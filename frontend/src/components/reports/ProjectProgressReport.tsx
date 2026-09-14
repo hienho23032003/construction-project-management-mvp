@@ -1,104 +1,145 @@
-import React, { memo } from 'react';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
-  Chip,
-} from '@mui/material';
+import React, { memo, useMemo } from 'react';
+import { Chip } from '@mui/material';
 import { format } from 'date-fns';
+import { CommonTable, ColumnDef } from '../common/CommonTable';
 import { ProgressBar } from '../common/ProgressBar';
 import { StatusChip } from '../common/StatusChip';
 
+interface ProjectProgressReportItem {
+  projectId: string;
+  code: string;
+  name: string;
+  managerName?: string;
+  startDate: string;
+  plannedEndDate: string;
+  progress: number;
+  status: any;
+  isOverdue?: boolean;
+  totalTasks: number;
+  completedTasks: number;
+  overdueTasks: number;
+}
+
 interface ProjectProgressReportProps {
-  data: any[];
+  data: ProjectProgressReportItem[];
   page: number;
   rowsPerPage: number;
+  loading?: boolean;
 }
 
 export const ProjectProgressReport: React.FC<ProjectProgressReportProps> = memo(
-  ({ data, page, rowsPerPage }) => {
-    const paginatedData = data.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
+  ({ data, page, rowsPerPage, loading = false }) => {
+    const paginatedData = useMemo(() => {
+      return data.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
+    }, [data, page, rowsPerPage]);
+
+    const columns: ColumnDef<ProjectProgressReportItem>[] = useMemo(
+      () => [
+        {
+          id: 'code',
+          header: 'Mã',
+          accessorKey: 'code',
+          width: 90,
+          minWidth: 80,
+          cell: ({ value }) => (
+            <Chip
+              label={value}
+              size="small"
+              sx={{ bgcolor: '#0284c7', color: '#ffffff', fontWeight: 800 }}
+            />
+          ),
+        },
+        {
+          id: 'name',
+          header: 'Tên Công Trình',
+          accessorKey: 'name',
+          width: '24%',
+          minWidth: 160,
+          ellipsis: true,
+          cellSx: { fontWeight: 700 },
+        },
+        {
+          id: 'managerName',
+          header: 'Người Quản Lý (PM)',
+          accessorFn: (row) => row.managerName || 'Chưa gán',
+          width: '16%',
+          minWidth: 130,
+          ellipsis: true,
+        },
+        {
+          id: 'startDate',
+          header: 'Ngày Khởi Công',
+          accessorKey: 'startDate',
+          width: 120,
+          minWidth: 110,
+          cell: ({ value }) => {
+            try {
+              return format(new Date(value), 'dd/MM/yyyy');
+            } catch {
+              return value || '-';
+            }
+          },
+        },
+        {
+          id: 'plannedEndDate',
+          header: 'Hạn Dự Kiến',
+          accessorKey: 'plannedEndDate',
+          width: 120,
+          minWidth: 110,
+          cell: ({ value }) => {
+            try {
+              return format(new Date(value), 'dd/MM/yyyy');
+            } catch {
+              return value || '-';
+            }
+          },
+        },
+        {
+          id: 'progress',
+          header: 'Tiến Độ',
+          accessorKey: 'progress',
+          width: 130,
+          minWidth: 120,
+          cell: ({ value }) => <ProgressBar value={value} height={7} />,
+        },
+        {
+          id: 'status',
+          header: 'Trạng Thái',
+          width: 130,
+          minWidth: 120,
+          cell: ({ row }) => <StatusChip status={row.status} isOverdue={row.isOverdue} />,
+        },
+        {
+          id: 'taskStats',
+          header: 'Tổng Task / Xong / Trễ',
+          align: 'right',
+          width: 170,
+          minWidth: 150,
+          cell: ({ row }) => (
+            <span>
+              {row.totalTasks} /{' '}
+              <span style={{ color: '#10b981', fontWeight: 700 }}>{row.completedTasks}</span> /{' '}
+              <span style={{ color: '#ef4444', fontWeight: 700 }}>{row.overdueTasks}</span>
+            </span>
+          ),
+        },
+      ],
+      []
+    );
 
     return (
-      <Table stickyHeader sx={{ minWidth: { xs: 750, md: '100%' } }}>
-        <TableHead>
-          <TableRow>
-            <TableCell sx={{ width: '50px', textAlign: 'center', whiteSpace: 'nowrap', py: 1.5 }}>STT</TableCell>
-            <TableCell sx={{ whiteSpace: 'nowrap', py: 1.5 }}>Mã</TableCell>
-            <TableCell sx={{ whiteSpace: 'nowrap', py: 1.5 }}>Tên Công Trình</TableCell>
-            <TableCell sx={{ whiteSpace: 'nowrap', py: 1.5 }}>Người Quản Lý (PM)</TableCell>
-            <TableCell sx={{ whiteSpace: 'nowrap', py: 1.5 }}>Ngày Khởi Công</TableCell>
-            <TableCell sx={{ whiteSpace: 'nowrap', py: 1.5 }}>Hạn Dự Kiến</TableCell>
-            <TableCell sx={{ whiteSpace: 'nowrap', py: 1.5 }}>Tiến Độ</TableCell>
-            <TableCell sx={{ whiteSpace: 'nowrap', py: 1.5 }}>Trạng Thái</TableCell>
-            <TableCell align="right" sx={{ whiteSpace: 'nowrap', py: 1.5 }}>Tổng Task / Xong / Trễ</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {paginatedData.length === 0 ? (
-            <TableRow>
-              <TableCell colSpan={9} align="center" sx={{ py: 4, color: '#64748b', whiteSpace: 'nowrap' }}>
-                Không có dữ liệu dự án phù hợp
-              </TableCell>
-            </TableRow>
-          ) : (
-            paginatedData.map((p, idx) => (
-              <TableRow key={p.projectId} hover>
-                <TableCell sx={{ textAlign: 'center', whiteSpace: 'nowrap', fontWeight: 600, color: '#64748b' }}>
-                  {idx + 1}
-                </TableCell>
-                <TableCell sx={{ whiteSpace: 'nowrap' }}>
-                  <Chip
-                    label={p.code}
-                    size="small"
-                    sx={{ bgcolor: '#0284c7', color: '#ffffff', fontWeight: 800 }}
-                  />
-                </TableCell>
-                <TableCell sx={{ fontWeight: 700, whiteSpace: 'nowrap', maxWidth: { xs: 180, sm: 260 } }}>
-                  <span
-                    style={{
-                      display: 'block',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                    }}
-                    title={p.name}
-                  >
-                    {p.name}
-                  </span>
-                </TableCell>
-                <TableCell sx={{ whiteSpace: 'nowrap', maxWidth: 160 }}>
-                  <span
-                    style={{
-                      display: 'block',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                    }}
-                    title={p.managerName || 'Chưa gán'}
-                  >
-                    {p.managerName || 'Chưa gán'}
-                  </span>
-                </TableCell>
-                <TableCell sx={{ whiteSpace: 'nowrap' }}>{format(new Date(p.startDate), 'dd/MM/yyyy')}</TableCell>
-                <TableCell sx={{ whiteSpace: 'nowrap' }}>{format(new Date(p.plannedEndDate), 'dd/MM/yyyy')}</TableCell>
-                <TableCell sx={{ width: 140, whiteSpace: 'nowrap' }}>
-                  <ProgressBar value={p.progress} height={7} />
-                </TableCell>
-                <TableCell sx={{ whiteSpace: 'nowrap' }}>
-                  <StatusChip status={p.status} isOverdue={p.isOverdue} />
-                </TableCell>
-                <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
-                  {p.totalTasks} / <span style={{ color: '#10b981', fontWeight: 700 }}>{p.completedTasks}</span> /{' '}
-                  <span style={{ color: '#ef4444', fontWeight: 700 }}>{p.overdueTasks}</span>
-                </TableCell>
-              </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
+      <CommonTable<ProjectProgressReportItem>
+        data={paginatedData}
+        columns={columns}
+        loading={loading}
+        showSTT
+        sttConfig={{
+          page,
+          rowsPerPage,
+        }}
+        rowKey="projectId"
+        emptyMessage="Không có dữ liệu dự án phù hợp"
+      />
     );
   }
 );

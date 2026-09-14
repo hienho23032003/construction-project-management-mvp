@@ -64,27 +64,27 @@ export const ReportsPage: React.FC = () => {
   );
 
   // Queries for each tab
-  const { data: projectReport = [], isLoading: loadingProjects } = useProjectProgressReportQuery(
+  const { data: projectReport = [], isLoading: loadingProjects, isFetching: fetchingProjects } = useProjectProgressReportQuery(
     activeTab === 0 ? filter : null
   );
-  const { data: taskReport = [], isLoading: loadingTasks } = useTaskReportQuery(
+  const { data: taskReport = [], isLoading: loadingTasks, isFetching: fetchingTasks } = useTaskReportQuery(
     activeTab === 1 ? filter : null
   );
-  const { data: overdueReport = [], isLoading: loadingOverdue } = useOverdueReportQuery(
+  const { data: overdueReport = [], isLoading: loadingOverdue, isFetching: fetchingOverdue } = useOverdueReportQuery(
     activeTab === 2 ? filter : null
   );
-  const { data: workloadReport = [], isLoading: loadingWorkload } = useWorkloadReportQuery(
+  const { data: workloadReport = [], isLoading: loadingWorkload, isFetching: fetchingWorkload } = useWorkloadReportQuery(
     activeTab === 3 ? filter : null
   );
 
-  const isLoading =
+  const isCurrentTabLoading =
     activeTab === 0
-      ? loadingProjects
+      ? loadingProjects || fetchingProjects
       : activeTab === 1
-      ? loadingTasks
+      ? loadingTasks || fetchingTasks
       : activeTab === 2
-      ? loadingOverdue
-      : loadingWorkload;
+      ? loadingOverdue || fetchingOverdue
+      : loadingWorkload || fetchingWorkload;
 
   const currentCount =
     activeTab === 0
@@ -149,34 +149,28 @@ export const ReportsPage: React.FC = () => {
           options={[{ id: '', code: 'ALL', name: 'Tất cả dự án' }, ...projects]}
           getOptionLabel={(p) => (p.id ? `${p.code} - ${p.name}` : p.name)}
           value={projects.find((p) => p.id === selectedProjectId) || { id: '', code: 'ALL', name: 'Tất cả dự án' }}
-          onChange={(_, newValue) => {
-            setSelectedProjectId(newValue?.id || '');
+          onChange={(_, val) => {
+            setSelectedProjectId(val?.id || '');
             setPage(0);
           }}
-          isOptionEqualToValue={(option, value) => option.id === value.id}
-          renderInput={(params) => (
-            <TextField {...params} label="Lọc Theo Dự Án" placeholder="Tìm kiếm dự án..." />
-          )}
+          renderInput={(params) => <TextField {...params} label="Lọc Theo Dự Án" />}
         />
 
         <Autocomplete
           size="small"
           sx={{ minWidth: 260 }}
           options={[{ id: '', fullName: 'Tất cả nhân sự', department: '' }, ...users]}
-          getOptionLabel={(u) => (u.id ? `${u.fullName} (${u.department || 'Chưa có phòng'})` : u.fullName)}
+          getOptionLabel={(u) => (u.id ? `${u.fullName} (${u.department || 'Chưa phân ban'})` : u.fullName)}
           value={users.find((u) => u.id === selectedUserId) || { id: '', fullName: 'Tất cả nhân sự', department: '' }}
-          onChange={(_, newValue) => {
-            setSelectedUserId(newValue?.id || '');
+          onChange={(_, val) => {
+            setSelectedUserId(val?.id || '');
             setPage(0);
           }}
-          isOptionEqualToValue={(option, value) => option.id === value.id}
-          renderInput={(params) => (
-            <TextField {...params} label="Lọc Theo Nhân Sự" placeholder="Tìm kiếm nhân sự..." />
-          )}
+          renderInput={(params) => <TextField {...params} label="Lọc Theo Nhân Sự" />}
         />
       </Paper>
 
-      {/* Tabs & Report Table */}
+      {/* Tab Navigation & Report Table */}
       <Paper sx={{ border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden' }}>
         <Tabs
           value={activeTab}
@@ -198,43 +192,52 @@ export const ReportsPage: React.FC = () => {
         </Tabs>
 
         <Box sx={{ p: 2 }}>
-          {isLoading ? (
-            <TableSkeleton columns={7} rows={6} />
-          ) : (
-            <Box sx={{ border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden' }}>
-              <TableContainer
-                sx={{
-                  maxHeight: 'calc(100vh - 330px)',
-                  overflow: 'auto',
-                }}
-              >
-                {activeTab === 0 && (
-                  <ProjectProgressReport data={projectReport} page={page} rowsPerPage={rowsPerPage} />
-                )}
-                {activeTab === 1 && (
-                  <TaskDetailReport data={taskReport} page={page} rowsPerPage={rowsPerPage} />
-                )}
-                {activeTab === 2 && (
-                  <OverdueReport data={overdueReport} page={page} rowsPerPage={rowsPerPage} />
-                )}
-                {activeTab === 3 && (
-                  <WorkloadReport data={workloadReport} page={page} rowsPerPage={rowsPerPage} />
-                )}
-              </TableContainer>
-
-              <CommonPagination
+          <Box sx={{ border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden', bgcolor: '#ffffff' }}>
+            {activeTab === 0 && (
+              <ProjectProgressReport
+                data={projectReport}
                 page={page}
                 rowsPerPage={rowsPerPage}
-                totalCount={currentCount}
-                onPageChange={(newPage) => setPage(newPage)}
-                onRowsPerPageChange={(newRowsPerPage) => {
-                  setRowsPerPage(newRowsPerPage);
-                  setPage(0);
-                }}
-                rowsPerPageOptions={[5, 10, 25, 50]}
+                loading={isCurrentTabLoading}
               />
-            </Box>
-          )}
+            )}
+            {activeTab === 1 && (
+              <TaskDetailReport
+                data={taskReport}
+                page={page}
+                rowsPerPage={rowsPerPage}
+                loading={isCurrentTabLoading}
+              />
+            )}
+            {activeTab === 2 && (
+              <OverdueReport
+                data={overdueReport}
+                page={page}
+                rowsPerPage={rowsPerPage}
+                loading={isCurrentTabLoading}
+              />
+            )}
+            {activeTab === 3 && (
+              <WorkloadReport
+                data={workloadReport}
+                page={page}
+                rowsPerPage={rowsPerPage}
+                loading={isCurrentTabLoading}
+              />
+            )}
+
+            <CommonPagination
+              page={page}
+              rowsPerPage={rowsPerPage}
+              totalCount={currentCount}
+              onPageChange={(newPage) => setPage(newPage)}
+              onRowsPerPageChange={(newRowsPerPage) => {
+                setRowsPerPage(newRowsPerPage);
+                setPage(0);
+              }}
+              rowsPerPageOptions={[5, 10, 25, 50]}
+            />
+          </Box>
         </Box>
       </Paper>
     </Box>

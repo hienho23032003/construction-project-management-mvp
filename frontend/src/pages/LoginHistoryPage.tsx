@@ -1,16 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Box,
   Typography,
   Grid,
   Card,
   CardContent,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   Paper,
   Chip,
   Avatar,
@@ -22,9 +16,8 @@ import {
   MenuItem,
   IconButton,
   Tooltip,
-  CircularProgress,
 } from '@mui/material';
-import { CommonPagination } from '../components/common/CommonPagination';
+import { CommonTable, ColumnDef } from '../components/common/CommonTable';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import {
   History,
@@ -112,6 +105,226 @@ export const LoginHistoryPage: React.FC = () => {
     if (ua.includes('Safari/') && !ua.includes('Chrome/')) return 'Apple Safari';
     return ua.length > 25 ? `${ua.substring(0, 25)}...` : ua;
   };
+
+  const columns: ColumnDef<UserLoginSession>[] = useMemo(
+    () => [
+      {
+        id: 'user',
+        header: 'NHÂN SỰ',
+        maxWidth: { xs: 180, sm: 240 },
+        cell: ({ row }) => (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <Avatar
+              sx={{
+                width: 34,
+                height: 34,
+                bgcolor: '#92400e',
+                color: '#ffffff',
+                fontSize: '0.85rem',
+                fontWeight: 700,
+              }}
+            >
+              {row.userName?.charAt(0) || 'U'}
+            </Avatar>
+            <Box sx={{ minWidth: 0, overflow: 'hidden' }}>
+              <Typography
+                variant="subtitle2"
+                noWrap
+                sx={{
+                  fontWeight: 700,
+                  fontSize: '0.85rem',
+                  color: '#2e251e',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {row.userName}
+              </Typography>
+              <Typography
+                variant="caption"
+                noWrap
+                sx={{
+                  color: '#66594d',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  display: 'block',
+                }}
+              >
+                {row.userEmail} {row.roleName ? `• ${row.roleName}` : ''}
+              </Typography>
+            </Box>
+          </Box>
+        ),
+      },
+      {
+        id: 'loginTime',
+        header: 'THỜI ĐIỂM ĐĂNG NHẬP',
+        cell: ({ row }) => (
+          <Box>
+            <Typography
+              variant="body2"
+              sx={{ fontWeight: 600, color: '#2e251e', fontSize: '0.8125rem', whiteSpace: 'nowrap' }}
+            >
+              {row.loginTime ? format(parseISO(row.loginTime), 'HH:mm:ss') : '-'}
+            </Typography>
+            <Typography variant="caption" sx={{ color: '#66594d', whiteSpace: 'nowrap' }}>
+              {row.loginTime ? format(parseISO(row.loginTime), 'dd/MM/yyyy') : '-'}
+            </Typography>
+          </Box>
+        ),
+      },
+      {
+        id: 'logoutTime',
+        header: 'THỜI ĐIỂM ĐĂNG XUẤT',
+        cell: ({ row }) => {
+          const isActive = row.status === 'Active';
+          if (isActive) {
+            return (
+              <Chip
+                label="Đang trực tuyến"
+                size="small"
+                sx={{
+                  bgcolor: '#dcfce7',
+                  color: '#15803d',
+                  fontWeight: 700,
+                  fontSize: '0.72rem',
+                  whiteSpace: 'nowrap',
+                }}
+              />
+            );
+          }
+          if (row.logoutTime) {
+            return (
+              <Box>
+                <Typography
+                  variant="body2"
+                  sx={{ fontWeight: 600, color: '#2e251e', fontSize: '0.8125rem', whiteSpace: 'nowrap' }}
+                >
+                  {format(parseISO(row.logoutTime), 'HH:mm:ss')}
+                </Typography>
+                <Typography variant="caption" sx={{ color: '#66594d', whiteSpace: 'nowrap' }}>
+                  {format(parseISO(row.logoutTime), 'dd/MM/yyyy')}
+                </Typography>
+              </Box>
+            );
+          }
+          return <Typography variant="caption" sx={{ color: '#a39587', whiteSpace: 'nowrap' }}>-</Typography>;
+        },
+      },
+      {
+        id: 'duration',
+        header: 'TỔNG THỜI LƯỢNG',
+        cell: ({ row }) => {
+          const isActive = row.status === 'Active';
+          return (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
+              <Clock size={15} color={isActive ? '#16a34a' : '#786c60'} />
+              <Typography
+                variant="body2"
+                sx={{
+                  fontWeight: 600,
+                  color: isActive ? '#15803d' : '#2e251e',
+                  fontSize: '0.8125rem',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {formatDuration(row.durationMinutes, isActive)}
+              </Typography>
+            </Box>
+          );
+        },
+      },
+      {
+        id: 'device',
+        header: 'ĐỊA CHỈ IP & THIẾT BỊ',
+        maxWidth: 200,
+        cell: ({ row }) => (
+          <Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, mb: 0.3 }}>
+              <Globe size={14} color="#92400e" />
+              <Typography
+                variant="body2"
+                sx={{ fontFamily: 'monospace', fontSize: '0.8rem', color: '#2e251e', whiteSpace: 'nowrap' }}
+              >
+                {row.ipAddress || '127.0.0.1'}
+              </Typography>
+            </Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6 }}>
+              {getDeviceIcon(row.userAgent)}
+              <Typography
+                variant="caption"
+                noWrap
+                sx={{
+                  color: '#66594d',
+                  fontSize: '0.72rem',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  display: 'block',
+                }}
+                title={row.userAgent || ''}
+              >
+                {parseUserAgent(row.userAgent)}
+              </Typography>
+            </Box>
+          </Box>
+        ),
+      },
+      {
+        id: 'status',
+        header: 'TRẠNG THÁI',
+        align: 'center',
+        cell: ({ row }) => {
+          if (row.status === 'Active') {
+            return (
+              <Chip
+                label="Hoạt Động"
+                size="small"
+                sx={{
+                  bgcolor: '#dcfce7',
+                  color: '#166534',
+                  fontWeight: 700,
+                  fontSize: '0.72rem',
+                  whiteSpace: 'nowrap',
+                }}
+              />
+            );
+          }
+          if (row.status === 'LoggedOut') {
+            return (
+              <Chip
+                label="Đã Đăng Xuất"
+                size="small"
+                sx={{
+                  bgcolor: '#f3ece1',
+                  color: '#493e32',
+                  fontWeight: 600,
+                  fontSize: '0.72rem',
+                  whiteSpace: 'nowrap',
+                }}
+              />
+            );
+          }
+          return (
+            <Chip
+              label="Hết Hạn"
+              size="small"
+              sx={{
+                bgcolor: '#fef3c7',
+                color: '#b45309',
+                fontWeight: 600,
+                fontSize: '0.72rem',
+                whiteSpace: 'nowrap',
+              }}
+            />
+          );
+        },
+      },
+    ],
+    []
+  );
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
@@ -385,257 +598,37 @@ export const LoginHistoryPage: React.FC = () => {
         </Paper>
 
         {/* Sessions Table */}
-        <Box sx={{ border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden', bgcolor: '#ffffff' }}>
-          <TableContainer
-            sx={{
-              overflow: 'auto',
-              maxHeight: 'calc(100vh - 360px)',
-            }}
-          >
-            <Table stickyHeader sx={{ minWidth: { xs: 780, md: '100%' } }}>
-              <TableHead>
-                <TableRow>
-                  <TableCell sx={{ width: '50px', textAlign: 'center', py: 1.5, whiteSpace: 'nowrap' }}>
-                    STT
-                  </TableCell>
-                  <TableCell sx={{ py: 1.5, whiteSpace: 'nowrap' }}>
-                    NHÂN SỰ
-                  </TableCell>
-                  <TableCell sx={{ py: 1.5, whiteSpace: 'nowrap' }}>
-                    THỜI ĐIỂM ĐĂNG NHẬP
-                  </TableCell>
-                  <TableCell sx={{ py: 1.5, whiteSpace: 'nowrap' }}>
-                    THỜI ĐIỂM ĐĂNG XUẤT
-                  </TableCell>
-                  <TableCell sx={{ py: 1.5, whiteSpace: 'nowrap' }}>
-                    TỔNG THỜI LƯỢNG
-                  </TableCell>
-                  <TableCell sx={{ py: 1.5, whiteSpace: 'nowrap' }}>
-                    ĐỊA CHỈ IP & THIẾT BỊ
-                  </TableCell>
-                  <TableCell align="center" sx={{ py: 1.5, whiteSpace: 'nowrap' }}>
-                    TRẠNG THÁI
-                  </TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {loadingHistory ? (
-                  <TableRow>
-                    <TableCell colSpan={7} align="center" sx={{ py: 6, whiteSpace: 'nowrap' }}>
-                      <CircularProgress size={32} color="primary" />
-                      <Typography variant="body2" sx={{ color: '#64748b', mt: 1, whiteSpace: 'nowrap' }}>
-                        Đang tải lịch sử phiên...
-                      </Typography>
-                    </TableCell>
-                  </TableRow>
-                ) : !historyData || historyData.items.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={7} align="center" sx={{ py: 6, whiteSpace: 'nowrap' }}>
-                      <History size={40} color="#cbd5e1" style={{ marginBottom: 8 }} />
-                      <Typography variant="subtitle2" sx={{ color: '#64748b', whiteSpace: 'nowrap' }}>
-                        Không có bản ghi phiên đăng nhập nào
-                      </Typography>
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  historyData.items.map((session: UserLoginSession, idx: number) => {
-                    const isActive = session.status === 'Active';
-
-                    return (
-                      <TableRow
-                        key={session.id}
-                        hover
-                        sx={{
-                          bgcolor: isActive ? 'rgba(240, 253, 244, 0.4)' : 'inherit',
-                        }}
-                      >
-                        <TableCell sx={{ textAlign: 'center', py: 1.5, whiteSpace: 'nowrap', fontWeight: 600, color: '#64748b' }}>
-                          {(pageIndex - 1) * pageSize + idx + 1}
-                        </TableCell>
-                        {/* User Info */}
-                        <TableCell sx={{ py: 1.5, whiteSpace: 'nowrap', maxWidth: { xs: 180, sm: 240 } }}>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                            <Avatar sx={{ width: 34, height: 34, bgcolor: '#92400e', color: '#ffffff', fontSize: '0.85rem', fontWeight: 700 }}>
-                              {session.userName?.charAt(0) || 'U'}
-                            </Avatar>
-                            <Box sx={{ minWidth: 0, overflow: 'hidden' }}>
-                              <Typography
-                                variant="subtitle2"
-                                noWrap
-                                sx={{
-                                  fontWeight: 700,
-                                  fontSize: '0.85rem',
-                                  color: '#2e251e',
-                                  overflow: 'hidden',
-                                  textOverflow: 'ellipsis',
-                                  whiteSpace: 'nowrap',
-                                }}
-                              >
-                                {session.userName}
-                              </Typography>
-                              <Typography
-                                variant="caption"
-                                noWrap
-                                sx={{
-                                  color: '#66594d',
-                                  overflow: 'hidden',
-                                  textOverflow: 'ellipsis',
-                                  whiteSpace: 'nowrap',
-                                  display: 'block',
-                                }}
-                              >
-                                {session.userEmail} {session.roleName ? `• ${session.roleName}` : ''}
-                              </Typography>
-                            </Box>
-                          </Box>
-                        </TableCell>
-
-                        {/* Login Time */}
-                        <TableCell sx={{ py: 1.5, whiteSpace: 'nowrap' }}>
-                          <Typography variant="body2" sx={{ fontWeight: 600, color: '#2e251e', fontSize: '0.8125rem', whiteSpace: 'nowrap' }}>
-                            {session.loginTime ? format(parseISO(session.loginTime), 'HH:mm:ss') : '-'}
-                          </Typography>
-                          <Typography variant="caption" sx={{ color: '#66594d', whiteSpace: 'nowrap' }}>
-                            {session.loginTime ? format(parseISO(session.loginTime), 'dd/MM/yyyy') : '-'}
-                          </Typography>
-                        </TableCell>
-
-                        {/* Logout Time */}
-                        <TableCell sx={{ py: 1.5, whiteSpace: 'nowrap' }}>
-                          {isActive ? (
-                            <Chip
-                              label="Đang trực tuyến"
-                              size="small"
-                              sx={{
-                                bgcolor: '#dcfce7',
-                                color: '#15803d',
-                                fontWeight: 700,
-                                fontSize: '0.72rem',
-                                whiteSpace: 'nowrap',
-                              }}
-                            />
-                          ) : session.logoutTime ? (
-                            <>
-                              <Typography variant="body2" sx={{ fontWeight: 600, color: '#2e251e', fontSize: '0.8125rem', whiteSpace: 'nowrap' }}>
-                                {format(parseISO(session.logoutTime), 'HH:mm:ss')}
-                              </Typography>
-                              <Typography variant="caption" sx={{ color: '#66594d', whiteSpace: 'nowrap' }}>
-                                {format(parseISO(session.logoutTime), 'dd/MM/yyyy')}
-                              </Typography>
-                            </>
-                          ) : (
-                            <Typography variant="caption" sx={{ color: '#a39587', whiteSpace: 'nowrap' }}>-</Typography>
-                          )}
-                        </TableCell>
-
-                        {/* Duration */}
-                        <TableCell sx={{ py: 1.5, whiteSpace: 'nowrap' }}>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
-                            <Clock size={15} color={isActive ? '#16a34a' : '#786c60'} />
-                            <Typography
-                              variant="body2"
-                              sx={{
-                                fontWeight: 600,
-                                color: isActive ? '#15803d' : '#2e251e',
-                                fontSize: '0.8125rem',
-                                whiteSpace: 'nowrap',
-                              }}
-                            >
-                              {formatDuration(session.durationMinutes, isActive)}
-                            </Typography>
-                          </Box>
-                        </TableCell>
-
-                        {/* IP Address & User Agent */}
-                        <TableCell sx={{ py: 1.5, whiteSpace: 'nowrap', maxWidth: 200 }}>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, mb: 0.3 }}>
-                            <Globe size={14} color="#92400e" />
-                            <Typography variant="body2" sx={{ fontFamily: 'monospace', fontSize: '0.8rem', color: '#2e251e', whiteSpace: 'nowrap' }}>
-                              {session.ipAddress || '127.0.0.1'}
-                            </Typography>
-                          </Box>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6 }}>
-                            {getDeviceIcon(session.userAgent)}
-                            <Typography
-                              variant="caption"
-                              noWrap
-                              sx={{
-                                color: '#66594d',
-                                fontSize: '0.72rem',
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                whiteSpace: 'nowrap',
-                                display: 'block',
-                              }}
-                              title={session.userAgent || ''}
-                            >
-                              {parseUserAgent(session.userAgent)}
-                            </Typography>
-                          </Box>
-                        </TableCell>
-
-                        {/* Status */}
-                        <TableCell align="center" sx={{ py: 1.5, whiteSpace: 'nowrap' }}>
-                          {session.status === 'Active' ? (
-                            <Chip
-                              label="Hoạt Động"
-                              size="small"
-                              sx={{
-                                bgcolor: '#dcfce7',
-                                color: '#166534',
-                                fontWeight: 700,
-                                fontSize: '0.72rem',
-                                whiteSpace: 'nowrap',
-                              }}
-                            />
-                          ) : session.status === 'LoggedOut' ? (
-                            <Chip
-                              label="Đã Đăng Xuất"
-                              size="small"
-                              sx={{
-                                bgcolor: '#f3ece1',
-                                color: '#493e32',
-                                fontWeight: 600,
-                                fontSize: '0.72rem',
-                                whiteSpace: 'nowrap',
-                              }}
-                            />
-                          ) : (
-                            <Chip
-                              label="Hết Hạn"
-                              size="small"
-                              sx={{
-                                bgcolor: '#fef3c7',
-                                color: '#b45309',
-                                fontWeight: 600,
-                                fontSize: '0.72rem',
-                                whiteSpace: 'nowrap',
-                              }}
-                            />
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-
-          {/* Common Pagination */}
-          <CommonPagination
-            page={pageIndex}
-            rowsPerPage={pageSize}
-            totalCount={historyData?.totalCount || 0}
-            onPageChange={(newPage) => setPageIndex(newPage)}
-            onRowsPerPageChange={(newSize) => {
+        <CommonTable<UserLoginSession>
+          data={historyData?.items || []}
+          columns={columns}
+          loading={loadingHistory}
+          showSTT
+          sttConfig={{
+            page: pageIndex - 1,
+            rowsPerPage: pageSize,
+          }}
+          rowKey="id"
+          rowSx={(session: UserLoginSession) => ({
+            bgcolor: session.status === 'Active' ? 'rgba(240, 253, 244, 0.4)' : 'inherit',
+          })}
+          maxHeight="calc(100vh - 360px)"
+          minWidth={{ xs: 780, md: '100%' }}
+          emptyMessage="Không có bản ghi phiên đăng nhập nào"
+          emptyIcon={<History size={40} color="#cbd5e1" style={{ marginBottom: 8 }} />}
+          bordered
+          pagination={{
+            page: pageIndex,
+            rowsPerPage: pageSize,
+            totalCount: historyData?.totalCount || 0,
+            onPageChange: (newPage) => setPageIndex(newPage),
+            onRowsPerPageChange: (newSize) => {
               setPageSize(newSize);
               setPageIndex(1);
-            }}
-            rowsPerPageOptions={[10, 15, 30, 50]}
-            isZeroIndexed={false}
-          />
-        </Box>
+            },
+            rowsPerPageOptions: [10, 15, 30, 50],
+            isZeroIndexed: false,
+          }}
+        />
       </Box>
   );
 };

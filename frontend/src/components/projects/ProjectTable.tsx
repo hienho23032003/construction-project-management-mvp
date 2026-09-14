@@ -1,13 +1,5 @@
-import React, { memo } from 'react';
+import React, { memo, useMemo } from 'react';
 import {
-  TableContainer,
-  Table,
-  TableHead,
-  TableBody,
-  TableRow,
-  TableCell,
-  TableSortLabel,
-  Paper,
   Chip,
   IconButton,
   Typography,
@@ -16,10 +8,12 @@ import { Edit, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { Project } from '../../types';
 import { StatusChip } from '../common/StatusChip';
-import { ProgressBar } from '../common/PriorityBadge';
+import { ProgressBar } from '../common/ProgressBar';
+import { CommonTable, ColumnDef } from '../common/CommonTable';
 
 interface ProjectTableProps {
   projects: Project[];
+  loading?: boolean;
   page?: number;
   rowsPerPage?: number;
   sortBy: string;
@@ -34,6 +28,7 @@ interface ProjectTableProps {
 
 export const ProjectTable: React.FC<ProjectTableProps> = memo(({
   projects,
+  loading = false,
   page = 0,
   rowsPerPage = 12,
   sortBy,
@@ -45,146 +40,130 @@ export const ProjectTable: React.FC<ProjectTableProps> = memo(({
   canEdit = false,
   isAdmin = false,
 }) => {
+  const columns: ColumnDef<Project>[] = useMemo(
+    () => [
+      {
+        id: 'code',
+        header: 'Mã Dự Án',
+        accessorKey: 'code',
+        sortable: true,
+        width: 100,
+        minWidth: 100,
+        cell: ({ value }) => (
+          <Chip
+            label={value}
+            size="small"
+            sx={{ bgcolor: '#0284c7', color: '#ffffff', fontWeight: 800 }}
+          />
+        ),
+      },
+      {
+        id: 'name',
+        header: 'Tên Công Trình',
+        accessorKey: 'name',
+        sortable: true,
+        width: '20%',
+        minWidth: 180,
+        ellipsis: true,
+        cellSx: { fontWeight: 700, color: '#0f172a' },
+      },
+      {
+        id: 'location',
+        header: 'Địa Điểm',
+        accessorKey: 'location',
+        width: '18%',
+        minWidth: 140,
+        ellipsis: true,
+        cell: ({ value }) => value || '-',
+      },
+      {
+        id: 'managerName',
+        header: 'Người Quản Lý (PM)',
+        accessorKey: 'managerName',
+        width: '15%',
+        minWidth: 100,
+        ellipsis: true,
+        cell: ({ value }) => value || 'Chưa gán',
+      },
+      {
+        id: 'plannedEndDate',
+        header: 'Hạn Hoàn Thành',
+        accessorKey: 'plannedEndDate',
+        sortable: true,
+        width: 130,
+        minWidth: 120,
+        cell: ({ row }) => (
+          <Typography
+            variant="caption"
+            sx={{
+              fontWeight: 600,
+              color: row.isOverdue ? '#ef4444' : '#334155',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {format(new Date(row.plannedEndDate), 'dd/MM/yyyy')}
+          </Typography>
+        ),
+      },
+      {
+        id: 'progress',
+        header: 'Tiến Độ',
+        accessorKey: 'progress',
+        sortable: true,
+        width: 130,
+        minWidth: 120,
+        cell: ({ value }) => <ProgressBar value={value} height={7} />,
+      },
+      {
+        id: 'status',
+        header: 'Trạng Thái',
+        accessorKey: 'status',
+        sortable: true,
+        width: 130,
+        minWidth: 120,
+        cell: ({ row }) => <StatusChip status={row.status} isOverdue={row.isOverdue} />,
+      },
+      {
+        id: 'actions',
+        header: 'Thao Tác',
+        align: 'right',
+        width: 100,
+        minWidth: 100,
+        cell: ({ row }) => (
+          <span onClick={(e) => e.stopPropagation()}>
+            {canEdit && onEditClick && (
+              <IconButton size="small" onClick={(e) => onEditClick(row, e)}>
+                <Edit size={16} color="#64748b" />
+              </IconButton>
+            )}
+            {isAdmin && onDeleteClick && (
+              <IconButton size="small" onClick={(e) => onDeleteClick(row.id, e)}>
+                <Trash2 size={16} color="#ef4444" />
+              </IconButton>
+            )}
+          </span>
+        ),
+      },
+    ],
+    [canEdit, isAdmin, onDeleteClick, onEditClick]
+  );
+
   return (
-    <TableContainer
-      sx={{
-        overflow: 'auto',
-        maxHeight: 'calc(100vh - 270px)',
+    <CommonTable<Project>
+      data={projects}
+      columns={columns}
+      loading={loading}
+      showSTT
+      sttConfig={{
+        page,
+        rowsPerPage,
       }}
-    >
-      <Table stickyHeader sx={{ minWidth: { xs: 720, md: '100%' } }}>
-        <TableHead>
-          <TableRow>
-            <TableCell sx={{ width: '50px', textAlign: 'center', whiteSpace: 'nowrap', py: 1.5 }}>
-              STT
-            </TableCell>
-            <TableCell sx={{ whiteSpace: 'nowrap', py: 1.5 }}>
-              <TableSortLabel
-                active={sortBy === 'code'}
-                direction={isDescending ? 'desc' : 'asc'}
-                onClick={() => onSort('code')}
-                sx={{ whiteSpace: 'nowrap' }}
-              >
-                Mã Dự Án
-              </TableSortLabel>
-            </TableCell>
-            <TableCell sx={{ whiteSpace: 'nowrap', py: 1.5, fontWeight: 700, fontSize: '0.8rem' }}>
-              <TableSortLabel
-                active={sortBy === 'name'}
-                direction={isDescending ? 'desc' : 'asc'}
-                onClick={() => onSort('name')}
-                sx={{ whiteSpace: 'nowrap' }}
-              >
-                Tên Công Trình
-              </TableSortLabel>
-            </TableCell>
-            <TableCell sx={{ whiteSpace: 'nowrap', py: 1.5, fontWeight: 700, fontSize: '0.8rem' }}>Địa Điểm</TableCell>
-            <TableCell sx={{ whiteSpace: 'nowrap', py: 1.5, fontWeight: 700, fontSize: '0.8rem' }}>Người Quản Lý (PM)</TableCell>
-            <TableCell sx={{ whiteSpace: 'nowrap', py: 1.5, fontWeight: 700, fontSize: '0.8rem' }}>
-              <TableSortLabel
-                active={sortBy === 'plannedEndDate'}
-                direction={isDescending ? 'desc' : 'asc'}
-                onClick={() => onSort('plannedEndDate')}
-                sx={{ whiteSpace: 'nowrap' }}
-              >
-                Hạn Hoàn Thành
-              </TableSortLabel>
-            </TableCell>
-            <TableCell sx={{ whiteSpace: 'nowrap', py: 1.5, fontWeight: 700, fontSize: '0.8rem' }}>
-              <TableSortLabel
-                active={sortBy === 'progress'}
-                direction={isDescending ? 'desc' : 'asc'}
-                onClick={() => onSort('progress')}
-                sx={{ whiteSpace: 'nowrap' }}
-              >
-                Tiến Độ
-              </TableSortLabel>
-            </TableCell>
-            <TableCell sx={{ whiteSpace: 'nowrap', py: 1.5, fontWeight: 700, fontSize: '0.8rem' }}>
-              <TableSortLabel
-                active={sortBy === 'status'}
-                direction={isDescending ? 'desc' : 'asc'}
-                onClick={() => onSort('status')}
-                sx={{ whiteSpace: 'nowrap' }}
-              >
-                Trạng Thái
-              </TableSortLabel>
-            </TableCell>
-            <TableCell align="right" sx={{ whiteSpace: 'nowrap', py: 1.5, fontWeight: 700, fontSize: '0.8rem' }}>Thao Tác</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {projects.map((p, idx) => (
-            <TableRow
-              key={p.id}
-              hover
-              onClick={() => onRowClick(p.id)}
-              sx={{ cursor: 'pointer' }}
-            >
-              <TableCell sx={{ textAlign: 'center', whiteSpace: 'nowrap', fontWeight: 600, color: '#64748b' }}>
-                {idx + 1}
-              </TableCell>
-              <TableCell sx={{ whiteSpace: 'nowrap' }}>
-                <Chip
-                  label={p.code}
-                  size="small"
-                  sx={{ bgcolor: '#0284c7', color: '#ffffff', fontWeight: 800 }}
-                />
-              </TableCell>
-              <TableCell sx={{ fontWeight: 700, color: '#0f172a', whiteSpace: 'nowrap', maxWidth: { xs: 180, sm: 280 } }}>
-                <Typography
-                  variant="body2"
-                  noWrap
-                  sx={{
-                    fontWeight: 700,
-                    color: '#0f172a',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                    display: 'block',
-                  }}
-                  title={p.name}
-                >
-                  {p.name}
-                </Typography>
-              </TableCell>
-              <TableCell sx={{ whiteSpace: 'nowrap', maxWidth: 140 }}>
-                <Typography variant="body2" noWrap sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {p.location || '-'}
-                </Typography>
-              </TableCell>
-              <TableCell sx={{ whiteSpace: 'nowrap', maxWidth: 150 }}>
-                <Typography variant="body2" noWrap sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {p.managerName || 'Chưa gán'}
-                </Typography>
-              </TableCell>
-              <TableCell sx={{ whiteSpace: 'nowrap' }}>
-                <Typography variant="caption" sx={{ fontWeight: 600, color: p.isOverdue ? '#ef4444' : '#334155', whiteSpace: 'nowrap' }}>
-                  {format(new Date(p.plannedEndDate), 'dd/MM/yyyy')}
-                </Typography>
-              </TableCell>
-              <TableCell sx={{ width: 140, whiteSpace: 'nowrap' }}>
-                <ProgressBar value={p.progress} height={7} />
-              </TableCell>
-              <TableCell sx={{ whiteSpace: 'nowrap' }}>
-                <StatusChip status={p.status} isOverdue={p.isOverdue} />
-              </TableCell>
-              <TableCell align="right" onClick={(e) => e.stopPropagation()} sx={{ whiteSpace: 'nowrap' }}>
-                {canEdit && onEditClick && (
-                  <IconButton size="small" onClick={(e) => onEditClick(p, e)}>
-                    <Edit size={16} color="#64748b" />
-                  </IconButton>
-                )}
-                {isAdmin && onDeleteClick && (
-                  <IconButton size="small" onClick={(e) => onDeleteClick(p.id, e)}>
-                    <Trash2 size={16} color="#ef4444" />
-                  </IconButton>
-                )}
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </TableContainer>
+      sortBy={sortBy}
+      isDescending={isDescending}
+      onSort={onSort}
+      rowKey="id"
+      onRowClick={(row) => onRowClick(row.id)}
+      emptyMessage="Không tìm thấy dự án nào"
+    />
   );
 });

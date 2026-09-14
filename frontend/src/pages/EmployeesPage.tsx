@@ -6,14 +6,11 @@ import {
   Button,
   Grid,
   TextField,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   InputAdornment,
   ToggleButtonGroup,
   ToggleButton,
 } from '@mui/material';
+import { CommonSelect } from '../components/common/CommonSelect';
 import {
   Users,
   Plus,
@@ -66,7 +63,7 @@ export const EmployeesPage: React.FC = () => {
   const debouncedSearch = useDebounce(search, 300);
 
   // Queries & Mutations
-  const { data, isLoading } = useUsersQuery({
+  const { data, isLoading, isFetching } = useUsersQuery({
     pageIndex: page + 1,
     pageSize: rowsPerPage,
     search: debouncedSearch.trim() || undefined,
@@ -186,23 +183,22 @@ export const EmployeesPage: React.FC = () => {
           />
         </Box>
 
-        <FormControl size="small" sx={{ minWidth: 180 }}>
-          <InputLabel>Phân Quyền Vai Trò</InputLabel>
-          <Select
-            value={roleFilter}
-            label="Phân Quyền Vai Trò"
-            onChange={(e) => {
-              setRoleFilter(e.target.value);
-              setPage(0);
-            }}
-          >
-            <MenuItem value="ALL">Tất cả vai trò</MenuItem>
-            <MenuItem value="Employee">Kỹ Sư / Nhân Viên</MenuItem>
-            <MenuItem value="Supervisor">Giám Sát Hiện Trường</MenuItem>
-            <MenuItem value="ProjectManager">Người Quản Lý (PM)</MenuItem>
-            <MenuItem value="SuperAdmin">Super Admin</MenuItem>
-          </Select>
-        </FormControl>
+        <CommonSelect
+          label="Phân Quyền Vai Trò"
+          value={roleFilter}
+          onChange={(val) => {
+            setRoleFilter(val);
+            setPage(0);
+          }}
+          minWidth={190}
+          options={[
+            { value: 'ALL', label: 'Tất cả vai trò' },
+            { value: 'Employee', label: 'Kỹ Sư / Nhân Viên', color: '#10b981' },
+            { value: 'Supervisor', label: 'Giám Sát Hiện Trường', color: '#f59e0b' },
+            { value: 'ProjectManager', label: 'Người Quản Lý (PM)', color: '#0284c7' },
+            { value: 'SuperAdmin', label: 'Super Admin', color: '#ef4444' },
+          ]}
+        />
 
         <Box sx={{ ml: 'auto' }}>
           <ToggleButtonGroup
@@ -222,66 +218,63 @@ export const EmployeesPage: React.FC = () => {
       </Paper>
 
       {/* Employees Content */}
-      {isLoading ? (
-        viewMode === 'grid' ? (
+      {viewMode === 'grid' ? (
+        isLoading || (isFetching && users.length === 0) ? (
           <CardGridSkeleton count={rowsPerPage > 6 ? 6 : rowsPerPage} />
+        ) : users.length === 0 ? (
+          <Paper sx={{ p: 6, textAlign: 'center', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+            <Users size={48} color="#94a3b8" style={{ marginBottom: 12 }} />
+            <Typography variant="h4" sx={{ color: '#475569', fontWeight: 600 }}>
+              Không tìm thấy nhân viên nào
+            </Typography>
+            <Typography variant="body2" sx={{ color: '#94a3b8', mt: 1 }}>
+              Hãy thử tìm kiếm với từ khóa khác hoặc xóa bộ lọc.
+            </Typography>
+          </Paper>
         ) : (
-          <Paper sx={{ border: '1px solid #e2e8f0', borderRadius: '8px', p: 2 }}>
-            <TableSkeleton columns={8} rows={6} />
-          </Paper>
+          <>
+            <Grid container spacing={2.5}>
+              {users.map((u) => {
+                const workload = workloads.find((w) => w.userId === u.id) || {
+                  activeTasks: 0,
+                  completedTasks: 0,
+                  overdueTasks: 0,
+                };
+                return (
+                  <Grid item xs={12} sm={6} md={4} key={u.id}>
+                    <EmployeeCard
+                      user={u}
+                      workload={workload}
+                      isAdmin={isAdmin}
+                      onEdit={handleOpenEdit}
+                      onToggleStatus={(target) => setToggleTarget(target)}
+                      onDelete={(target) => setDeleteTarget(target)}
+                    />
+                  </Grid>
+                );
+              })}
+            </Grid>
+            <Paper sx={{ border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden', mt: 1 }}>
+              <CommonPagination
+                page={page}
+                rowsPerPage={rowsPerPage}
+                totalCount={totalCount}
+                onPageChange={(newPage) => setPage(newPage)}
+                onRowsPerPageChange={(newRowsPerPage) => {
+                  setRowsPerPage(newRowsPerPage);
+                  setPage(0);
+                }}
+                rowsPerPageOptions={[6, 9, 15, 30]}
+              />
+            </Paper>
+          </>
         )
-      ) : users.length === 0 ? (
-        <Paper sx={{ p: 6, textAlign: 'center', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-          <Users size={48} color="#94a3b8" style={{ marginBottom: 12 }} />
-          <Typography variant="h4" sx={{ color: '#475569', fontWeight: 600 }}>
-            Không tìm thấy nhân viên nào
-          </Typography>
-          <Typography variant="body2" sx={{ color: '#94a3b8', mt: 1 }}>
-            Hãy thử tìm kiếm với từ khóa khác hoặc xóa bộ lọc.
-          </Typography>
-        </Paper>
-      ) : viewMode === 'grid' ? (
-        <>
-          <Grid container spacing={2.5}>
-            {users.map((u) => {
-              const workload = workloads.find((w) => w.userId === u.id) || {
-                activeTasks: 0,
-                completedTasks: 0,
-                overdueTasks: 0,
-              };
-              return (
-                <Grid item xs={12} sm={6} md={4} key={u.id}>
-                  <EmployeeCard
-                    user={u}
-                    workload={workload}
-                    isAdmin={isAdmin}
-                    onEdit={handleOpenEdit}
-                    onToggleStatus={(target) => setToggleTarget(target)}
-                    onDelete={(target) => setDeleteTarget(target)}
-                  />
-                </Grid>
-              );
-            })}
-          </Grid>
-          <Paper sx={{ border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden', mt: 1 }}>
-            <CommonPagination
-              page={page}
-              rowsPerPage={rowsPerPage}
-              totalCount={totalCount}
-              onPageChange={(newPage) => setPage(newPage)}
-              onRowsPerPageChange={(newRowsPerPage) => {
-                setRowsPerPage(newRowsPerPage);
-                setPage(0);
-              }}
-              rowsPerPageOptions={[6, 9, 15, 30]}
-            />
-          </Paper>
-        </>
       ) : (
         <Paper sx={{ border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden', bgcolor: '#ffffff' }}>
           <EmployeeTable
             users={users}
             workloads={workloads}
+            loading={isLoading || isFetching}
             page={page}
             rowsPerPage={rowsPerPage}
             sortBy={sortBy}

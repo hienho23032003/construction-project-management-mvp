@@ -7,15 +7,11 @@ import {
   Button,
   TextField,
   InputAdornment,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  TablePagination,
   Grid,
   ToggleButtonGroup,
   ToggleButton,
 } from '@mui/material';
+import { CommonSelect } from '../components/common/CommonSelect';
 import {
   Plus,
   Search,
@@ -76,7 +72,7 @@ export const ProjectsPage: React.FC = () => {
     [page, rowsPerPage, debouncedSearch, statusFilter, sortBy, isDescending]
   );
 
-  const { data: pagedResult, isLoading } = useProjectsQuery(queryParams);
+  const { data: pagedResult, isLoading, isFetching } = useProjectsQuery(queryParams);
   const { data: users = [] } = useUsersListQuery();
 
   // Mutations
@@ -96,42 +92,47 @@ export const ProjectsPage: React.FC = () => {
     }
   };
 
-  const handleOpenCreate = () => {
-    setEditingProject(null);
-    setOpenModal(true);
-  };
-
   const handleOpenEdit = (p: Project, e: React.MouseEvent) => {
     e.stopPropagation();
     setEditingProject(p);
     setOpenModal(true);
   };
 
-  const handleFormSubmit = async (formData: ProjectFormData) => {
+  const handleDeleteConfirm = async () => {
+    if (deleteId) {
+      await deleteMutation.mutateAsync(deleteId);
+      setDeleteId(null);
+    }
+  };
+
+  const handleFormSubmit = async (formData: any) => {
     if (editingProject) {
-      await updateMutation.mutateAsync({ id: editingProject.id, data: formData });
+      await updateMutation.mutateAsync({ id: editingProject.id, ...formData });
     } else {
       await createMutation.mutateAsync(formData);
     }
     setOpenModal(false);
-  };
-
-  const handleDeleteConfirm = async () => {
-    if (!deleteId) return;
-    await deleteMutation.mutateAsync(deleteId);
-    setDeleteId(null);
+    setEditingProject(null);
   };
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-      {/* Header & Controls */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
+      {/* Header */}
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: 2,
+        }}
+      >
         <Box>
           <Typography variant="h2" sx={{ fontWeight: 800, fontSize: '1.35rem', color: '#0f172a' }}>
-            Danh Sách Công Trình & Dự Án
+            Quản Lý Công Trình & Dự Án
           </Typography>
           <Typography variant="body2" sx={{ color: '#64748b', mt: 0.25 }}>
-            Theo dõi tiến độ, nhân sự và các hạng mục thi công
+            Theo dõi tiến độ, phân bổ nguồn lực và trạng thái các dự án xây dựng
           </Typography>
         </Box>
 
@@ -139,22 +140,36 @@ export const ProjectsPage: React.FC = () => {
           <Button
             variant="contained"
             startIcon={<Plus size={18} />}
-            onClick={handleOpenCreate}
-            sx={{ bgcolor: '#0284c7', fontWeight: 700, px: 2.5 }}
+            onClick={() => {
+              setEditingProject(null);
+              setOpenModal(true);
+            }}
+            sx={{ fontWeight: 700 }}
           >
-            Tạo Công Trình Mới
+            Tạo Dự Án Mới
           </Button>
         )}
       </Box>
 
       {/* Filter Toolbar */}
-      <Paper sx={{ p: 2, border: '1px solid #e2e8f0', borderRadius: '8px', display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
-        {/* Compact Search Input */}
-        <Box sx={{ width: { xs: '100%', sm: 280 } }}>
+      <Paper
+        sx={{
+          p: 2,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 2,
+          flexWrap: 'wrap',
+          border: '1px solid #e2e8f0',
+          borderRadius: '8px',
+          bgcolor: '#ffffff',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+        }}
+      >
+        <Box sx={{ minWidth: 260, flexGrow: 1, maxWidth: { xs: '100%', sm: 380 } }}>
           <TextField
             size="small"
             fullWidth
-            placeholder="Tìm theo mã, tên dự án..."
+            placeholder="Tìm theo mã dự án, tên công trình, địa điểm..."
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
@@ -170,24 +185,23 @@ export const ProjectsPage: React.FC = () => {
           />
         </Box>
 
-        <FormControl size="small" sx={{ minWidth: 180 }}>
-          <InputLabel>Trạng Thái</InputLabel>
-          <Select
-            value={statusFilter}
-            label="Trạng Thái"
-            onChange={(e) => {
-              setStatusFilter(e.target.value);
-              setPage(0);
-            }}
-          >
-            <MenuItem value="ALL">Tất cả trạng thái</MenuItem>
-            <MenuItem value="InProgress">Đang thực hiện</MenuItem>
-            <MenuItem value="Completed">Hoàn thành</MenuItem>
-            <MenuItem value="NotStarted">Chưa bắt đầu</MenuItem>
-            <MenuItem value="OnHold">Tạm dừng</MenuItem>
-            <MenuItem value="Overdue">Trễ tiến độ</MenuItem>
-          </Select>
-        </FormControl>
+        <CommonSelect
+          label="Trạng Thái"
+          value={statusFilter}
+          onChange={(val) => {
+            setStatusFilter(val);
+            setPage(0);
+          }}
+          minWidth={180}
+          options={[
+            { value: 'ALL', label: 'Tất cả trạng thái' },
+            { value: 'InProgress', label: 'Đang thực hiện', color: '#0284c7' },
+            { value: 'Completed', label: 'Hoàn thành', color: '#10b981' },
+            { value: 'NotStarted', label: 'Chưa bắt đầu', color: '#64748b' },
+            { value: 'OnHold', label: 'Tạm dừng', color: '#f59e0b' },
+            { value: 'Overdue', label: 'Trễ tiến độ', color: '#ef4444' },
+          ]}
+        />
 
         <Box sx={{ ml: 'auto' }}>
           <ToggleButtonGroup
@@ -207,61 +221,58 @@ export const ProjectsPage: React.FC = () => {
       </Paper>
 
       {/* Projects Content */}
-      {isLoading ? (
-        viewMode === 'grid' ? (
+      {viewMode === 'grid' ? (
+        isLoading || (isFetching && projects.length === 0) ? (
           <CardGridSkeleton count={rowsPerPage > 6 ? 6 : rowsPerPage} />
+        ) : projects.length === 0 ? (
+          <Paper sx={{ p: 6, textAlign: 'center', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+            <FolderKanban size={48} color="#94a3b8" style={{ marginBottom: 12 }} />
+            <Typography variant="h4" sx={{ color: '#475569', fontWeight: 600 }}>
+              Không tìm thấy công trình nào
+            </Typography>
+            <Typography variant="body2" sx={{ color: '#94a3b8', mt: 1 }}>
+              Hãy thử thay đổi bộ lọc tìm kiếm hoặc tạo mới dự án đầu tiên.
+            </Typography>
+          </Paper>
         ) : (
-          <Paper sx={{ border: '1px solid #e2e8f0', borderRadius: '8px', p: 2 }}>
-            <TableSkeleton columns={7} rows={6} />
-          </Paper>
+          <>
+            <Grid container spacing={2.5}>
+              {projects.map((p) => (
+                <Grid item xs={12} md={6} lg={4} key={p.id}>
+                  <ProjectCard
+                    project={p}
+                    onCardClick={(id) => navigate(`/projects/${id}`)}
+                    onEditClick={handleOpenEdit}
+                    onDeleteClick={(id, e) => {
+                      e.stopPropagation();
+                      setDeleteId(id);
+                    }}
+                    canEdit={canEditProject}
+                    isAdmin={isAdmin}
+                  />
+                </Grid>
+              ))}
+            </Grid>
+            <Paper sx={{ border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden', mt: 1 }}>
+              <CommonPagination
+                page={page}
+                rowsPerPage={rowsPerPage}
+                totalCount={totalCount}
+                onPageChange={(newPage) => setPage(newPage)}
+                onRowsPerPageChange={(newRowsPerPage) => {
+                  setRowsPerPage(newRowsPerPage);
+                  setPage(0);
+                }}
+                rowsPerPageOptions={[6, 12, 24, 48]}
+              />
+            </Paper>
+          </>
         )
-      ) : projects.length === 0 ? (
-        <Paper sx={{ p: 6, textAlign: 'center', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-          <FolderKanban size={48} color="#94a3b8" style={{ marginBottom: 12 }} />
-          <Typography variant="h4" sx={{ color: '#475569', fontWeight: 600 }}>
-            Không tìm thấy công trình nào
-          </Typography>
-          <Typography variant="body2" sx={{ color: '#94a3b8', mt: 1 }}>
-            Hãy thử thay đổi bộ lọc tìm kiếm hoặc tạo mới dự án đầu tiên.
-          </Typography>
-        </Paper>
-      ) : viewMode === 'grid' ? (
-        <>
-          <Grid container spacing={2.5}>
-            {projects.map((p) => (
-              <Grid item xs={12} md={6} lg={4} key={p.id}>
-                <ProjectCard
-                  project={p}
-                  onCardClick={(id) => navigate(`/projects/${id}`)}
-                  onEditClick={handleOpenEdit}
-                  onDeleteClick={(id, e) => {
-                    e.stopPropagation();
-                    setDeleteId(id);
-                  }}
-                  canEdit={canEditProject}
-                  isAdmin={isAdmin}
-                />
-              </Grid>
-            ))}
-          </Grid>
-          <Paper sx={{ border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden', mt: 1 }}>
-            <CommonPagination
-              page={page}
-              rowsPerPage={rowsPerPage}
-              totalCount={totalCount}
-              onPageChange={(newPage) => setPage(newPage)}
-              onRowsPerPageChange={(newRowsPerPage) => {
-                setRowsPerPage(newRowsPerPage);
-                setPage(0);
-              }}
-              rowsPerPageOptions={[6, 12, 24, 48]}
-            />
-          </Paper>
-        </>
       ) : (
         <Paper sx={{ border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden', bgcolor: '#ffffff' }}>
           <ProjectTable
             projects={projects}
+            loading={isLoading || isFetching}
             page={page}
             rowsPerPage={rowsPerPage}
             sortBy={sortBy}

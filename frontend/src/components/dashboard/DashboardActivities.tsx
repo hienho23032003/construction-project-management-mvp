@@ -1,22 +1,15 @@
-import React, { memo, useState } from 'react';
+import React, { memo, useState, useMemo } from 'react';
 import {
   Paper,
   Box,
   Typography,
   Avatar,
-  TableContainer,
-  Table,
-  TableHead,
-  TableRow,
-  TableCell,
-  TableBody,
   Chip,
-  Divider,
 } from '@mui/material';
 import { Activity, Clock } from 'lucide-react';
 import { format } from 'date-fns';
 import { DashboardSummary } from '../../types';
-import { CommonPagination } from '../common/CommonPagination';
+import { CommonTable, ColumnDef } from '../common/CommonTable';
 
 interface DashboardActivitiesProps {
   data: DashboardSummary;
@@ -27,9 +20,147 @@ export const DashboardActivities: React.FC<DashboardActivitiesProps> = memo(({ d
   const [rowsPerPage, setRowsPerPage] = useState<number>(5);
 
   const activities = data.recentActivities || [];
-  const paginatedActivities = activities.slice(
-    page * rowsPerPage,
-    (page + 1) * rowsPerPage
+  const paginatedActivities = useMemo(() => {
+    return activities.slice(page * rowsPerPage, (page + 1) * rowsPerPage);
+  }, [activities, page, rowsPerPage]);
+
+  const columns: ColumnDef<any>[] = useMemo(
+    () => [
+      {
+        id: 'createdAt',
+        header: 'Thời Gian',
+        width: 155,
+        cell: ({ row }) => {
+          let formattedTime = '-';
+          try {
+            if (row.createdAt) {
+              formattedTime = format(new Date(row.createdAt), 'HH:mm dd/MM/yyyy');
+            }
+          } catch {
+            formattedTime = row.createdAt || '-';
+          }
+          return (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, color: '#475569', fontSize: '0.8125rem' }}>
+              <Clock size={13} color="#94a3b8" />
+              <span>{formattedTime}</span>
+            </Box>
+          );
+        },
+      },
+      {
+        id: 'userName',
+        header: 'Người Thực Hiện',
+        width: 180,
+        cell: ({ row }) => (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Avatar
+              sx={{
+                width: 26,
+                height: 26,
+                fontSize: '0.75rem',
+                fontWeight: 700,
+                bgcolor: '#0284c7',
+              }}
+            >
+              {(row.userName || 'U').charAt(0).toUpperCase()}
+            </Avatar>
+            <Typography
+              variant="body2"
+              sx={{ fontWeight: 600, fontSize: '0.8125rem', color: '#0f172a' }}
+            >
+              {row.userName || '-'}
+            </Typography>
+          </Box>
+        ),
+      },
+      {
+        id: 'project',
+        header: 'Dự Án / Công Trình',
+        width: 170,
+        cell: ({ row }) =>
+          row.projectCode ? (
+            <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+              <Chip
+                label={row.projectCode}
+                size="small"
+                sx={{
+                  fontWeight: 700,
+                  fontSize: '0.75rem',
+                  height: 22,
+                  bgcolor: '#e0f2fe',
+                  color: '#0369a1',
+                  width: 'fit-content',
+                  mb: row.projectName ? 0.3 : 0,
+                }}
+              />
+              {row.projectName && row.projectName !== row.projectCode && (
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: '#64748b',
+                    fontSize: '0.75rem',
+                    maxWidth: 160,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}
+                  title={row.projectName}
+                >
+                  {row.projectName}
+                </Typography>
+              )}
+            </Box>
+          ) : (
+            <Typography variant="body2" sx={{ color: '#94a3b8' }}>
+              -
+            </Typography>
+          ),
+      },
+      {
+        id: 'task',
+        header: 'Hạng Mục / Công Việc',
+        width: 200,
+        cell: ({ row }) =>
+          row.taskName ? (
+            <Typography
+              variant="body2"
+              sx={{
+                fontWeight: 500,
+                fontSize: '0.8125rem',
+                color: '#334155',
+                maxWidth: 220,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+              title={row.taskName}
+            >
+              {row.taskName}
+            </Typography>
+          ) : (
+            <Typography variant="body2" sx={{ color: '#94a3b8' }}>
+              -
+            </Typography>
+          ),
+      },
+      {
+        id: 'details',
+        header: 'Nội Dung & Biến Động',
+        cell: ({ row }) => (
+          <Typography
+            variant="body2"
+            sx={{
+              fontSize: '0.8125rem',
+              color: '#1e293b',
+              wordBreak: 'break-word',
+            }}
+          >
+            {row.details || row.actionName || row.action || '-'}
+          </Typography>
+        ),
+      },
+    ],
+    []
   );
 
   return (
@@ -86,179 +217,33 @@ export const DashboardActivities: React.FC<DashboardActivitiesProps> = memo(({ d
         />
       </Box>
 
-      {/* Table Content */}
-      <TableContainer sx={{ maxHeight: 440 }}>
-        <Table size="small" stickyHeader>
-          <TableHead>
-            <TableRow>
-              <TableCell align="center" sx={{ width: 60, fontWeight: 700 }}>
-                STT
-              </TableCell>
-              <TableCell sx={{ width: 155, fontWeight: 700 }}>Thời Gian</TableCell>
-              <TableCell sx={{ width: 180, fontWeight: 700 }}>Người Thực Hiện</TableCell>
-              <TableCell sx={{ width: 170, fontWeight: 700 }}>Dự Án / Công Trình</TableCell>
-              <TableCell sx={{ width: 200, fontWeight: 700 }}>Hạng Mục / Công Việc</TableCell>
-              <TableCell sx={{ fontWeight: 700 }}>Nội Dung & Biến Động</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {activities.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={6} align="center" sx={{ py: 4, color: '#64748b' }}>
-                  Chưa có hoạt động nào được ghi nhận gần đây.
-                </TableCell>
-              </TableRow>
-            ) : (
-              paginatedActivities.map((act, index) => {
-                const stt = page * rowsPerPage + index + 1;
-                let formattedTime = '-';
-                try {
-                  if (act.createdAt) {
-                    formattedTime = format(new Date(act.createdAt), 'HH:mm dd/MM/yyyy');
-                  }
-                } catch {
-                  formattedTime = act.createdAt || '-';
-                }
-
-                return (
-                  <TableRow
-                    key={act.id || `${act.userId}-${index}`}
-                    hover
-                    sx={{
-                      '&:nth-of-type(even)': { bgcolor: '#f8fafc' },
-                      '&:hover': { bgcolor: '#f1f5f9 !important' },
-                    }}
-                  >
-                    <TableCell align="center" sx={{ fontWeight: 600, color: '#64748b' }}>
-                      {stt}
-                    </TableCell>
-                    <TableCell sx={{ color: '#475569', fontSize: '0.8125rem' }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6 }}>
-                        <Clock size={13} color="#94a3b8" />
-                        <span>{formattedTime}</span>
-                      </Box>
-                    </TableCell>
-                    <TableCell>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Avatar
-                          sx={{
-                            width: 26,
-                            height: 26,
-                            fontSize: '0.75rem',
-                            fontWeight: 700,
-                            bgcolor: '#0284c7',
-                          }}
-                        >
-                          {(act.userName || 'U').charAt(0).toUpperCase()}
-                        </Avatar>
-                        <Typography
-                          variant="body2"
-                          sx={{ fontWeight: 600, fontSize: '0.8125rem', color: '#0f172a' }}
-                        >
-                          {act.userName || '-'}
-                        </Typography>
-                      </Box>
-                    </TableCell>
-                    <TableCell>
-                      {act.projectCode ? (
-                        <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                          <Chip
-                            label={act.projectCode}
-                            size="small"
-                            sx={{
-                              fontWeight: 700,
-                              fontSize: '0.75rem',
-                              height: 22,
-                              bgcolor: '#e0f2fe',
-                              color: '#0369a1',
-                              width: 'fit-content',
-                              mb: act.projectName ? 0.3 : 0,
-                            }}
-                          />
-                          {act.projectName && act.projectName !== act.projectCode && (
-                            <Typography
-                              variant="caption"
-                              sx={{
-                                color: '#64748b',
-                                fontSize: '0.75rem',
-                                maxWidth: 160,
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                whiteSpace: 'nowrap',
-                              }}
-                              title={act.projectName}
-                            >
-                              {act.projectName}
-                            </Typography>
-                          )}
-                        </Box>
-                      ) : (
-                        <Typography variant="body2" sx={{ color: '#94a3b8' }}>
-                          -
-                        </Typography>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {act.taskName ? (
-                        <Typography
-                          variant="body2"
-                          sx={{
-                            fontWeight: 500,
-                            fontSize: '0.8125rem',
-                            color: '#334155',
-                            maxWidth: 220,
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
-                          }}
-                          title={act.taskName}
-                        >
-                          {act.taskName}
-                        </Typography>
-                      ) : (
-                        <Typography variant="body2" sx={{ color: '#94a3b8' }}>
-                          -
-                        </Typography>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          fontSize: '0.8125rem',
-                          color: '#1e293b',
-                          wordBreak: 'break-word',
-                        }}
-                      >
-                        {act.details || act.actionName || act.action || '-'}
-                      </Typography>
-                    </TableCell>
-                  </TableRow>
-                );
-              })
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
-
-      {/* Pagination */}
-      {activities.length > 0 && (
-        <>
-          <Divider />
-          <CommonPagination
-            page={page}
-            rowsPerPage={rowsPerPage}
-            totalCount={activities.length}
-            onPageChange={(newPage) => setPage(newPage)}
-            onRowsPerPageChange={(newRpp) => {
-              setRowsPerPage(newRpp);
-              setPage(0);
-            }}
-            rowsPerPageOptions={[5, 10, 20, 50]}
-            isZeroIndexed={true}
-          />
-        </>
-      )}
+      {/* CommonTable */}
+      <CommonTable
+        data={paginatedActivities}
+        columns={columns}
+        showSTT
+        sttConfig={{
+          page,
+          rowsPerPage,
+          width: 60,
+        }}
+        rowKey={(r, idx) => r.id || `${r.userId}-${idx}`}
+        density="compact"
+        maxHeight={440}
+        emptyMessage="Chưa có hoạt động nào được ghi nhận gần đây."
+        pagination={{
+          page,
+          rowsPerPage,
+          totalCount: activities.length,
+          onPageChange: (newPage) => setPage(newPage),
+          onRowsPerPageChange: (newRpp) => {
+            setRowsPerPage(newRpp);
+            setPage(0);
+          },
+          rowsPerPageOptions: [5, 10, 20, 50],
+          isZeroIndexed: true,
+        }}
+      />
     </Paper>
   );
 });

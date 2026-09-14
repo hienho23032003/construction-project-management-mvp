@@ -1,12 +1,5 @@
-import React, { memo } from 'react';
+import React, { memo, useMemo } from 'react';
 import {
-  TableContainer,
-  Table,
-  TableHead,
-  TableBody,
-  TableRow,
-  TableCell,
-  TableSortLabel,
   Box,
   Avatar,
   Chip,
@@ -17,6 +10,7 @@ import {
 import { Edit2, Lock, Unlock, Trash2 } from 'lucide-react';
 import { User } from '../../types';
 import { roleLabels } from '../../pages/EmployeesPage';
+import { CommonTable, ColumnDef } from '../common/CommonTable';
 
 interface EmployeeTableProps {
   users: User[];
@@ -30,6 +24,7 @@ interface EmployeeTableProps {
   onEdit?: (user: User) => void;
   onToggleStatus?: (user: User) => void;
   onDelete?: (user: User) => void;
+  loading?: boolean;
 }
 
 export const EmployeeTable: React.FC<EmployeeTableProps> = memo(({
@@ -44,178 +39,215 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = memo(({
   onEdit,
   onToggleStatus,
   onDelete,
+  loading = false,
 }) => {
-  return (
-    <TableContainer
-      sx={{
-        overflow: 'auto',
-        maxHeight: 'calc(100vh - 270px)',
-      }}
-    >
-      <Table stickyHeader sx={{ minWidth: { xs: 800, md: '100%' } }}>
-        <TableHead>
-          <TableRow>
-            <TableCell sx={{ width: '50px', textAlign: 'center', whiteSpace: 'nowrap', py: 1.5 }}>
-              STT
-            </TableCell>
-            <TableCell sx={{ whiteSpace: 'nowrap', py: 1.5 }}>
-              <TableSortLabel
-                active={sortBy === 'fullName'}
-                direction={isDescending ? 'desc' : 'asc'}
-                onClick={() => onSort('fullName')}
-                sx={{ whiteSpace: 'nowrap' }}
-              >
-                Họ Và Tên
-              </TableSortLabel>
-            </TableCell>
-            <TableCell sx={{ whiteSpace: 'nowrap', py: 1.5, fontWeight: 700, fontSize: '0.8rem' }}>
-              <TableSortLabel
-                active={sortBy === 'email'}
-                direction={isDescending ? 'desc' : 'asc'}
-                onClick={() => onSort('email')}
-                sx={{ whiteSpace: 'nowrap' }}
-              >
-                Email
-              </TableSortLabel>
-            </TableCell>
-            <TableCell sx={{ whiteSpace: 'nowrap', py: 1.5, fontWeight: 700, fontSize: '0.8rem' }}>Số Điện Thoại</TableCell>
-            <TableCell sx={{ whiteSpace: 'nowrap', py: 1.5, fontWeight: 700, fontSize: '0.8rem' }}>
-              <TableSortLabel
-                active={sortBy === 'department'}
-                direction={isDescending ? 'desc' : 'asc'}
-                onClick={() => onSort('department')}
-                sx={{ whiteSpace: 'nowrap' }}
-              >
-                Phòng Ban
-              </TableSortLabel>
-            </TableCell>
-            <TableCell sx={{ whiteSpace: 'nowrap', py: 1.5, fontWeight: 700, fontSize: '0.8rem' }}>
-              <TableSortLabel
-                active={sortBy === 'role'}
-                direction={isDescending ? 'desc' : 'asc'}
-                onClick={() => onSort('role')}
-                sx={{ whiteSpace: 'nowrap' }}
-              >
-                Vai Trò
-              </TableSortLabel>
-            </TableCell>
-            <TableCell align="center" sx={{ whiteSpace: 'nowrap', py: 1.5, fontWeight: 700, fontSize: '0.8rem' }}>
-              Trạng Thái
-            </TableCell>
-            <TableCell align="center" sx={{ whiteSpace: 'nowrap', py: 1.5, fontWeight: 700, fontSize: '0.8rem' }}>
-              Tải Công Việc (Đang làm / Xong / Trễ)
-            </TableCell>
-            {isAdmin && (
-              <TableCell align="center" sx={{ whiteSpace: 'nowrap', py: 1.5, fontWeight: 700, fontSize: '0.8rem', width: 120 }}>
-                Thao Tác
-              </TableCell>
-            )}
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {users.map((u, idx) => {
-            const workload = workloads.find((w) => w.userId === u.id) || {
-              activeTasks: 0,
-              completedTasks: 0,
-              overdueTasks: 0,
-            };
-            const isUserActive = u.isActive ?? true;
+  const columns: ColumnDef<User>[] = useMemo(
+    () => [
+      {
+        id: 'fullName',
+        header: 'Họ Và Tên',
+        accessorKey: 'fullName',
+        sortable: true,
+        width: '22%',
+        minWidth: 160,
+        ellipsis: true,
+        cell: ({ row }) => (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <Avatar sx={{ width: 32, height: 32, fontSize: '0.85rem' }}>
+              {row.fullName.charAt(0)}
+            </Avatar>
+            <Typography
+              variant="body2"
+              noWrap
+              sx={{
+                fontWeight: 700,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {row.fullName}
+            </Typography>
+          </Box>
+        ),
+      },
+      {
+        id: 'email',
+        header: 'Email',
+        accessorKey: 'email',
+        sortable: true,
+        width: '20%',
+        minWidth: 150,
+        ellipsis: true,
+      },
+      {
+        id: 'phone',
+        header: 'Số Điện Thoại',
+        accessorFn: (row) => row.phone || '-',
+        width: 120,
+      },
+      {
+        id: 'department',
+        header: 'Phòng Ban',
+        accessorKey: 'department',
+        sortable: true,
+        width: '16%',
+        minWidth: 130,
+        ellipsis: true,
+        cell: ({ value }) => value || 'Chưa phân ban',
+      },
+      {
+        id: 'role',
+        header: 'Vai Trò',
+        accessorKey: 'role',
+        sortable: true,
+        width: 150,
+        cell: ({ row }) => (
+          <Chip
+            label={roleLabels[row.role] || row.roleName || row.role}
+            size="small"
+            sx={{
+              height: 22,
+              fontSize: '0.7rem',
+              fontWeight: 700,
+              whiteSpace: 'nowrap',
+              bgcolor:
+                row.role === 'SuperAdmin'
+                  ? '#fee2e2'
+                  : row.role === 'ProjectManager'
+                  ? '#e0f2fe'
+                  : '#ecfdf5',
+              color:
+                row.role === 'SuperAdmin'
+                  ? '#b91c1c'
+                  : row.role === 'ProjectManager'
+                  ? '#0369a1'
+                  : '#047857',
+            }}
+          />
+        ),
+      },
+      {
+        id: 'status',
+        header: 'Trạng Thái',
+        align: 'center',
+        width: 110,
+        cell: ({ row }) => {
+          const isUserActive = row.isActive ?? true;
+          return (
+            <Chip
+              label={isUserActive ? 'Hoạt động' : 'Đã khóa'}
+              size="small"
+              sx={{
+                height: 22,
+                fontSize: '0.7rem',
+                fontWeight: 700,
+                bgcolor: isUserActive ? '#dcfce7' : '#fee2e2',
+                color: isUserActive ? '#15803d' : '#b91c1c',
+              }}
+            />
+          );
+        },
+      },
+      {
+        id: 'workload',
+        header: 'Tải Công Việc (Đang làm / Xong / Trễ)',
+        align: 'center',
+        width: 180,
+        cell: ({ row }) => {
+          const workload = workloads.find((w) => w.userId === row.id) || {
+            activeTasks: 0,
+            completedTasks: 0,
+            overdueTasks: 0,
+          };
+          return (
+            <span>
+              <span style={{ color: '#0284c7', fontWeight: 700 }}>{workload.activeTasks}</span> /{' '}
+              <span style={{ color: '#10b981', fontWeight: 700 }}>{workload.completedTasks}</span> /{' '}
+              <span style={{ color: '#ef4444', fontWeight: 700 }}>{workload.overdueTasks}</span>
+            </span>
+          );
+        },
+      },
+      ...(isAdmin
+        ? [
+            {
+              id: 'actions',
+              header: 'Thao Tác',
+              align: 'center' as const,
+              width: 120,
+              cell: ({ row }: { row: User }) => {
+                const isUserActive = row.isActive ?? true;
+                return (
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 0.5,
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <Tooltip title="Chỉnh sửa thông tin">
+                      <IconButton
+                        size="small"
+                        onClick={() => onEdit && onEdit(row)}
+                        sx={{ color: '#0284c7', '&:hover': { bgcolor: '#e0f2fe' } }}
+                      >
+                        <Edit2 size={16} />
+                      </IconButton>
+                    </Tooltip>
 
-            return (
-              <TableRow key={u.id} hover sx={{ opacity: isUserActive ? 1 : 0.65 }}>
-                <TableCell sx={{ textAlign: 'center', whiteSpace: 'nowrap', fontWeight: 600, color: '#64748b' }}>
-                  {(page * rowsPerPage) + idx + 1}
-                </TableCell>
-                <TableCell sx={{ fontWeight: 700, whiteSpace: 'nowrap', maxWidth: { xs: 160, sm: 220 } }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                    <Avatar sx={{ width: 32, height: 32, fontSize: '0.85rem' }}>{u.fullName.charAt(0)}</Avatar>
-                    <Typography variant="body2" noWrap sx={{ fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {u.fullName}
-                    </Typography>
+                    <Tooltip title={isUserActive ? 'Khóa tài khoản' : 'Mở khóa tài khoản'}>
+                      <IconButton
+                        size="small"
+                        onClick={() => onToggleStatus && onToggleStatus(row)}
+                        sx={{
+                          color: isUserActive ? '#f59e0b' : '#10b981',
+                          '&:hover': { bgcolor: isUserActive ? '#fef3c7' : '#dcfce7' },
+                        }}
+                      >
+                        {isUserActive ? <Lock size={16} /> : <Unlock size={16} />}
+                      </IconButton>
+                    </Tooltip>
+
+                    <Tooltip title="Xóa tài khoản">
+                      <IconButton
+                        size="small"
+                        onClick={() => onDelete && onDelete(row)}
+                        sx={{ color: '#ef4444', '&:hover': { bgcolor: '#fee2e2' } }}
+                      >
+                        <Trash2 size={16} />
+                      </IconButton>
+                    </Tooltip>
                   </Box>
-                </TableCell>
-                <TableCell sx={{ whiteSpace: 'nowrap', maxWidth: { xs: 160, sm: 220 } }}>
-                  <Typography variant="body2" noWrap sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {u.email}
-                  </Typography>
-                </TableCell>
-                <TableCell sx={{ whiteSpace: 'nowrap' }}>{u.phone || '-'}</TableCell>
-                <TableCell sx={{ whiteSpace: 'nowrap' }}>{u.department || 'Chưa phân ban'}</TableCell>
-                <TableCell sx={{ whiteSpace: 'nowrap' }}>
-                  <Chip
-                    label={roleLabels[u.role] || u.roleName || u.role}
-                    size="small"
-                    sx={{
-                      height: 22,
-                      fontSize: '0.7rem',
-                      fontWeight: 700,
-                      whiteSpace: 'nowrap',
-                      bgcolor: u.role === 'SuperAdmin' ? '#fee2e2' : u.role === 'ProjectManager' ? '#e0f2fe' : '#ecfdf5',
-                      color: u.role === 'SuperAdmin' ? '#b91c1c' : u.role === 'ProjectManager' ? '#0369a1' : '#047857',
-                    }}
-                  />
-                </TableCell>
-                <TableCell align="center" sx={{ whiteSpace: 'nowrap' }}>
-                  <Chip
-                    label={isUserActive ? 'Hoạt động' : 'Đã khóa'}
-                    size="small"
-                    sx={{
-                      height: 22,
-                      fontSize: '0.7rem',
-                      fontWeight: 700,
-                      bgcolor: isUserActive ? '#dcfce7' : '#fee2e2',
-                      color: isUserActive ? '#15803d' : '#b91c1c',
-                    }}
-                  />
-                </TableCell>
-                <TableCell align="center" sx={{ whiteSpace: 'nowrap' }}>
-                  <span style={{ color: '#0284c7', fontWeight: 700 }}>{workload.activeTasks}</span> /{' '}
-                  <span style={{ color: '#10b981', fontWeight: 700 }}>{workload.completedTasks}</span> /{' '}
-                  <span style={{ color: '#ef4444', fontWeight: 700 }}>{workload.overdueTasks}</span>
-                </TableCell>
-                {isAdmin && (
-                  <TableCell align="center" sx={{ whiteSpace: 'nowrap' }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5 }}>
-                      <Tooltip title="Chỉnh sửa thông tin">
-                        <IconButton
-                          size="small"
-                          onClick={() => onEdit && onEdit(u)}
-                          sx={{ color: '#0284c7', '&:hover': { bgcolor: '#e0f2fe' } }}
-                        >
-                          <Edit2 size={16} />
-                        </IconButton>
-                      </Tooltip>
+                );
+              },
+            },
+          ]
+        : []),
+    ],
+    [isAdmin, onDelete, onEdit, onToggleStatus, workloads]
+  );
 
-                      <Tooltip title={isUserActive ? 'Khóa tài khoản' : 'Mở khóa tài khoản'}>
-                        <IconButton
-                          size="small"
-                          onClick={() => onToggleStatus && onToggleStatus(u)}
-                          sx={{
-                            color: isUserActive ? '#f59e0b' : '#10b981',
-                            '&:hover': { bgcolor: isUserActive ? '#fef3c7' : '#dcfce7' },
-                          }}
-                        >
-                          {isUserActive ? <Lock size={16} /> : <Unlock size={16} />}
-                        </IconButton>
-                      </Tooltip>
-
-                      <Tooltip title="Xóa tài khoản">
-                        <IconButton
-                          size="small"
-                          onClick={() => onDelete && onDelete(u)}
-                          sx={{ color: '#ef4444', '&:hover': { bgcolor: '#fee2e2' } }}
-                        >
-                          <Trash2 size={16} />
-                        </IconButton>
-                      </Tooltip>
-                    </Box>
-                  </TableCell>
-                )}
-              </TableRow>
-            );
-          })}
-        </TableBody>
-      </Table>
-    </TableContainer>
+  return (
+    <CommonTable<User>
+      data={users}
+      columns={columns}
+      loading={loading}
+      showSTT
+      sttConfig={{
+        page,
+        rowsPerPage,
+      }}
+      sortBy={sortBy}
+      isDescending={isDescending}
+      onSort={onSort}
+      rowKey="id"
+      rowSx={(row: User) => ({
+        opacity: (row.isActive ?? true) ? 1 : 0.65,
+      })}
+      emptyMessage="Không tìm thấy nhân viên nào"
+    />
   );
 });
