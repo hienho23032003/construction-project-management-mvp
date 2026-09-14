@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="ConstructionManagement.API/ConstructionManagement.API.csproj" />
+  <Project Path="ConstructionManagement.Application/ConstructionManagement.Application.csproj" />
+  <Project Path="ConstructionManagement.Domain/ConstructionManagement.Domain.csproj" />
+  <Project Path="ConstructionManagement.Infrastructure/ConstructionManagement.Infrastructure.csproj" />
+</Solution>

@@ -1,0 +1,348 @@
+import React, { useState } from 'react';
+import {
+  Box,
+  Paper,
+  Typography,
+  Button,
+  Grid,
+  TextField,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  InputAdornment,
+  ToggleButtonGroup,
+  ToggleButton,
+} from '@mui/material';
+import {
+  Users,
+  Plus,
+  Search,
+  LayoutGrid,
+  List as ListIcon,
+} from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+import { User } from '../types';
+import { EmployeeCard } from '../components/employees/EmployeeCard';
+import { EmployeeTable } from '../components/employees/EmployeeTable';
+import { EmployeeFormModal, EmployeeFormData } from '../components/employees/EmployeeFormModal';
+import { ConfirmDialog } from '../components/common/ConfirmDialog';
+import { CardGridSkeleton } from '../components/common/CardGridSkeleton';
+import { TableSkeleton } from '../components/common/TableSkeleton';
+import { CommonPagination } from '../components/common/CommonPagination';
+import { useDebounce } from '../hooks/useDebounce';
+import {
+  useUsersQuery,
+  useUserWorkloadQuery,
+  useCreateUserMutation,
+  useUpdateUserMutation,
+  useToggleUserStatusMutation,
+  useDeleteUserMutation,
+} from '../hooks/useEmployees';
+
+export const roleLabels: Record<string, string> = {
+  SuperAdmin: 'Quản Trị Viên (Super Admin)',
+  ProjectManager: 'Người Quản Lý (PM)',
+  Supervisor: 'Giám Sát Hiện Trường',
+  Employee: 'Kỹ Sư / Nhân Viên',
+};
+
+export const EmployeesPage: React.FC = () => {
+  const { isAdmin } = useAuth();
+  const [viewMode, setViewMode] = useState<'grid' | 'table'>('table');
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(9);
+  const [search, setSearch] = useState('');
+  const [roleFilter, setRoleFilter] = useState('ALL');
+  const [sortBy, setSortBy] = useState('fullName');
+  const [isDescending, setIsDescending] = useState(false);
+
+  // Modal & Dialog state
+  const [openModal, setOpenModal] = useState(false);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
+  const [toggleTarget, setToggleTarget] = useState<User | null>(null);
+
+  const debouncedSearch = useDebounce(search, 300);
+
+  // Queries & Mutations
+  const { data, isLoading } = useUsersQuery({
+    pageIndex: page + 1,
+    pageSize: rowsPerPage,
+    search: debouncedSearch.trim() || undefined,
+    role: roleFilter === 'ALL' ? undefined : roleFilter,
+    sortBy,
+    isDescending,
+  });
+
+  const { data: workloads = [] } = useUserWorkloadQuery();
+  const createMutation = useCreateUserMutation();
+  const updateMutation = useUpdateUserMutation();
+  const toggleStatusMutation = useToggleUserStatusMutation();
+  const deleteMutation = useDeleteUserMutation();
+
+  const users = data?.items || [];
+  const totalCount = data?.totalCount || 0;
+
+  const handleSort = (field: string) => {
+    if (sortBy === field) {
+      setIsDescending(!isDescending);
+    } else {
+      setSortBy(field);
+      setIsDescending(false);
+    }
+  };
+
+  const handleOpenCreate = () => {
+    setEditingUser(null);
+    setOpenModal(true);
+  };
+
+  const handleOpenEdit = (user: User) => {
+    setEditingUser(user);
+    setOpenModal(true);
+  };
+
+  const handleSubmitUser = async (formData: EmployeeFormData) => {
+    if (editingUser) {
+      await updateMutation.mutateAsync({
+        id: editingUser.id,
+        data: {
+          fullName: formData.fullName,
+          phone: formData.phone,
+          department: formData.department,
+          role: formData.role,
+          roleIds: formData.roleIds,
+          isActive: formData.isActive ?? true,
+          newPassword: formData.password || undefined,
+        },
+      });
+    } else {
+      await createMutation.mutateAsync(formData);
+    }
+    setOpenModal(false);
+    setEditingUser(null);
+  };
+
+  const handleConfirmToggleStatus = async () => {
+    if (toggleTarget) {
+      await toggleStatusMutation.mutateAsync(toggleTarget.id);
+      setToggleTarget(null);
+    }
+  };
+
+  const handleConfirmDelete = async () => {
+    if (deleteTarget) {
+      await deleteMutation.mutateAsync(deleteTarget.id);
+      setDeleteTarget(null);
+    }
+  };
+
+  return (
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+      {/* Header */}
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
+        <Box>
+          <Typography variant="h2" sx={{ fontWeight: 800, fontSize: '1.35rem', color: '#0f172a' }}>
+            Quản Lý Nhân Sự & Tải Công Việc (Workload)
+          </Typography>
+          <Typography variant="body2" sx={{ color: '#64748b', mt: 0.25 }}>
+            Danh sách kỹ sư, phân quyền vai trò và phân bổ khối lượng công việc hiện trường
+          </Typography>
+        </Box>
+
+        {isAdmin && (
+          <Button
+            variant="contained"
+            startIcon={<Plus size={18} />}
+            onClick={handleOpenCreate}
+            sx={{ bgcolor: '#0284c7', fontWeight: 700 }}
+          >
+            Thêm Nhân Viên Mới
+          </Button>
+        )}
+      </Box>
+
+      {/* Filter & Toolbar */}
+      <Paper sx={{ p: 2, border: '1px solid #e2e8f0', borderRadius: '8px', display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
+        {/* Compact Search Input */}
+        <Box sx={{ width: { xs: '100%', sm: 280 } }}>
+          <TextField
+            size="small"
+            fullWidth
+            placeholder="Tìm theo họ tên, email, phòng..."
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(0);
+            }}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Search size={18} color="#94a3b8" />
+                </InputAdornment>
+              ),
+            }}
+          />
+        </Box>
+
+        <FormControl size="small" sx={{ minWidth: 180 }}>
+          <InputLabel>Phân Quyền Vai Trò</InputLabel>
+          <Select
+            value={roleFilter}
+            label="Phân Quyền Vai Trò"
+            onChange={(e) => {
+              setRoleFilter(e.target.value);
+              setPage(0);
+            }}
+          >
+            <MenuItem value="ALL">Tất cả vai trò</MenuItem>
+            <MenuItem value="Employee">Kỹ Sư / Nhân Viên</MenuItem>
+            <MenuItem value="Supervisor">Giám Sát Hiện Trường</MenuItem>
+            <MenuItem value="ProjectManager">Người Quản Lý (PM)</MenuItem>
+            <MenuItem value="SuperAdmin">Super Admin</MenuItem>
+          </Select>
+        </FormControl>
+
+        <Box sx={{ ml: 'auto' }}>
+          <ToggleButtonGroup
+            size="small"
+            value={viewMode}
+            exclusive
+            onChange={(_, val) => val && setViewMode(val)}
+          >
+            <ToggleButton value="table">
+              <ListIcon size={18} />
+            </ToggleButton>
+            <ToggleButton value="grid">
+              <LayoutGrid size={18} />
+            </ToggleButton>
+          </ToggleButtonGroup>
+        </Box>
+      </Paper>
+
+      {/* Employees Content */}
+      {isLoading ? (
+        viewMode === 'grid' ? (
+          <CardGridSkeleton count={rowsPerPage > 6 ? 6 : rowsPerPage} />
+        ) : (
+          <Paper sx={{ border: '1px solid #e2e8f0', borderRadius: '8px', p: 2 }}>
+            <TableSkeleton columns={8} rows={6} />
+          </Paper>
+        )
+      ) : users.length === 0 ? (
+        <Paper sx={{ p: 6, textAlign: 'center', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+          <Users size={48} color="#94a3b8" style={{ marginBottom: 12 }} />
+          <Typography variant="h4" sx={{ color: '#475569', fontWeight: 600 }}>
+            Không tìm thấy nhân viên nào
+          </Typography>
+          <Typography variant="body2" sx={{ color: '#94a3b8', mt: 1 }}>
+            Hãy thử tìm kiếm với từ khóa khác hoặc xóa bộ lọc.
+          </Typography>
+        </Paper>
+      ) : viewMode === 'grid' ? (
+        <>
+          <Grid container spacing={2.5}>
+            {users.map((u) => {
+              const workload = workloads.find((w) => w.userId === u.id) || {
+                activeTasks: 0,
+                completedTasks: 0,
+                overdueTasks: 0,
+              };
+              return (
+                <Grid item xs={12} sm={6} md={4} key={u.id}>
+                  <EmployeeCard
+                    user={u}
+                    workload={workload}
+                    isAdmin={isAdmin}
+                    onEdit={handleOpenEdit}
+                    onToggleStatus={(target) => setToggleTarget(target)}
+                    onDelete={(target) => setDeleteTarget(target)}
+                  />
+                </Grid>
+              );
+            })}
+          </Grid>
+          <Paper sx={{ border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden', mt: 1 }}>
+            <CommonPagination
+              page={page}
+              rowsPerPage={rowsPerPage}
+              totalCount={totalCount}
+              onPageChange={(newPage) => setPage(newPage)}
+              onRowsPerPageChange={(newRowsPerPage) => {
+                setRowsPerPage(newRowsPerPage);
+                setPage(0);
+              }}
+              rowsPerPageOptions={[6, 9, 15, 30]}
+            />
+          </Paper>
+        </>
+      ) : (
+        <Paper sx={{ border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden', bgcolor: '#ffffff' }}>
+          <EmployeeTable
+            users={users}
+            workloads={workloads}
+            page={page}
+            rowsPerPage={rowsPerPage}
+            sortBy={sortBy}
+            isDescending={isDescending}
+            onSort={handleSort}
+            isAdmin={isAdmin}
+            onEdit={handleOpenEdit}
+            onToggleStatus={(target) => setToggleTarget(target)}
+            onDelete={(target) => setDeleteTarget(target)}
+          />
+          <CommonPagination
+            page={page}
+            rowsPerPage={rowsPerPage}
+            totalCount={totalCount}
+            onPageChange={(newPage) => setPage(newPage)}
+            onRowsPerPageChange={(newRowsPerPage) => {
+              setRowsPerPage(newRowsPerPage);
+              setPage(0);
+            }}
+            rowsPerPageOptions={[6, 9, 15, 30]}
+          />
+        </Paper>
+      )}
+
+      {/* Add / Edit User Modal */}
+      <EmployeeFormModal
+        open={openModal}
+        onClose={() => {
+          setOpenModal(false);
+          setEditingUser(null);
+        }}
+        onSubmit={handleSubmitUser}
+        editingUser={editingUser}
+        isSubmitting={createMutation.isPending || updateMutation.isPending}
+      />
+
+      {/* Lock / Unlock Confirmation Dialog */}
+      <ConfirmDialog
+        open={Boolean(toggleTarget)}
+        title={toggleTarget?.isActive ? 'Khóa Tài Khoản Nhân Sự' : 'Mở Khóa Tài Khoản Nhân Sự'}
+        message={
+          toggleTarget?.isActive
+            ? `Bạn có chắc chắn muốn khóa tài khoản của "${toggleTarget?.fullName}" (${toggleTarget?.email})? Nhân viên này sẽ không thể đăng nhập vào hệ thống.`
+            : `Bạn có muốn mở khóa tài khoản của "${toggleTarget?.fullName}" (${toggleTarget?.email}) để nhân viên có thể đăng nhập bình thường?`
+        }
+        confirmText={toggleTarget?.isActive ? 'Khóa Tài Khoản' : 'Mở Khóa'}
+        confirmColor={toggleTarget?.isActive ? 'warning' : 'primary'}
+        onConfirm={handleConfirmToggleStatus}
+        onCancel={() => setToggleTarget(null)}
+      />
+
+      {/* Delete User Confirmation Dialog */}
+      <ConfirmDialog
+        open={Boolean(deleteTarget)}
+        title="Xác Nhận Xóa Nhân Viên"
+        message={`Bạn có chắc chắn muốn xóa tài khoản "${deleteTarget?.fullName}" (${deleteTarget?.email})? Hành động này sẽ xóa toàn bộ phân quyền và gỡ phân công công việc của nhân viên.`}
+        confirmText="Xóa Nhân Viên"
+        confirmColor="error"
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setDeleteTarget(null)}
+      />
+    </Box>
+  );
+};
