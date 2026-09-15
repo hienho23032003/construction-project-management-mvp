@@ -19,7 +19,7 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
-// Response interceptor: handle 401 Unauthorized
+// Response interceptor: handle 401 Unauthorized & standardize Vietnamese error messages
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -30,6 +30,13 @@ apiClient.interceptors.response.use(
         window.location.href = '/login';
       }
     }
+
+    if (error.response?.data?.message) {
+      error.message = error.response.data.message;
+    } else if (error.response?.data?.title) {
+      error.message = error.response.data.title;
+    }
+
     return Promise.reject(error);
   }
 );

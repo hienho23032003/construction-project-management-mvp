@@ -23,6 +23,8 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { format } from 'date-fns';
 import { PriorityLevel, TaskItem, TaskStatus, User } from '../../types';
 import { useProjectMembersQuery, useProjectsListQuery } from '../../hooks/useProjects';
+import { usePresenceHeartbeat } from '../../hooks/usePresence';
+import { CoEditingWarningBanner } from '../presence/ProjectPresenceAvatars';
 
 export interface TaskFormData {
   name: string;
@@ -176,12 +178,24 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
     }
   }, [open, editingTask, reset]);
 
+  usePresenceHeartbeat({
+    projectId: targetProjectId || undefined,
+    taskId: editingTask?.id,
+    taskName: editingTask?.name,
+    isEditing: Boolean(editingTask && open),
+    enabled: open && Boolean(targetProjectId),
+  });
+
   const handleFormSubmit = async (data: TaskFormData) => {
-    const payload = {
+    const payload: any = {
       ...data,
-      actualEndDate: data.status === 'Completed' ? (data.actualEndDate || data.plannedEndDate) : undefined,
-      projectId: targetProjectId || undefined,
+      projectId: targetProjectId,
+      parentId: parentTaskId || null,
+      assigneeUserIds: data.assigneeIds && data.assigneeIds.length > 0 ? data.assigneeIds : [],
     };
+    if (!data.actualEndDate || data.actualEndDate.trim() === '') {
+      delete payload.actualEndDate;
+    }
     await onSubmit(payload);
   };
 
@@ -227,6 +241,9 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
       </DialogTitle>
       <form onSubmit={handleSubmit(handleFormSubmit)}>
         <DialogContent dividers sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, pt: 2.5 }}>
+          {editingTask && targetProjectId && (
+            <CoEditingWarningBanner projectId={targetProjectId} taskId={editingTask.id} />
+          )}
           {!projectId && (
             <FormControl fullWidth size="small">
               <InputLabel>Thuộc Dự Án *</InputLabel>

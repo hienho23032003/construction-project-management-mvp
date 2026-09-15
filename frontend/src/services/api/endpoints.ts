@@ -18,6 +18,9 @@ import {
   PermissionModuleGroup,
   UserLoginSession,
   LoginSessionStats,
+  UserPresence,
+  ProjectPresence,
+  PresenceHeartbeatRequest,
 } from '../../types';
 
 export const authApi = {
@@ -81,13 +84,43 @@ export const userApi = {
   getWorkload: () => apiClient.get<ApiResponse<any[]>>('/users/workload'),
 };
 
+const sanitizeProjectPayload = (data: any) => {
+  if (!data || typeof data !== 'object') return data;
+  const clean = { ...data };
+  if ('actualEndDate' in clean && (!clean.actualEndDate || String(clean.actualEndDate).trim() === '')) {
+    delete clean.actualEndDate;
+  }
+  if ('managerId' in clean && (!clean.managerId || clean.managerId === 'null' || clean.managerId === 'undefined')) {
+    clean.managerId = null;
+  }
+  return clean;
+};
+
+const sanitizeTaskPayload = (data: any) => {
+  if (!data || typeof data !== 'object') return data;
+  const clean = { ...data };
+  if ('actualEndDate' in clean && (!clean.actualEndDate || String(clean.actualEndDate).trim() === '')) {
+    delete clean.actualEndDate;
+  }
+  if ('parentId' in clean && (!clean.parentId || clean.parentId === 'null' || clean.parentId === 'undefined')) {
+    clean.parentId = null;
+  }
+  if ('assigneeUserIds' in clean && (!clean.assigneeUserIds || clean.assigneeUserIds.length === 0)) {
+    delete clean.assigneeUserIds;
+  }
+  if ('assigneeIds' in clean && (!clean.assigneeIds || clean.assigneeIds.length === 0)) {
+    delete clean.assigneeIds;
+  }
+  return clean;
+};
+
 export const projectApi = {
   getAll: (params?: PaginationParams & { status?: string }) =>
     apiClient.get<ApiResponse<PagedResult<Project>>>('/projects', { params }),
   getAllList: () => apiClient.get<ApiResponse<Project[]>>('/projects/all'),
   getById: (id: string) => apiClient.get<ApiResponse<Project & { members: ProjectMember[]; tasks: TaskItem[]; recentActivities: ActivityLog[] }>>(`/projects/${id}`),
-  create: (data: any) => apiClient.post<ApiResponse<Project>>('/projects', data),
-  update: (id: string, data: any) => apiClient.put<ApiResponse<Project>>(`/projects/${id}`, data),
+  create: (data: any) => apiClient.post<ApiResponse<Project>>('/projects', sanitizeProjectPayload(data)),
+  update: (id: string, data: any) => apiClient.put<ApiResponse<Project>>(`/projects/${id}`, sanitizeProjectPayload(data)),
   delete: (id: string) => apiClient.delete<ApiResponse<boolean>>(`/projects/${id}`),
   getTasks: (id: string) => apiClient.get<ApiResponse<TaskTreeItem[]>>(`/projects/${id}/tasks`),
   getMembers: (id: string) => apiClient.get<ApiResponse<ProjectMember[]>>(`/projects/${id}/members`),
@@ -101,8 +134,8 @@ export const taskApi = {
   getAll: (params?: PaginationParams & { projectId?: string; assigneeId?: string; status?: string; priority?: string }) =>
     apiClient.get<ApiResponse<PagedResult<TaskItem>>>('/tasks', { params }),
   getById: (id: string) => apiClient.get<ApiResponse<TaskItem>>(`/tasks/${id}`),
-  create: (data: any) => apiClient.post<ApiResponse<TaskItem>>('/tasks', data),
-  update: (id: string, data: any) => apiClient.put<ApiResponse<TaskItem>>(`/tasks/${id}`, data),
+  create: (data: any) => apiClient.post<ApiResponse<TaskItem>>('/tasks', sanitizeTaskPayload(data)),
+  update: (id: string, data: any) => apiClient.put<ApiResponse<TaskItem>>(`/tasks/${id}`, sanitizeTaskPayload(data)),
   delete: (id: string) => apiClient.delete<ApiResponse<boolean>>(`/tasks/${id}`),
   updateStatus: (id: string, status: string) =>
     apiClient.patch<ApiResponse<TaskItem>>(`/tasks/${id}/status`, { status }),
@@ -184,3 +217,17 @@ export const activityLogApi = {
   getLogs: (projectId?: string, taskId?: string, limit = 50) =>
     apiClient.get<ApiResponse<ActivityLog[]>>('/activity-logs', { params: { projectId, taskId, limit } }),
 };
+
+export const presenceApi = {
+  heartbeat: (data: PresenceHeartbeatRequest) =>
+    apiClient.post<ApiResponse<boolean>>('/presence/heartbeat', data),
+  clearEditingTask: () =>
+    apiClient.post<ApiResponse<boolean>>('/presence/clear-task'),
+  leave: () =>
+    apiClient.post<ApiResponse<boolean>>('/presence/leave'),
+  getProjectPresence: (projectId: string) =>
+    apiClient.get<ApiResponse<ProjectPresence>>(`/presence/project/${projectId}`),
+  getOnlineUsers: () =>
+    apiClient.get<ApiResponse<UserPresence[]>>('/presence/online'),
+};
+

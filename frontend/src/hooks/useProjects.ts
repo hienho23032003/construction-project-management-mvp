@@ -13,6 +13,8 @@ export const useProjectsQuery = (params?: PaginationParams & { status?: string }
       }
       return res.data.data;
     },
+    staleTime: 30_000,
+    refetchInterval: 5 * 60 * 1000, // 5 phút reload 1 lần
   });
 };
 
@@ -26,6 +28,7 @@ export const useProjectsListQuery = () => {
       }
       return res.data.data;
     },
+    staleTime: 5 * 60 * 1000, // 5 phút
   });
 };
 
@@ -41,6 +44,8 @@ export const useProjectDetailQuery = (id?: string) => {
       return res.data.data;
     },
     enabled: Boolean(id),
+    staleTime: 30_000,
+    refetchInterval: 5 * 60 * 1000, // 5 phút reload 1 lần
   });
 };
 
@@ -82,9 +87,14 @@ export const useUpdateProjectMutation = () => {
   const { showSuccess, showError } = useToast();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) => projectApi.update(id, data),
-    onSuccess: (_, variables) => {
+    mutationFn: (variables: { id: string; data?: any } | (any & { id: string })) => {
+      const { id, data, ...rest } = variables as any;
+      const payload = data !== undefined ? data : rest;
+      return projectApi.update(id, payload);
+    },
+    onSuccess: (_, variables: any) => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
+      queryClient.invalidateQueries({ queryKey: ['projects-list'] });
       queryClient.invalidateQueries({ queryKey: ['project', variables.id] });
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
       showSuccess('Cập nhật thông tin dự án thành công!');

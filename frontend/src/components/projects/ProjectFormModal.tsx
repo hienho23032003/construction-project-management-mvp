@@ -181,6 +181,7 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
           <Controller
             name="managerId"
             control={control}
+            rules={{ required: 'Vui lòng chọn người quản lý dự án' }}
             render={({ field }) => (
               <Autocomplete
                 options={users}
@@ -197,6 +198,9 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
                     {...params}
                     label="Người Quản Lý / Project Manager (PM)"
                     placeholder="Tìm kiếm và chọn nhân sự..."
+                    required
+                    error={Boolean(errors.managerId)}
+                    helperText={errors.managerId?.message}
                   />
                 )}
               />

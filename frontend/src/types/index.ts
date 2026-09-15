@@ -412,3 +412,40 @@ export interface EmployeeProgressDetail {
   recentActivities: EmployeeActivityLog[];
 }
 
+export interface UserPresence {
+  userId: string;
+  userName: string;
+  userAvatarUrl?: string;
+  userRole?: string;
+  userDepartment?: string;
+  projectId?: string;
+  editingTaskId?: string;
+  editingTaskName?: string;
+  isEditing: boolean;
+  lastHeartbeat: string;
+}
+
+export interface TaskActiveEditor {
+  taskId: string;
+  taskName?: string;
+  userId: string;
+  userName: string;
+  userAvatarUrl?: string;
+  editingSince: string;
+}
+
+export interface ProjectPresence {
+  projectId: string;
+  activeUsers: UserPresence[];
+  activeEditors: TaskActiveEditor[];
+}
+
+export interface PresenceHeartbeatRequest {
+  projectId?: string;
+  taskId?: string;
+  taskName?: string;
+  isEditing?: boolean;
+  avatarUrl?: string;
+}
+
+

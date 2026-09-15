@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Paper,
@@ -31,24 +32,86 @@ import {
   useOverdueReportQuery,
   useWorkloadReportQuery,
 } from '../hooks/useReports';
+import {
+  useTaskDetailQuery,
+  useTaskCommentsQuery,
+  useTaskDependenciesQuery,
+  useAddCommentMutation,
+} from '../hooks/useTasks';
+import { useAppSearchParams } from '../hooks/useAppSearchParams';
 import { ProjectProgressReport } from '../components/reports/ProjectProgressReport';
 import { TaskDetailReport } from '../components/reports/TaskDetailReport';
 import { OverdueReport } from '../components/reports/OverdueReport';
 import { WorkloadReport } from '../components/reports/WorkloadReport';
 import { TableSkeleton } from '../components/common/TableSkeleton';
 import { CommonPagination } from '../components/common/CommonPagination';
+import { TaskDetailDrawer } from '../components/tasks/TaskDetailDrawer';
 import { useToast } from '../contexts/ToastContext';
 
+const TAB_NAME_MAP: Record<string, number> = {
+  progress: 0,
+  projects: 0,
+  tasks: 1,
+  detail: 1,
+  overdue: 2,
+  workload: 3,
+  '0': 0,
+  '1': 1,
+  '2': 2,
+  '3': 3,
+};
+
+const TAB_INDEX_MAP: Record<number, string> = {
+  0: 'progress',
+  1: 'tasks',
+  2: 'overdue',
+  3: 'workload',
+};
+
 export const ReportsPage: React.FC = () => {
-  const [activeTab, setActiveTab] = useState(0);
+  const navigate = useNavigate();
+  const { getParam, getNumberParam, setParam, setParams, removeParams } = useAppSearchParams();
+
+  const tabParam = getParam('tab');
+  const projectIdParam = getParam('projectId');
+  const userIdParam = getParam('userId');
+  const taskIdParam = getParam('taskId');
+  const pageParam = Math.max(0, getNumberParam('page', 1) - 1);
+
+  const resolvedInitialTab = tabParam && TAB_NAME_MAP[tabParam.toLowerCase()] !== undefined
+    ? TAB_NAME_MAP[tabParam.toLowerCase()]
+    : 0;
+
+  const [activeTab, setActiveTab] = useState(resolvedInitialTab);
 
   // Filters
-  const [selectedProjectId, setSelectedProjectId] = useState<string>('');
-  const [selectedUserId, setSelectedUserId] = useState<string>('');
+  const [selectedProjectId, setSelectedProjectId] = useState<string>(projectIdParam);
+  const [selectedUserId, setSelectedUserId] = useState<string>(userIdParam);
+
+  // Selected task for detail drawer
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(taskIdParam || null);
+  const { data: selectedTask } = useTaskDetailQuery(selectedTaskId || undefined);
+  const { data: comments = [], isLoading: loadingComments } = useTaskCommentsQuery(selectedTaskId || undefined);
+  const { data: dependencies = [] } = useTaskDependenciesQuery(selectedTaskId || undefined);
+  const addCommentMutation = useAddCommentMutation(selectedTaskId || undefined);
 
   // Pagination
-  const [page, setPage] = useState(0);
+  const [page, setPage] = useState(pageParam);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+
+  // Sync tab with URL
+  useEffect(() => {
+    if (tabParam && TAB_NAME_MAP[tabParam.toLowerCase()] !== undefined) {
+      setActiveTab(TAB_NAME_MAP[tabParam.toLowerCase()]);
+    }
+  }, [tabParam]);
+
+  // Sync taskId with URL
+  useEffect(() => {
+    if (taskIdParam && taskIdParam !== selectedTaskId) {
+      setSelectedTaskId(taskIdParam);
+    }
+  }, [taskIdParam, selectedTaskId]);
 
   // Filter options queries
   const { data: projects = [] } = useProjectsListQuery();
@@ -117,6 +180,41 @@ export const ReportsPage: React.FC = () => {
     }
   };
 
+  const handleViewTasksFromProject = (projectId: string, filterType: 'all' | 'completed' | 'overdue') => {
+    if (filterType === 'overdue') {
+      setActiveTab(2);
+      setSelectedProjectId(projectId);
+      setPage(0);
+      setParams({ tab: 'overdue', projectId, page: null });
+    } else if (filterType === 'completed') {
+      navigate(`/tasks?projectId=${projectId}&status=Completed`);
+    } else {
+      setActiveTab(1);
+      setSelectedProjectId(projectId);
+      setPage(0);
+      setParams({ tab: 'tasks', projectId, page: null });
+    }
+  };
+
+  const handleSelectTask = (taskId: string) => {
+    setSelectedTaskId(taskId);
+    setParam('taskId', taskId);
+  };
+
+  const handleCloseTaskDrawer = () => {
+    setSelectedTaskId(null);
+    removeParams('taskId', 'taskTab');
+  };
+
+  const handleSelectUser = (userId: string) => {
+    navigate(`/employees/${userId}`);
+  };
+
+  const handleAddComment = async (content: string, files?: File[]) => {
+    if (!selectedTaskId) return;
+    await addCommentMutation.mutateAsync({ content, files });
+  };
+
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 2, sm: 3 }, width: '100%', maxWidth: '100%', minWidth: 0, overflowX: 'hidden' }}>
       {/* Header */}
@@ -150,8 +248,10 @@ export const ReportsPage: React.FC = () => {
           getOptionLabel={(p) => (p.id ? `${p.code} - ${p.name}` : p.name)}
           value={projects.find((p) => p.id === selectedProjectId) || { id: '', code: 'ALL', name: 'Tất cả dự án' }}
           onChange={(_, val) => {
-            setSelectedProjectId(val?.id || '');
+            const nextProj = val?.id || '';
+            setSelectedProjectId(nextProj);
             setPage(0);
+            setParams({ projectId: nextProj || null, page: null });
           }}
           renderInput={(params) => <TextField {...params} label="Lọc Theo Dự Án" />}
         />
@@ -163,8 +263,10 @@ export const ReportsPage: React.FC = () => {
           getOptionLabel={(u) => (u.id ? `${u.fullName} (${u.department || 'Chưa phân ban'})` : u.fullName)}
           value={users.find((u) => u.id === selectedUserId) || { id: '', fullName: 'Tất cả nhân sự', department: '' }}
           onChange={(_, val) => {
-            setSelectedUserId(val?.id || '');
+            const nextUser = val?.id || '';
+            setSelectedUserId(nextUser);
             setPage(0);
+            setParams({ userId: nextUser || null, page: null });
           }}
           renderInput={(params) => <TextField {...params} label="Lọc Theo Nhân Sự" />}
         />
@@ -177,6 +279,7 @@ export const ReportsPage: React.FC = () => {
           onChange={(_, val) => {
             setActiveTab(val);
             setPage(0);
+            setParams({ tab: TAB_INDEX_MAP[val] || 'progress', page: null });
           }}
           variant="scrollable"
           scrollButtons="auto"
@@ -202,6 +305,7 @@ export const ReportsPage: React.FC = () => {
                 page={page}
                 rowsPerPage={rowsPerPage}
                 loading={isCurrentTabLoading}
+                onViewTasks={handleViewTasksFromProject}
               />
             )}
             {activeTab === 1 && (
@@ -210,6 +314,7 @@ export const ReportsPage: React.FC = () => {
                 page={page}
                 rowsPerPage={rowsPerPage}
                 loading={isCurrentTabLoading}
+                onSelectTask={handleSelectTask}
               />
             )}
             {activeTab === 2 && (
@@ -218,6 +323,7 @@ export const ReportsPage: React.FC = () => {
                 page={page}
                 rowsPerPage={rowsPerPage}
                 loading={isCurrentTabLoading}
+                onSelectTask={handleSelectTask}
               />
             )}
             {activeTab === 3 && (
@@ -226,6 +332,7 @@ export const ReportsPage: React.FC = () => {
                 page={page}
                 rowsPerPage={rowsPerPage}
                 loading={isCurrentTabLoading}
+                onSelectUser={handleSelectUser}
               />
             )}
 
@@ -233,16 +340,30 @@ export const ReportsPage: React.FC = () => {
               page={page}
               rowsPerPage={rowsPerPage}
               totalCount={currentCount}
-              onPageChange={(newPage) => setPage(newPage)}
+              onPageChange={(newPage) => {
+                setPage(newPage);
+                setParam('page', newPage > 0 ? newPage + 1 : null);
+              }}
               onRowsPerPageChange={(newRowsPerPage) => {
                 setRowsPerPage(newRowsPerPage);
                 setPage(0);
+                setParam('page', null);
               }}
               rowsPerPageOptions={[5, 10, 25, 50]}
             />
           </Box>
         </Box>
       </Paper>
+
+      {/* Task Detail Drawer */}
+      <TaskDetailDrawer
+        task={selectedTask || null}
+        onClose={handleCloseTaskDrawer}
+        comments={comments}
+        dependencies={dependencies}
+        loadingComments={loadingComments}
+        onAddComment={handleAddComment}
+      />
     </Box>
   );
 };

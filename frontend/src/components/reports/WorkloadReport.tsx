@@ -19,10 +19,11 @@ interface WorkloadReportProps {
   page: number;
   rowsPerPage: number;
   loading?: boolean;
+  onSelectUser?: (userId: string) => void;
 }
 
 export const WorkloadReport: React.FC<WorkloadReportProps> = memo(
-  ({ data, page, rowsPerPage, loading = false }) => {
+  ({ data, page, rowsPerPage, loading = false, onSelectUser }) => {
     const paginatedData = useMemo(() => {
       return data.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
     }, [data, page, rowsPerPage]);
@@ -108,6 +109,14 @@ export const WorkloadReport: React.FC<WorkloadReportProps> = memo(
           rowsPerPage,
         }}
         rowKey="userId"
+        onRowClick={(row) => onSelectUser?.(row.userId)}
+        rowSx={() => ({
+          cursor: onSelectUser ? 'pointer' : 'default',
+          transition: 'background-color 0.15s ease',
+          '&:hover': {
+            bgcolor: '#f8fafc',
+          },
+        })}
         emptyMessage="Không có dữ liệu nhân sự phù hợp"
       />
     );

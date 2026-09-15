@@ -68,25 +68,37 @@ export const DashboardCharts: React.FC<DashboardChartsProps> = memo(({ data }) =
           </Typography>
 
           <Box sx={{ height: 220, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={data.taskStatusDistribution.filter((d) => d.count > 0)}
-                  dataKey="count"
-                  nameKey="status"
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={50}
-                  outerRadius={80}
-                  paddingAngle={3}
-                >
-                  {data.taskStatusDistribution.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <RechartsTooltip />
-              </PieChart>
-            </ResponsiveContainer>
+            {(() => {
+              const activeStatusData = data.taskStatusDistribution.filter((d) => d.count > 0);
+              if (activeStatusData.length === 0) {
+                return (
+                  <Typography variant="body2" sx={{ color: '#94a3b8' }}>
+                    Chưa có dữ liệu công việc
+                  </Typography>
+                );
+              }
+              return (
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={activeStatusData}
+                      dataKey="count"
+                      nameKey="status"
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={50}
+                      outerRadius={80}
+                      paddingAngle={3}
+                    >
+                      {activeStatusData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <RechartsTooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              );
+            })()}
           </Box>
 
           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5, justifyContent: 'center', mt: 1 }}>

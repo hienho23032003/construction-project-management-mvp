@@ -22,6 +22,7 @@ export const useTasksQuery = (
     },
     placeholderData: keepPreviousData,
     staleTime: 10_000,
+    refetchInterval: 60_000, // 1 phút reload 1 lần
   });
 };
 
@@ -51,6 +52,8 @@ export const useGanttDataQuery = (
       return res.data.data;
     },
     placeholderData: keepPreviousData,
+    staleTime: 10_000,
+    refetchInterval: 60_000, // 1 phút reload 1 lần
   });
 };
 
@@ -66,6 +69,8 @@ export const useTaskDetailQuery = (taskId?: string | null) => {
       return res.data.data;
     },
     enabled: Boolean(taskId),
+    staleTime: 10_000,
+    refetchInterval: 60_000, // 1 phút reload 1 lần
   });
 };
 
@@ -81,6 +86,8 @@ export const useTaskCommentsQuery = (taskId?: string) => {
       return res.data.data;
     },
     enabled: Boolean(taskId),
+    staleTime: 3_000,
+    refetchInterval: 15_000,
   });
 };
 

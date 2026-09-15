@@ -12,6 +12,22 @@ public static class DbInitializer
     {
         await context.Database.EnsureCreatedAsync();
 
+        // Tối ưu hóa SQLite Concurrency (WAL Mode, busy_timeout 5s, synchronous NORMAL)
+        if (context.Database.IsSqlite())
+        {
+            try
+            {
+                await context.Database.ExecuteSqlRawAsync("PRAGMA journal_mode=WAL;");
+                await context.Database.ExecuteSqlRawAsync("PRAGMA busy_timeout=5000;");
+                await context.Database.ExecuteSqlRawAsync("PRAGMA synchronous=NORMAL;");
+                await context.Database.ExecuteSqlRawAsync("PRAGMA temp_store=MEMORY;");
+            }
+            catch (Exception)
+            {
+                // Fallback gracefully if provider does not support raw PRAGMA execution
+            }
+        }
+
         // Tự động đồng bộ Schema: Tự tạo bảng mới hoặc thêm các cột/field mới vào SQLite DB mà không làm mất dữ liệu
         await AutoSyncSchemaAsync(context);
 

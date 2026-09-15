@@ -19,10 +19,11 @@ interface OverdueReportProps {
   page: number;
   rowsPerPage: number;
   loading?: boolean;
+  onSelectTask?: (taskId: string) => void;
 }
 
 export const OverdueReport: React.FC<OverdueReportProps> = memo(
-  ({ data, page, rowsPerPage, loading = false }) => {
+  ({ data, page, rowsPerPage, loading = false, onSelectTask }) => {
     const paginatedData = useMemo(() => {
       return data.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
     }, [data, page, rowsPerPage]);
@@ -102,8 +103,14 @@ export const OverdueReport: React.FC<OverdueReportProps> = memo(
           rowsPerPage,
         }}
         rowKey="taskId"
+        onRowClick={(row) => onSelectTask?.(row.taskId)}
         rowSx={() => ({
           bgcolor: '#fff5f5',
+          cursor: onSelectTask ? 'pointer' : 'default',
+          transition: 'background-color 0.15s ease',
+          '&:hover': {
+            bgcolor: '#fee2e2 !important',
+          },
         })}
         emptyMessage="Tuyệt vời! Không có công việc nào bị quá hạn."
       />

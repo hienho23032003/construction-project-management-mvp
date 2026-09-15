@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -23,6 +23,7 @@ import { useQuery } from '@tanstack/react-query';
 import { projectApi } from '../services/api/endpoints';
 import { TaskStatus, TaskTreeItem } from '../types';
 import { useAuth } from '../contexts/AuthContext';
+import { useAppSearchParams } from '../hooks/useAppSearchParams';
 import { StatusChip } from '../components/common/StatusChip';
 import { InteractiveGantt } from '../components/gantt/InteractiveGantt';
 import { GanttSkeleton } from '../components/common/GanttSkeleton';
@@ -52,27 +53,59 @@ import {
   useAddCommentMutation,
 } from '../hooks/useTasks';
 import { useUsersListQuery } from '../hooks/useEmployees';
+import { usePresenceHeartbeat } from '../hooks/usePresence';
+import { ProjectPresenceAvatars } from '../components/presence/ProjectPresenceAvatars';
+
+const TAB_NAME_MAP: Record<string, number> = {
+  overview: 0,
+  tasks: 1,
+  tree: 1,
+  gantt: 2,
+  members: 3,
+  activities: 4,
+  logs: 4,
+};
+
+const TAB_INDEX_MAP: Record<number, string> = {
+  0: 'overview',
+  1: 'tasks',
+  2: 'gantt',
+  3: 'members',
+  4: 'activities',
+};
 
 export const ProjectDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { getParam, getBooleanParam, setParam, setParams, removeParams } = useAppSearchParams();
   const { user } = useAuth();
   const canEditTask = user?.role === 'SuperAdmin' || user?.role === 'ProjectManager' || user?.role === 'Supervisor';
 
-  const [activeTab, setActiveTab] = useState(0);
+  const tabParam = getParam('tab');
+  const taskIdParam = getParam('taskId');
+  const editTaskIdParam = getParam('editTaskId');
+  const createTaskParam = getBooleanParam('createTask');
+  const parentIdParam = getParam('parentId');
+
+  const resolvedInitialTab = tabParam && TAB_NAME_MAP[tabParam.toLowerCase()] !== undefined
+    ? TAB_NAME_MAP[tabParam.toLowerCase()]
+    : 0;
+
+  const [activeTab, setActiveTab] = useState(resolvedInitialTab);
   const [openTaskModal, setOpenTaskModal] = useState(false);
   const [openMemberModal, setOpenMemberModal] = useState(false);
   const [editingTask, setEditingTask] = useState<TaskTreeItem | null>(null);
-  const [parentTaskId, setParentTaskId] = useState<string | null>(null);
+  const [parentTaskId, setParentTaskId] = useState<string | null>(parentIdParam || null);
   const [deleteTaskId, setDeleteTaskId] = useState<string | null>(null);
   const [removeMemberUserId, setRemoveMemberUserId] = useState<string | null>(null);
-  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(taskIdParam || null);
 
   // Queries
   const { data: project, isLoading: isProjectLoading } = useProjectDetailQuery(id);
   const { data: users = [] } = useUsersListQuery();
   const { data: ganttData, isLoading: isGanttLoading } = useGanttDataQuery(id);
   const { data: selectedTask } = useTaskDetailQuery(selectedTaskId || undefined);
+  const { data: taskToEditFromUrl } = useTaskDetailQuery(editTaskIdParam || undefined);
   const { data: comments = [], isLoading: loadingComments } = useTaskCommentsQuery(selectedTaskId || undefined);
   const { data: dependencies = [] } = useTaskDependenciesQuery(selectedTaskId || undefined);
   const addCommentMutation = useAddCommentMutation(selectedTaskId || undefined);
@@ -87,6 +120,35 @@ export const ProjectDetailPage: React.FC = () => {
     enabled: Boolean(id),
   });
 
+  // Sync tab with URL parameter
+  useEffect(() => {
+    if (tabParam && TAB_NAME_MAP[tabParam.toLowerCase()] !== undefined) {
+      setActiveTab(TAB_NAME_MAP[tabParam.toLowerCase()]);
+    }
+  }, [tabParam]);
+
+  // Sync taskId with URL parameter
+  useEffect(() => {
+    if (taskIdParam && taskIdParam !== selectedTaskId) {
+      setSelectedTaskId(taskIdParam);
+    }
+  }, [taskIdParam, selectedTaskId]);
+
+  // Sync editTaskId or createTask with URL parameter
+  useEffect(() => {
+    if (editTaskIdParam) {
+      if (taskToEditFromUrl) {
+        setEditingTask(taskToEditFromUrl as unknown as TaskTreeItem);
+        setParentTaskId(taskToEditFromUrl.parentId || null);
+        setOpenTaskModal(true);
+      }
+    } else if (createTaskParam) {
+      setEditingTask(null);
+      setParentTaskId(parentIdParam || null);
+      setOpenTaskModal(true);
+    }
+  }, [editTaskIdParam, createTaskParam, parentIdParam, taskToEditFromUrl]);
+
   // Mutations
   const createTaskMutation = useCreateTaskMutation();
   const updateTaskMutation = useUpdateTaskMutation();
@@ -96,25 +158,58 @@ export const ProjectDetailPage: React.FC = () => {
   const addMemberMutation = useAddProjectMemberMutation(id);
   const removeMemberMutation = useRemoveProjectMemberMutation(id);
 
+  const handleTabChange = (_: any, newTab: number) => {
+    setActiveTab(newTab);
+    setParam('tab', TAB_INDEX_MAP[newTab] || 'overview');
+  };
+
   const handleOpenCreateTask = (parentId?: string | null) => {
     setEditingTask(null);
     setParentTaskId(parentId || null);
     setOpenTaskModal(true);
+    setParams({
+      createTask: 'true',
+      parentId: parentId || null,
+      editTaskId: null,
+    });
   };
 
   const handleOpenEditTask = (task: TaskTreeItem) => {
     setEditingTask(task);
     setParentTaskId(task.parentId || null);
     setOpenTaskModal(true);
+    setParams({
+      editTaskId: task.id,
+      createTask: null,
+      parentId: null,
+    });
+  };
+
+  const handleCloseTaskModal = () => {
+    setOpenTaskModal(false);
+    setEditingTask(null);
+    setParentTaskId(null);
+    removeParams('editTaskId', 'createTask', 'parentId');
+  };
+
+  const handleSelectTask = (taskId: string | null) => {
+    setSelectedTaskId(taskId);
+    if (taskId) {
+      setParam('taskId', taskId);
+    } else {
+      removeParams('taskId', 'taskTab');
+    }
   };
 
   const handleSaveTask = async (formData: TaskFormData) => {
     if (!id) return;
+    const cleanActualEndDate = formData.actualEndDate && formData.actualEndDate.trim() !== '' ? formData.actualEndDate : undefined;
     if (editingTask) {
       await updateTaskMutation.mutateAsync({
         id: editingTask.id,
         data: {
           ...formData,
+          actualEndDate: cleanActualEndDate,
           projectId: id,
           parentId: editingTask.parentId || null,
         },
@@ -122,12 +217,12 @@ export const ProjectDetailPage: React.FC = () => {
     } else {
       await createTaskMutation.mutateAsync({
         ...formData,
+        actualEndDate: cleanActualEndDate,
         projectId: id,
         parentId: parentTaskId || null,
       });
     }
-    setOpenTaskModal(false);
-    setEditingTask(null);
+    handleCloseTaskModal();
     refetchTasks();
   };
 
@@ -148,6 +243,11 @@ export const ProjectDetailPage: React.FC = () => {
     await removeMemberMutation.mutateAsync(removeMemberUserId);
     setRemoveMemberUserId(null);
   };
+
+  usePresenceHeartbeat({
+    projectId: id,
+    enabled: Boolean(id),
+  });
 
   if (isProjectLoading || !project) {
     return (
@@ -178,38 +278,54 @@ export const ProjectDetailPage: React.FC = () => {
           <StatusChip status={project.status} isOverdue={project.isOverdue} />
         </Box>
 
-        {canEditTask && (
-          <Button
-            variant="contained"
-            startIcon={<Plus size={16} />}
-            onClick={() => handleOpenCreateTask()}
-            sx={{ bgcolor: '#0284c7', fontWeight: 700 }}
-          >
-            Thêm Hạng Mục / Task Mới
-          </Button>
-        )}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+          <ProjectPresenceAvatars projectId={id} />
+          {canEditTask && (
+            <Button
+              variant="contained"
+              startIcon={<Plus size={16} />}
+              onClick={() => handleOpenCreateTask()}
+              sx={{ bgcolor: '#0284c7', fontWeight: 700 }}
+            >
+              Thêm Hạng Mục / Task Mới
+            </Button>
+          )}
+        </Box>
       </Box>
 
       {/* Tabs */}
       <Paper sx={{ border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden', width: '100%', maxWidth: '100%' }}>
         <Tabs
           value={activeTab}
-          onChange={(_, val) => setActiveTab(val)}
+          onChange={handleTabChange}
           variant="scrollable"
           scrollButtons="auto"
           allowScrollButtonsMobile
           sx={{
             borderBottom: '1px solid #e2e8f0',
             bgcolor: '#f8fafc',
-            px: { xs: 1, sm: 2 },
-            '& .MuiTab-root': { fontWeight: 700, textTransform: 'none', fontSize: { xs: '0.8125rem', sm: '0.9rem' }, py: 1.5, minWidth: 'auto', px: { xs: 1.5, sm: 2 } },
+            px: { xs: 1, sm: 1.5 },
+            minHeight: 40,
+            '& .MuiTabs-flexContainer': {
+              minHeight: 40,
+            },
+            '& .MuiTab-root': {
+              fontWeight: 700,
+              textTransform: 'none',
+              fontSize: { xs: '0.78rem', sm: '0.84rem' },
+              py: 0.75,
+              minHeight: 40,
+              minWidth: 'auto',
+              px: { xs: 1.25, sm: 1.75 },
+              gap: 0.75,
+            },
           }}
         >
-          <Tab label="1. Tổng Quan" icon={<Layers size={17} />} iconPosition="start" />
-          <Tab label={`2. Cây Công Việc (${project.tasks.length})`} icon={<FolderTree size={17} />} iconPosition="start" />
-          <Tab label="3. Tiến Độ Gantt" icon={<BarChart3 size={17} />} iconPosition="start" />
-          <Tab label={`4. Thành Viên (${project.members.length})`} icon={<Users size={17} />} iconPosition="start" />
-          <Tab label="5. Nhật Ký Hoạt Động" icon={<Activity size={17} />} iconPosition="start" />
+          <Tab label="1. Tổng Quan" icon={<Layers size={15} />} iconPosition="start" />
+          <Tab label={`2. Cây Công Việc (${project.tasks.length})`} icon={<FolderTree size={15} />} iconPosition="start" />
+          <Tab label="3. Tiến Độ Gantt" icon={<BarChart3 size={15} />} iconPosition="start" />
+          <Tab label={`4. Thành Viên (${project.members.length})`} icon={<Users size={15} />} iconPosition="start" />
+          <Tab label="5. Nhật Ký Hoạt Động" icon={<Activity size={15} />} iconPosition="start" />
         </Tabs>
 
         {activeTab === 0 && <ProjectOverviewTab project={project} />}
@@ -226,16 +342,34 @@ export const ProjectDetailPage: React.FC = () => {
           />
         )}
         {activeTab === 2 && (
-          <Box sx={{ p: 2 }}>
+          <Box
+            sx={{
+              p: { xs: 1, sm: 1.5 },
+              height: {
+                xs: 'calc(100vh - 270px)',
+                sm: 'calc(100vh - 240px)',
+                md: 'calc(100vh - 215px)',
+              },
+              minHeight: 520,
+              width: '100%',
+              maxWidth: '100%',
+              overflow: 'hidden',
+              display: 'flex',
+              flexDirection: 'column',
+            }}
+          >
             {isGanttLoading ? (
               <GanttSkeleton />
             ) : (
-              <InteractiveGantt
-                tasks={ganttData?.tasks || []}
-                links={ganttData?.links || []}
-                canEdit={canEditTask}
-                onTaskUpdated={refetchTasks}
-              />
+              <Box sx={{ flexGrow: 1, minHeight: 0, height: '100%', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+                <InteractiveGantt
+                  tasks={ganttData?.tasks || []}
+                  links={ganttData?.links || []}
+                  canEdit={canEditTask}
+                  onTaskClick={(task) => handleSelectTask(task.realTaskId || task.id)}
+                  onTaskUpdated={refetchTasks}
+                />
+              </Box>
             )}
           </Box>
         )}
@@ -250,7 +384,7 @@ export const ProjectDetailPage: React.FC = () => {
         {activeTab === 4 && (
           <ProjectActivitiesTab
             activities={project.recentActivities}
-            onSelectTask={(taskId) => setSelectedTaskId(taskId)}
+            onSelectTask={(taskId) => handleSelectTask(taskId)}
           />
         )}
       </Paper>
@@ -258,10 +392,7 @@ export const ProjectDetailPage: React.FC = () => {
       {/* Modals */}
       <TaskFormModal
         open={openTaskModal}
-        onClose={() => {
-          setOpenTaskModal(false);
-          setEditingTask(null);
-        }}
+        onClose={handleCloseTaskModal}
         onSubmit={handleSaveTask}
         editingTask={editingTask}
         parentTaskId={parentTaskId}
@@ -299,7 +430,7 @@ export const ProjectDetailPage: React.FC = () => {
       {/* Task Detail Drawer */}
       <TaskDetailDrawer
         task={selectedTask || null}
-        onClose={() => setSelectedTaskId(null)}
+        onClose={() => handleSelectTask(null)}
         comments={comments}
         dependencies={dependencies}
         loadingComments={loadingComments}

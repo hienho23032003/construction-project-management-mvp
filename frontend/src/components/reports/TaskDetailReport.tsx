@@ -22,10 +22,11 @@ interface TaskDetailReportProps {
   page: number;
   rowsPerPage: number;
   loading?: boolean;
+  onSelectTask?: (taskId: string) => void;
 }
 
 export const TaskDetailReport: React.FC<TaskDetailReportProps> = memo(
-  ({ data, page, rowsPerPage, loading = false }) => {
+  ({ data, page, rowsPerPage, loading = false, onSelectTask }) => {
     const paginatedData = useMemo(() => {
       return data.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
     }, [data, page, rowsPerPage]);
@@ -50,7 +51,7 @@ export const TaskDetailReport: React.FC<TaskDetailReportProps> = memo(
           header: 'Tên Công Việc',
           accessorKey: 'taskName',
           minWidth: 200,
-          cellSx: { fontWeight: 600 },
+          cellSx: { fontWeight: 700, color: '#0f172a' },
         },
         {
           id: 'assigneeNames',
@@ -97,6 +98,14 @@ export const TaskDetailReport: React.FC<TaskDetailReportProps> = memo(
           rowsPerPage,
         }}
         rowKey="taskId"
+        onRowClick={(row) => onSelectTask?.(row.taskId)}
+        rowSx={() => ({
+          cursor: onSelectTask ? 'pointer' : 'default',
+          transition: 'background-color 0.15s ease',
+          '&:hover': {
+            bgcolor: '#f8fafc',
+          },
+        })}
         emptyMessage="Không có dữ liệu công việc phù hợp"
       />
     );

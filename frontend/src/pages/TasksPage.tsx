@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useSearchParams } from 'react-router-dom';
 import {
   Box,
   Paper,
@@ -37,23 +36,32 @@ import {
 } from '../hooks/useTasks';
 import { useProjectsListQuery } from '../hooks/useProjects';
 import { useDebounce } from '../hooks/useDebounce';
+import { useAppSearchParams } from '../hooks/useAppSearchParams';
+import { usePresenceHeartbeat } from '../hooks/usePresence';
+import { ProjectPresenceAvatars } from '../components/presence/ProjectPresenceAvatars';
 
 export const TasksPage: React.FC = () => {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const taskIdParam = searchParams.get('taskId');
+  const { getParam, getNumberParam, setParam, setParams, removeParams } = useAppSearchParams();
+  const taskIdParam = getParam('taskId');
+  const projectParam = getParam('projectId', 'ALL');
+  const statusParam = getParam('status', 'ALL');
+  const priorityParam = getParam('priority', 'ALL');
+  const searchParam = getParam('search');
+  const viewParam = (getParam('view', 'table') === 'grid' ? 'grid' : 'table') as 'table' | 'grid';
+  const pageParam = Math.max(0, getNumberParam('page', 1) - 1);
 
   // View mode
-  const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
+  const [viewMode, setViewMode] = useState<'table' | 'grid'>(viewParam);
 
   // Pagination & Filtering & Sorting
-  const [page, setPage] = useState(0);
+  const [page, setPage] = useState(pageParam);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [sortBy, setSortBy] = useState('sortOrder');
   const [isDescending, setIsDescending] = useState(false);
-  const [search, setSearch] = useState('');
-  const [selectedProjectId, setSelectedProjectId] = useState('ALL');
-  const [selectedStatus, setSelectedStatus] = useState('ALL');
-  const [selectedPriority, setSelectedPriority] = useState('ALL');
+  const [search, setSearch] = useState(searchParam);
+  const [selectedProjectId, setSelectedProjectId] = useState(projectParam);
+  const [selectedStatus, setSelectedStatus] = useState(statusParam);
+  const [selectedPriority, setSelectedPriority] = useState(priorityParam);
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
 
   const handleToggleGroup = useCallback((groupKey: string) => {
@@ -67,7 +75,7 @@ export const TasksPage: React.FC = () => {
 
   // Selected task for drawer
   const [selectedTask, setSelectedTask] = useState<TaskItem | null>(null);
-  const tabParam = searchParams.get('tab');
+  const tabParam = getParam('tab');
   const initialTab = useMemo(() => {
     if (tabParam === 'comments' || tabParam === 'discussion' || tabParam === '1') return 1;
     if (tabParam === 'history' || tabParam === 'activities' || tabParam === '2') return 2;
@@ -82,6 +90,50 @@ export const TasksPage: React.FC = () => {
       setSelectedTask(taskFromUrl);
     }
   }, [taskFromUrl]);
+
+  // Sync debounced search with URL
+  useEffect(() => {
+    if (debouncedSearch.trim()) {
+      if (getParam('search') !== debouncedSearch.trim()) {
+        setParams({ search: debouncedSearch.trim(), page: null });
+      }
+    } else {
+      setParam('search', null);
+    }
+  }, [debouncedSearch, getParam, setParam, setParams]);
+
+  const handleProjectFilterChange = (val: string) => {
+    setSelectedProjectId(val);
+    setPage(0);
+    setParams({ projectId: val !== 'ALL' ? val : null, page: null });
+  };
+
+  const handleStatusFilterChange = (val: string) => {
+    setSelectedStatus(val);
+    setPage(0);
+    setParams({ status: val !== 'ALL' ? val : null, page: null });
+  };
+
+  const handlePriorityFilterChange = (val: string) => {
+    setSelectedPriority(val);
+    setPage(0);
+    setParams({ priority: val !== 'ALL' ? val : null, page: null });
+  };
+
+  const handleViewModeChange = (val: 'table' | 'grid') => {
+    setViewMode(val);
+    setParam('view', val === 'grid' ? 'grid' : null);
+  };
+
+  const handlePageChange = useCallback((newPage: number) => {
+    setPage(newPage);
+    setParam('page', newPage > 0 ? newPage + 1 : null);
+  }, [setParam]);
+
+  const handleRowsPerPageChange = useCallback((newRowsPerPage: number) => {
+    setRowsPerPage(newRowsPerPage);
+    handlePageChange(0);
+  }, [handlePageChange]);
 
   // Query params memoized
   const queryParams = useMemo(() => ({
@@ -128,25 +180,13 @@ export const TasksPage: React.FC = () => {
 
   const handleRowClick = useCallback((task: TaskItem) => {
     setSelectedTask(task);
-    setSearchParams((prevParams) => {
-      const next = new URLSearchParams(prevParams);
-      next.set('taskId', task.id);
-      return next;
-    }, { replace: true });
-  }, [setSearchParams]);
+    setParam('taskId', task.id);
+  }, [setParam]);
 
   const handleCloseDrawer = useCallback(() => {
     setSelectedTask(null);
-    setSearchParams((prevParams) => {
-      if (prevParams.has('taskId') || prevParams.has('tab')) {
-        const next = new URLSearchParams(prevParams);
-        next.delete('taskId');
-        next.delete('tab');
-        return next;
-      }
-      return prevParams;
-    }, { replace: true });
-  }, [setSearchParams]);
+    removeParams('taskId', 'tab', 'taskTab');
+  }, [removeParams]);
 
   const handleStatusChange = useCallback((taskId: string, status: TaskStatus) => {
     updateStatusMutation.mutate({ id: taskId, status });
@@ -156,19 +196,15 @@ export const TasksPage: React.FC = () => {
     updateProgressMutation.mutate({ id: taskId, progress });
   }, [updateProgressMutation]);
 
-  const handlePageChange = useCallback((newPage: number) => {
-    setPage(newPage);
-  }, []);
-
-  const handleRowsPerPageChange = useCallback((newRowsPerPage: number) => {
-    setRowsPerPage(newRowsPerPage);
-    setPage(0);
-  }, []);
+  usePresenceHeartbeat({
+    projectId: selectedProjectId !== 'ALL' ? selectedProjectId : undefined,
+    enabled: selectedProjectId !== 'ALL',
+  });
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 2, sm: 3 }, width: '100%', maxWidth: '100%', minWidth: 0, overflowX: 'hidden' }}>
       {/* Header */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', flexWrap: 'wrap', gap: 1.5 }}>
         <Box>
           <Typography variant="h2" sx={{ fontWeight: 800, fontSize: { xs: '1.15rem', sm: '1.35rem' }, color: '#0f172a' }}>
             Quản Lý Công Việc & Tiến Độ Thi Công
@@ -177,6 +213,9 @@ export const TasksPage: React.FC = () => {
             Tra cứu, cập nhật tiến độ, bình luận và theo dõi deadline toàn hệ thống
           </Typography>
         </Box>
+        {selectedProjectId !== 'ALL' && (
+          <ProjectPresenceAvatars projectId={selectedProjectId} />
+        )}
       </Box>
 
       {/* Filters Toolbar */}
@@ -211,10 +250,7 @@ export const TasksPage: React.FC = () => {
               ? { id: 'ALL', code: 'ALL', name: 'Tất cả dự án' }
               : projects.find((p) => p.id === selectedProjectId) || { id: 'ALL', code: 'ALL', name: 'Tất cả dự án' }
           }
-          onChange={(_, val) => {
-            setSelectedProjectId(val ? val.id : 'ALL');
-            setPage(0);
-          }}
+          onChange={(_, val) => handleProjectFilterChange(val ? val.id : 'ALL')}
           isOptionEqualToValue={(opt, val) => opt.id === val.id}
           renderInput={(params) => (
             <TextField
@@ -232,10 +268,7 @@ export const TasksPage: React.FC = () => {
             <Select
               value={selectedStatus}
               label="Trạng Thái"
-              onChange={(e) => {
-                setSelectedStatus(e.target.value);
-                setPage(0);
-              }}
+              onChange={(e) => handleStatusFilterChange(e.target.value)}
             >
               <MenuItem value="ALL">Tất cả</MenuItem>
               <MenuItem value="InProgress">Đang thực hiện</MenuItem>
@@ -250,10 +283,7 @@ export const TasksPage: React.FC = () => {
             <Select
               value={selectedPriority}
               label="Độ Ưu Tiên"
-              onChange={(e) => {
-                setSelectedPriority(e.target.value);
-                setPage(0);
-              }}
+              onChange={(e) => handlePriorityFilterChange(e.target.value)}
             >
               <MenuItem value="ALL">Tất cả</MenuItem>
               <MenuItem value="Urgent">Khẩn cấp</MenuItem>
@@ -269,7 +299,7 @@ export const TasksPage: React.FC = () => {
             size="small"
             value={viewMode}
             exclusive
-            onChange={(_, val) => val && setViewMode(val)}
+            onChange={(_, val) => val && handleViewModeChange(val)}
           >
             <ToggleButton value="table">
               <ListIcon size={18} />

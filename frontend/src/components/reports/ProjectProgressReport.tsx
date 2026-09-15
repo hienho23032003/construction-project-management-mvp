@@ -1,5 +1,5 @@
 import React, { memo, useMemo } from 'react';
-import { Chip } from '@mui/material';
+import { Chip, Box, Tooltip } from '@mui/material';
 import { CommonTable, ColumnDef } from '../common/CommonTable';
 import { ProgressBar } from '../common/ProgressBar';
 import { StatusChip } from '../common/StatusChip';
@@ -25,10 +25,11 @@ interface ProjectProgressReportProps {
   page: number;
   rowsPerPage: number;
   loading?: boolean;
+  onViewTasks?: (projectId: string, filterType: 'all' | 'completed' | 'overdue') => void;
 }
 
 export const ProjectProgressReport: React.FC<ProjectProgressReportProps> = memo(
-  ({ data, page, rowsPerPage, loading = false }) => {
+  ({ data, page, rowsPerPage, loading = false, onViewTasks }) => {
     const paginatedData = useMemo(() => {
       return data.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
     }, [data, page, rowsPerPage]);
@@ -56,6 +57,7 @@ export const ProjectProgressReport: React.FC<ProjectProgressReportProps> = memo(
           accessorKey: 'name',
           minWidth: 200,
           sortable: true,
+          cellSx: { fontWeight: 700, color: '#0f172a' },
         },
         {
           id: 'managerName',
@@ -94,17 +96,80 @@ export const ProjectProgressReport: React.FC<ProjectProgressReportProps> = memo(
           id: 'taskStats',
           header: 'Tổng Task / Xong / Trễ',
           align: 'right',
-          minWidth: 150,
+          minWidth: 210,
           cell: ({ row }) => (
-            <span style={{ whiteSpace: 'nowrap' }}>
-              {row.totalTasks} /{' '}
-              <span style={{ color: '#10b981', fontWeight: 700 }}>{row.completedTasks}</span> /{' '}
-              <span style={{ color: '#ef4444', fontWeight: 700 }}>{row.overdueTasks}</span>
-            </span>
+            <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.75, justifyContent: 'flex-end', width: '100%' }}>
+              <Tooltip title={row.totalTasks > 0 ? `Bấm để xem tất cả (${row.totalTasks}) công việc của dự án này` : 'Không có công việc'} arrow>
+                <Chip
+                  label={`${row.totalTasks} Tổng`}
+                  size="small"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (row.totalTasks > 0 && onViewTasks) {
+                      onViewTasks(row.projectId, 'all');
+                    }
+                  }}
+                  sx={{
+                    fontWeight: 700,
+                    fontSize: '0.75rem',
+                    cursor: row.totalTasks > 0 ? 'pointer' : 'default',
+                    bgcolor: '#f1f5f9',
+                    color: '#334155',
+                    border: '1px solid #cbd5e1',
+                    '&:hover': row.totalTasks > 0 ? { bgcolor: '#e2e8f0', borderColor: '#94a3b8' } : undefined,
+                    transition: 'all 0.15s ease-in-out',
+                  }}
+                />
+              </Tooltip>
+              <Tooltip title={row.completedTasks > 0 ? `Bấm để xem (${row.completedTasks}) công việc đã hoàn thành` : 'Chưa có công việc hoàn thành'} arrow>
+                <Chip
+                  label={`${row.completedTasks} Xong`}
+                  size="small"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (row.completedTasks > 0 && onViewTasks) {
+                      onViewTasks(row.projectId, 'completed');
+                    }
+                  }}
+                  sx={{
+                    fontWeight: 700,
+                    fontSize: '0.75rem',
+                    cursor: row.completedTasks > 0 ? 'pointer' : 'default',
+                    bgcolor: '#ecfdf5',
+                    color: '#059669',
+                    border: '1px solid #a7f3d0',
+                    '&:hover': row.completedTasks > 0 ? { bgcolor: '#d1fae5', borderColor: '#6ee7b7' } : undefined,
+                    transition: 'all 0.15s ease-in-out',
+                  }}
+                />
+              </Tooltip>
+              <Tooltip title={row.overdueTasks > 0 ? `Bấm để xem (${row.overdueTasks}) công việc bị trễ hạn` : 'Không có công việc trễ hạn'} arrow>
+                <Chip
+                  label={`${row.overdueTasks} Trễ`}
+                  size="small"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (row.overdueTasks > 0 && onViewTasks) {
+                      onViewTasks(row.projectId, 'overdue');
+                    }
+                  }}
+                  sx={{
+                    fontWeight: 700,
+                    fontSize: '0.75rem',
+                    cursor: row.overdueTasks > 0 ? 'pointer' : 'default',
+                    bgcolor: row.overdueTasks > 0 ? '#fef2f2' : '#f8fafc',
+                    color: row.overdueTasks > 0 ? '#dc2626' : '#94a3b8',
+                    border: row.overdueTasks > 0 ? '1px solid #fecaca' : '1px solid #e2e8f0',
+                    '&:hover': row.overdueTasks > 0 ? { bgcolor: '#fee2e2', borderColor: '#f87171' } : undefined,
+                    transition: 'all 0.15s ease-in-out',
+                  }}
+                />
+              </Tooltip>
+            </Box>
           ),
         },
       ],
-      []
+      [onViewTasks]
     );
 
     return (
@@ -123,3 +188,4 @@ export const ProjectProgressReport: React.FC<ProjectProgressReportProps> = memo(
     );
   }
 );
+

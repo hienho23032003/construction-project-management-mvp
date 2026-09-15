@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -23,11 +23,13 @@ import { useAuth } from '../contexts/AuthContext';
 import { Project } from '../types';
 import {
   useProjectsQuery,
+  useProjectDetailQuery,
   useCreateProjectMutation,
   useUpdateProjectMutation,
   useDeleteProjectMutation,
 } from '../hooks/useProjects';
 import { useUsersListQuery } from '../hooks/useEmployees';
+import { useAppSearchParams } from '../hooks/useAppSearchParams';
 import { ProjectCard } from '../components/projects/ProjectCard';
 import { ProjectTable } from '../components/projects/ProjectTable';
 import { ProjectFormModal, ProjectFormData } from '../components/projects/ProjectFormModal';
@@ -39,16 +41,24 @@ import { useDebounce } from '../hooks/useDebounce';
 
 export const ProjectsPage: React.FC = () => {
   const navigate = useNavigate();
+  const { getParam, getNumberParam, getBooleanParam, setParam, setParams, removeParams } = useAppSearchParams();
   const { user } = useAuth();
   const isAdmin = user?.role === 'SuperAdmin';
   const canEditProject = isAdmin || user?.role === 'ProjectManager';
 
+  const editProjectIdParam = getParam('editProjectId') || getParam('edit');
+  const createProjectParam = getBooleanParam('createProject');
+  const searchParam = getParam('search');
+  const statusParam = getParam('status', 'ALL');
+  const viewParam = (getParam('view', 'table') === 'grid' ? 'grid' : 'table') as 'grid' | 'table';
+  const pageParam = Math.max(0, getNumberParam('page', 1) - 1);
+
   // Filters & Pagination
-  const [page, setPage] = useState(0);
+  const [page, setPage] = useState(pageParam);
   const [rowsPerPage, setRowsPerPage] = useState(12);
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('ALL');
-  const [viewMode, setViewMode] = useState<'grid' | 'table'>('table');
+  const [search, setSearch] = useState(searchParam);
+  const [statusFilter, setStatusFilter] = useState(statusParam);
+  const [viewMode, setViewMode] = useState<'grid' | 'table'>(viewParam);
   const [sortBy, setSortBy] = useState('plannedEndDate');
   const [isDescending, setIsDescending] = useState(false);
 
@@ -58,6 +68,36 @@ export const ProjectsPage: React.FC = () => {
   const [openModal, setOpenModal] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+
+  // Single project detail query if editProjectId is present in URL
+  const { data: projectFromUrl } = useProjectDetailQuery(editProjectIdParam || undefined);
+
+  // Sync debounced search to URL
+  useEffect(() => {
+    if (debouncedSearch.trim()) {
+      if (getParam('search') !== debouncedSearch.trim()) {
+        setParams({ search: debouncedSearch.trim(), page: null });
+      }
+    } else {
+      setParam('search', null);
+    }
+  }, [debouncedSearch, getParam, setParam, setParams]);
+
+  const handleStatusChange = (val: string) => {
+    setStatusFilter(val);
+    setPage(0);
+    setParams({ status: val !== 'ALL' ? val : null, page: null });
+  };
+
+  const handleViewModeChange = (val: 'grid' | 'table') => {
+    setViewMode(val);
+    setParam('view', val === 'grid' ? 'grid' : null);
+  };
+
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage);
+    setParam('page', newPage > 0 ? newPage + 1 : null);
+  };
 
   // Queries
   const queryParams = useMemo(
@@ -74,6 +114,25 @@ export const ProjectsPage: React.FC = () => {
 
   const { data: pagedResult, isLoading, isFetching } = useProjectsQuery(queryParams);
   const { data: users = [] } = useUsersListQuery();
+
+  // Sync URL params to open modal
+  useEffect(() => {
+    if (editProjectIdParam) {
+      if (projectFromUrl) {
+        setEditingProject(projectFromUrl);
+        setOpenModal(true);
+      } else {
+        const found = pagedResult?.items.find((p) => p.id === editProjectIdParam);
+        if (found) {
+          setEditingProject(found);
+          setOpenModal(true);
+        }
+      }
+    } else if (createProjectParam) {
+      setEditingProject(null);
+      setOpenModal(true);
+    }
+  }, [editProjectIdParam, createProjectParam, projectFromUrl, pagedResult]);
 
   // Mutations
   const createMutation = useCreateProjectMutation();
@@ -92,10 +151,23 @@ export const ProjectsPage: React.FC = () => {
     }
   };
 
+  const handleOpenCreate = () => {
+    setEditingProject(null);
+    setOpenModal(true);
+    setParams({ createProject: true, editProjectId: null, edit: null });
+  };
+
   const handleOpenEdit = (p: Project, e: React.MouseEvent) => {
     e.stopPropagation();
     setEditingProject(p);
     setOpenModal(true);
+    setParams({ editProjectId: p.id, createProject: null });
+  };
+
+  const handleCloseModal = () => {
+    setOpenModal(false);
+    setEditingProject(null);
+    removeParams('editProjectId', 'edit', 'createProject');
   };
 
   const handleDeleteConfirm = async () => {
@@ -107,12 +179,11 @@ export const ProjectsPage: React.FC = () => {
 
   const handleFormSubmit = async (formData: any) => {
     if (editingProject) {
-      await updateMutation.mutateAsync({ id: editingProject.id, ...formData });
+      await updateMutation.mutateAsync({ id: editingProject.id, data: formData });
     } else {
       await createMutation.mutateAsync(formData);
     }
-    setOpenModal(false);
-    setEditingProject(null);
+    handleCloseModal();
   };
 
   return (
@@ -141,10 +212,7 @@ export const ProjectsPage: React.FC = () => {
           <Button
             variant="contained"
             startIcon={<Plus size={18} />}
-            onClick={() => {
-              setEditingProject(null);
-              setOpenModal(true);
-            }}
+            onClick={handleOpenCreate}
             sx={{ fontWeight: 700 }}
           >
             Tạo Dự Án Mới
@@ -192,10 +260,7 @@ export const ProjectsPage: React.FC = () => {
           <CommonSelect
             label="Trạng Thái"
             value={statusFilter}
-            onChange={(val) => {
-              setStatusFilter(val);
-              setPage(0);
-            }}
+            onChange={handleStatusChange}
             minWidth={180}
             options={[
               { value: 'ALL', label: 'Tất cả trạng thái' },
@@ -213,7 +278,7 @@ export const ProjectsPage: React.FC = () => {
             size="small"
             value={viewMode}
             exclusive
-            onChange={(_, val) => val && setViewMode(val)}
+            onChange={(_, val) => val && handleViewModeChange(val)}
           >
             <ToggleButton value="table">
               <ListIcon size={18} />
@@ -296,10 +361,10 @@ export const ProjectsPage: React.FC = () => {
             page={page}
             rowsPerPage={rowsPerPage}
             totalCount={totalCount}
-            onPageChange={(newPage) => setPage(newPage)}
+            onPageChange={handlePageChange}
             onRowsPerPageChange={(newRowsPerPage) => {
               setRowsPerPage(newRowsPerPage);
-              setPage(0);
+              handlePageChange(0);
             }}
             rowsPerPageOptions={[6, 12, 24, 48]}
           />
@@ -309,7 +374,7 @@ export const ProjectsPage: React.FC = () => {
       {/* Modals */}
       <ProjectFormModal
         open={openModal}
-        onClose={() => setOpenModal(false)}
+        onClose={handleCloseModal}
         onSubmit={handleFormSubmit}
         editingProject={editingProject}
         users={users}

@@ -1,16 +1,98 @@
 using System.Text.Json.Serialization;
+using ConstructionManagement.API.Converters;
 using ConstructionManagement.API.Extensions;
+using ConstructionManagement.API.Filters;
 using ConstructionManagement.API.Middleware;
+using ConstructionManagement.Application.Common;
 using ConstructionManagement.Infrastructure.Persistence;
+using Microsoft.AspNetCore.Mvc;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container
-builder.Services.AddControllers()
+builder.Services.AddControllers(options =>
+    {
+        options.Filters.Add<ValidationFilter>();
+    })
     .AddJsonOptions(options =>
     {
         options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+        options.JsonSerializerOptions.Converters.Add(new NullableDateTimeConverter());
+        options.JsonSerializerOptions.Converters.Add(new NullableGuidConverter());
+        options.JsonSerializerOptions.Converters.Add(new NullableDoubleConverter());
+        options.JsonSerializerOptions.Converters.Add(new NullableIntConverter());
+        options.JsonSerializerOptions.Converters.Add(new NullableBooleanConverter());
+    })
+    .ConfigureApiBehaviorOptions(options =>
+    {
+        options.InvalidModelStateResponseFactory = context =>
+        {
+            var fieldDisplayNames = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                { "name", "Tên" },
+                { "code", "Mã" },
+                { "projectId", "Dự án/Công trình" },
+                { "startDate", "Ngày bắt đầu" },
+                { "plannedEndDate", "Ngày kết thúc dự kiến" },
+                { "actualEndDate", "Ngày kết thúc thực tế" },
+                { "email", "Địa chỉ Email" },
+                { "password", "Mật khẩu" },
+                { "currentPassword", "Mật khẩu hiện tại" },
+                { "newPassword", "Mật khẩu mới" },
+                { "fullName", "Họ và tên" },
+                { "phone", "Số điện thoại" },
+                { "department", "Phòng ban/Bộ phận" },
+                { "progress", "Tiến độ" },
+                { "weight", "Trọng số" },
+                { "priority", "Độ ưu tiên" },
+                { "status", "Trạng thái" },
+                { "content", "Nội dung" },
+                { "role", "Vai trò" },
+                { "request", "Dữ liệu yêu cầu" },
+            };
+
+            var errors = new List<string>();
+            foreach (var key in context.ModelState.Keys)
+            {
+                var entry = context.ModelState[key];
+                if (entry == null || !entry.Errors.Any()) continue;
+
+                var cleanKey = key.TrimStart('$', '.').Replace("request.", "");
+                var fieldName = fieldDisplayNames.TryGetValue(cleanKey, out var displayName) ? displayName : cleanKey;
+
+                foreach (var error in entry.Errors)
+                {
+                    var msg = error.ErrorMessage;
+                    if (string.IsNullOrWhiteSpace(msg) && error.Exception != null)
+                    {
+                        msg = error.Exception.Message;
+                    }
+
+                    if (string.IsNullOrWhiteSpace(msg)) continue;
+
+                    if (msg.Contains("could not be converted to", StringComparison.OrdinalIgnoreCase) ||
+                        msg.Contains("The JSON value could not be converted", StringComparison.OrdinalIgnoreCase))
+                    {
+                        errors.Add($"Trường '{fieldName}' có định dạng không hợp lệ.");
+                    }
+                    else if (msg.Contains("is required", StringComparison.OrdinalIgnoreCase) ||
+                             msg.Contains("The field is required", StringComparison.OrdinalIgnoreCase) ||
+                             msg.Contains("The request field is required", StringComparison.OrdinalIgnoreCase))
+                    {
+                        errors.Add($"Vui lòng nhập thông tin cho trường '{fieldName}'.");
+                    }
+                    else
+                    {
+                        errors.Add(msg);
+                    }
+                }
+            }
+
+            var mainMessage = errors.Count > 0 ? errors[0] : "Dữ liệu gửi lên không hợp lệ.";
+            var response = ApiResponse<string>.Fail(mainMessage, errors);
+            return new BadRequestObjectResult(response);
+        };
     });
 
 builder.Services.AddEndpointsApiExplorer();

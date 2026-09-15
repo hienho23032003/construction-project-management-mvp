@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
+import { useAppSearchParams } from '../../hooks/useAppSearchParams';
 import {
   Drawer,
   Box,
@@ -49,6 +50,7 @@ import { StatusChip, getVietnameseStatus } from '../common/StatusChip';
 import { PriorityBadge, ProgressBar } from '../common';
 import { formatDate, formatDateTime } from '../../utils/dateUtils';
 import { getMediaUrl } from '../../utils/fileUtils';
+import { CoEditingWarningBanner } from '../presence/ProjectPresenceAvatars';
 
 interface TaskDetailDrawerProps {
   task: TaskItem | null;
@@ -209,7 +211,16 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
   initialTab = 0,
 }) => {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState(initialTab);
+  const { getParam, setParam } = useAppSearchParams();
+  const urlTab = getParam('taskTab') || getParam('tab');
+
+  const getTabNumber = (tabStr: string | null): number => {
+    if (tabStr === 'comments' || tabStr === 'discussion' || tabStr === '1') return 1;
+    if (tabStr === 'history' || tabStr === 'activities' || tabStr === '2') return 2;
+    return 0;
+  };
+
+  const [activeTab, setActiveTab] = useState(urlTab ? getTabNumber(urlTab) : initialTab);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
 
@@ -235,9 +246,26 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
   const canSubmit = Boolean((contentValue && contentValue.trim().length > 0) || selectedFiles.length > 0);
 
   useEffect(() => {
-    setActiveTab(initialTab);
+    if (urlTab) {
+      setActiveTab(getTabNumber(urlTab));
+    } else {
+      setActiveTab(initialTab);
+    }
     setSelectedFiles([]);
-  }, [task?.id, initialTab]);
+  }, [task?.id, initialTab, urlTab]);
+
+  const handleTabChange = (_: any, val: number) => {
+    setActiveTab(val);
+    const tabName = val === 1 ? 'comments' : val === 2 ? 'history' : 'details';
+    const mainTab = getParam('tab');
+    if (getParam('taskId')) {
+      if (mainTab && ['overview', 'tasks', 'gantt', 'members', 'activities'].includes(mainTab)) {
+        setParam('taskTab', tabName);
+      } else {
+        setParam('tab', tabName);
+      }
+    }
+  };
 
   const handleFilesAdded = (newFiles: FileList | File[]) => {
     const fileArray = Array.from(newFiles);
@@ -357,7 +385,7 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
           {/* Navigation Tabs */}
           <Tabs
             value={activeTab}
-            onChange={(_, val) => setActiveTab(val)}
+            onChange={handleTabChange}
             variant="scrollable"
             scrollButtons="auto"
             allowScrollButtonsMobile
@@ -391,6 +419,10 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
 
         {/* Tab Content Container */}
         <Box sx={{ flexGrow: 1, overflowY: 'auto', p: { xs: 2, sm: 2.5 }, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+          {task.projectId && (
+            <CoEditingWarningBanner projectId={task.projectId} taskId={task.id} />
+          )}
+
           {/* TAB 0: CHI TIẾT */}
           {activeTab === 0 && (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>

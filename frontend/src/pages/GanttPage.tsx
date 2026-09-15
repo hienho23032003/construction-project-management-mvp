@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import {
   Box,
   Paper,
@@ -24,10 +24,13 @@ import {
   useUpdateTaskMutation,
 } from '../hooks/useTasks';
 import { useUsersListQuery } from '../hooks/useEmployees';
+import { useAppSearchParams } from '../hooks/useAppSearchParams';
 import { InteractiveGantt } from '../components/gantt/InteractiveGantt';
 import { GanttSkeleton } from '../components/common/GanttSkeleton';
 import { EmptyStateIllustration } from '../components/common/EmptyStateIllustration';
 import { TaskFormModal, TaskFormData } from '../components/tasks/TaskFormModal';
+import { usePresenceHeartbeat } from '../hooks/usePresence';
+import { ProjectPresenceAvatars } from '../components/presence/ProjectPresenceAvatars';
 import { GanttTask } from '../types';
 
 const getInitialMonthRange = () => {
@@ -42,12 +45,22 @@ const getInitialMonthRange = () => {
 
 export const GanttPage: React.FC = () => {
   const { canEditTask } = useAuth();
+  const { getParam, getBooleanParam, setParams, removeParams } = useAppSearchParams();
   const initialMonth = useMemo(() => getInitialMonthRange(), []);
-  const [selectedProjectId, setSelectedProjectId] = useState<string>('ALL');
-  const [selectedStatus, setSelectedStatus] = useState<string>('ALL');
-  const [selectedDatePreset, setSelectedDatePreset] = useState<string>('THIS_MONTH');
-  const [customStartDate, setCustomStartDate] = useState<string>(initialMonth.start);
-  const [customEndDate, setCustomEndDate] = useState<string>(initialMonth.end);
+
+  const projectParam = getParam('projectId', 'ALL');
+  const statusParam = getParam('status', 'ALL');
+  const datePresetParam = getParam('datePreset', 'THIS_MONTH');
+  const fromDateParam = getParam('fromDate') || (datePresetParam === 'THIS_MONTH' ? initialMonth.start : '');
+  const toDateParam = getParam('toDate') || (datePresetParam === 'THIS_MONTH' ? initialMonth.end : '');
+  const editTaskIdParam = getParam('editTaskId') || getParam('taskId');
+  const createTaskParam = getBooleanParam('createTask');
+
+  const [selectedProjectId, setSelectedProjectId] = useState<string>(projectParam);
+  const [selectedStatus, setSelectedStatus] = useState<string>(statusParam);
+  const [selectedDatePreset, setSelectedDatePreset] = useState<string>(datePresetParam);
+  const [customStartDate, setCustomStartDate] = useState<string>(fromDateParam);
+  const [customEndDate, setCustomEndDate] = useState<string>(toDateParam);
 
   const [modalState, setModalState] = useState<{
     open: boolean;
@@ -56,14 +69,37 @@ export const GanttPage: React.FC = () => {
     projectId?: string;
     parentTaskId?: string | null;
   }>({
-    open: false,
-    mode: 'create',
-    taskId: null,
+    open: Boolean(editTaskIdParam || createTaskParam),
+    mode: editTaskIdParam ? 'edit' : 'create',
+    taskId: editTaskIdParam || null,
     projectId: undefined,
     parentTaskId: null,
   });
 
   const { data: projects = [], isLoading: isProjectsLoading } = useProjectsListQuery();
+
+  // Single task detail query if editTaskId is present in URL
+  const { data: taskToEditFromUrl } = useTaskDetailQuery(editTaskIdParam || undefined);
+
+  useEffect(() => {
+    if (editTaskIdParam) {
+      setModalState({
+        open: true,
+        mode: 'edit',
+        taskId: editTaskIdParam,
+        projectId: taskToEditFromUrl?.projectId,
+        parentTaskId: taskToEditFromUrl?.parentId || null,
+      });
+    } else if (createTaskParam) {
+      setModalState({
+        open: true,
+        mode: 'create',
+        taskId: null,
+        projectId: selectedProjectId !== 'ALL' ? selectedProjectId : undefined,
+        parentTaskId: null,
+      });
+    }
+  }, [editTaskIdParam, createTaskParam, taskToEditFromUrl, selectedProjectId]);
 
   const ganttQueryParams = useMemo(() => {
     const params: {
@@ -113,31 +149,56 @@ export const GanttPage: React.FC = () => {
   const handlePresetChange = (preset: string) => {
     setSelectedDatePreset(preset);
     const now = new Date();
+    let startStr = '';
+    let endStr = '';
     if (preset === 'ALL') {
-      setCustomStartDate('');
-      setCustomEndDate('');
+      startStr = '';
+      endStr = '';
     } else if (preset === 'THIS_MONTH') {
       const start = new Date(now.getFullYear(), now.getMonth(), 1);
       const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-      setCustomStartDate(format(start, 'yyyy-MM-dd'));
-      setCustomEndDate(format(end, 'yyyy-MM-dd'));
+      startStr = format(start, 'yyyy-MM-dd');
+      endStr = format(end, 'yyyy-MM-dd');
     } else if (preset === 'THIS_QUARTER') {
       const q = Math.floor(now.getMonth() / 3);
       const start = new Date(now.getFullYear(), q * 3, 1);
       const end = new Date(now.getFullYear(), q * 3 + 3, 0);
-      setCustomStartDate(format(start, 'yyyy-MM-dd'));
-      setCustomEndDate(format(end, 'yyyy-MM-dd'));
+      startStr = format(start, 'yyyy-MM-dd');
+      endStr = format(end, 'yyyy-MM-dd');
     } else if (preset === 'NEXT_6_MONTHS') {
       const start = new Date(now.getFullYear(), now.getMonth(), 1);
       const end = addDays(start, 180);
-      setCustomStartDate(format(start, 'yyyy-MM-dd'));
-      setCustomEndDate(format(end, 'yyyy-MM-dd'));
+      startStr = format(start, 'yyyy-MM-dd');
+      endStr = format(end, 'yyyy-MM-dd');
     } else if (preset === 'THIS_YEAR') {
       const start = new Date(now.getFullYear(), 0, 1);
       const end = new Date(now.getFullYear(), 11, 31);
-      setCustomStartDate(format(start, 'yyyy-MM-dd'));
-      setCustomEndDate(format(end, 'yyyy-MM-dd'));
+      startStr = format(start, 'yyyy-MM-dd');
+      endStr = format(end, 'yyyy-MM-dd');
     }
+    setCustomStartDate(startStr);
+    setCustomEndDate(endStr);
+    setParams({
+      datePreset: preset !== 'THIS_MONTH' ? preset : null,
+      fromDate: preset === 'CUSTOM' ? (startStr || null) : null,
+      toDate: preset === 'CUSTOM' ? (endStr || null) : null,
+    });
+  };
+
+  const handleCustomDateChange = (from?: string, to?: string) => {
+    if (from !== undefined) {
+      setCustomStartDate(from);
+      setParams({ fromDate: from || null });
+    }
+    if (to !== undefined) {
+      setCustomEndDate(to);
+      setParams({ toDate: to || null });
+    }
+  };
+
+  const handleStatusChange = (status: string) => {
+    setSelectedStatus(status);
+    setParams({ status: status !== 'ALL' ? status : null });
   };
 
   const tasksList = ganttData?.tasks || [];
@@ -147,14 +208,19 @@ export const GanttPage: React.FC = () => {
     if (task.type === 'project' || task.type === 'phase') {
       return;
     }
+    const tId = task.realTaskId || task.id;
     setModalState({
       open: true,
       mode: 'edit',
-      taskId: task.realTaskId || task.id,
+      taskId: tId,
       projectId: task.projectId,
       parentTaskId: task.parentId || null,
     });
-  }, []);
+    setParams({
+      editTaskId: tId,
+      createTask: null,
+    });
+  }, [setParams]);
 
   const handleOpenCreate = useCallback(() => {
     setModalState({
@@ -164,7 +230,12 @@ export const GanttPage: React.FC = () => {
       projectId: selectedProjectId !== 'ALL' ? selectedProjectId : undefined,
       parentTaskId: null,
     });
-  }, [selectedProjectId]);
+    setParams({
+      createTask: 'true',
+      editTaskId: null,
+      taskId: null,
+    });
+  }, [selectedProjectId, setParams]);
 
   const handleCloseModal = useCallback(() => {
     setModalState({
@@ -174,13 +245,24 @@ export const GanttPage: React.FC = () => {
       projectId: undefined,
       parentTaskId: null,
     });
-  }, []);
+    removeParams('editTaskId', 'taskId', 'createTask');
+  }, [removeParams]);
+
+  const handleProjectSelect = (val: any) => {
+    const nextProjId = val ? val.id : 'ALL';
+    setSelectedProjectId(nextProjId);
+    setParams({ projectId: nextProjId !== 'ALL' ? nextProjId : null });
+  };
 
   const handleSaveTask = async (formData: TaskFormData) => {
+    const cleanActualEndDate = formData.actualEndDate && formData.actualEndDate.trim() !== '' ? formData.actualEndDate : undefined;
     if (modalState.mode === 'edit' && modalState.taskId) {
       await updateTaskMutation.mutateAsync({
         id: modalState.taskId,
-        data: formData,
+        data: {
+          ...formData,
+          actualEndDate: cleanActualEndDate,
+        },
       });
     } else {
       const finalProjectId =
@@ -192,6 +274,7 @@ export const GanttPage: React.FC = () => {
 
       await createTaskMutation.mutateAsync({
         ...formData,
+        actualEndDate: cleanActualEndDate,
         projectId: finalProjectId,
         parentId: modalState.parentTaskId || undefined,
       });
@@ -211,7 +294,7 @@ export const GanttPage: React.FC = () => {
             ? { id: 'ALL', code: 'ALL', name: 'Tất cả công trình (Tổng quan)' }
             : projects.find((p) => p.id === selectedProjectId) || { id: 'ALL', code: 'ALL', name: 'Tất cả công trình (Tổng quan)' }
         }
-        onChange={(_, val) => setSelectedProjectId(val ? val.id : 'ALL')}
+        onChange={(_, val) => handleProjectSelect(val)}
         isOptionEqualToValue={(opt, val) => opt.id === val.id}
         renderInput={(params) => (
           <TextField
@@ -230,7 +313,7 @@ export const GanttPage: React.FC = () => {
         <FormControl size="small" sx={{ width: { xs: '50%', sm: 145 }, minWidth: { xs: '50%', sm: 145 } }}>
           <Select
             value={selectedStatus}
-            onChange={(e) => setSelectedStatus(e.target.value)}
+            onChange={(e) => handleStatusChange(e.target.value)}
             displayEmpty
             sx={{
               height: 32,
@@ -274,7 +357,7 @@ export const GanttPage: React.FC = () => {
             label="Từ ngày"
             value={customStartDate ? new Date(customStartDate) : null}
             onChange={(newVal) =>
-              setCustomStartDate(newVal && !isNaN(newVal.getTime()) ? format(newVal, 'yyyy-MM-dd') : '')
+              handleCustomDateChange(newVal && !isNaN(newVal.getTime()) ? format(newVal, 'yyyy-MM-dd') : '', undefined)
             }
             slotProps={{
               textField: {
@@ -292,7 +375,7 @@ export const GanttPage: React.FC = () => {
             label="Đến ngày"
             value={customEndDate ? new Date(customEndDate) : null}
             onChange={(newVal) =>
-              setCustomEndDate(newVal && !isNaN(newVal.getTime()) ? format(newVal, 'yyyy-MM-dd') : '')
+              handleCustomDateChange(undefined, newVal && !isNaN(newVal.getTime()) ? format(newVal, 'yyyy-MM-dd') : '')
             }
             slotProps={{
               textField: {
@@ -317,6 +400,11 @@ export const GanttPage: React.FC = () => {
       )}
     </Box>
   );
+
+  usePresenceHeartbeat({
+    projectId: selectedProjectId !== 'ALL' ? selectedProjectId : undefined,
+    enabled: selectedProjectId !== 'ALL',
+  });
 
   return (
     <Box
@@ -356,6 +444,9 @@ export const GanttPage: React.FC = () => {
             Theo dõi dòng thời gian thi công, phân cấp công việc và kéo thả timeline để di chuyển góc nhìn trực quan
           </Typography>
         </Box>
+        {selectedProjectId !== 'ALL' && (
+          <ProjectPresenceAvatars projectId={selectedProjectId} />
+        )}
       </Box>
 
       {/* Interactive Gantt Component or Skeleton Loading or Empty State */}
