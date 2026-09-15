@@ -12,15 +12,8 @@ public static class DbInitializer
     {
         await context.Database.EnsureCreatedAsync();
 
-        // Ensure new schema columns exist in SQLite without losing data
-        try
-        {
-            await context.Database.ExecuteSqlRawAsync("ALTER TABLE \"UserLoginSessions\" ADD COLUMN \"LastActiveTime\" TEXT NULL;");
-        }
-        catch
-        {
-            // Column already exists, safely ignore
-        }
+        // Tự động đồng bộ Schema: Tự tạo bảng mới hoặc thêm các cột/field mới vào SQLite DB mà không làm mất dữ liệu
+        await AutoSyncSchemaAsync(context);
 
         if (await context.Users.AnyAsync())
         {
@@ -759,5 +752,148 @@ public static class DbInitializer
         );
 
         await context.SaveChangesAsync();
+    }
+
+    /// <summary>
+    /// Tự động đồng bộ Schema: Tự tạo bảng mới hoặc thêm các cột/field mới vào SQLite DB mà không làm mất dữ liệu cũ.
+    /// </summary>
+    private static async Task AutoSyncSchemaAsync(AppDbContext context)
+    {
+        try
+        {
+            var connection = context.Database.GetDbConnection();
+            var wasOpen = connection.State == System.Data.ConnectionState.Open;
+            if (!wasOpen)
+            {
+                await connection.OpenAsync();
+            }
+
+            // Lấy danh sách tất cả các bảng hiện có trong SQLite
+            var existingTables = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            using (var cmd = connection.CreateCommand())
+            {
+                cmd.CommandText = "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%';";
+                using var reader = await cmd.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+                    existingTables.Add(reader.GetString(0));
+                }
+            }
+
+            // Duyệt qua tất cả các Entity trong Model EF Core
+            var entityTypes = context.Model.GetEntityTypes();
+            foreach (var entityType in entityTypes)
+            {
+                var tableName = entityType.GetTableName();
+                if (string.IsNullOrEmpty(tableName)) continue;
+
+                if (!existingTables.Contains(tableName))
+                {
+                    // Nếu bảng chưa có trong DB, tự động tạo bảng mới
+                    var createTableSql = GenerateCreateTableSql(entityType);
+                    if (!string.IsNullOrEmpty(createTableSql))
+                    {
+                        using var createCmd = connection.CreateCommand();
+                        createCmd.CommandText = createTableSql;
+                        await createCmd.ExecuteNonQueryAsync();
+                    }
+                }
+                else
+                {
+                    // Nếu bảng đã tồn tại, kiểm tra xem có cột/field nào mới thêm không
+                    var existingColumns = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                    using (var infoCmd = connection.CreateCommand())
+                    {
+                        infoCmd.CommandText = $"PRAGMA table_info(\"{tableName}\");";
+                        using var reader = await infoCmd.ExecuteReaderAsync();
+                        while (await reader.ReadAsync())
+                        {
+                            existingColumns.Add(reader.GetString(1)); // name column
+                        }
+                    }
+
+                    foreach (var property in entityType.GetProperties())
+                    {
+                        var columnName = property.GetColumnName();
+                        if (string.IsNullOrEmpty(columnName)) continue;
+
+                        if (!existingColumns.Contains(columnName))
+                        {
+                            // Cột mới chưa có trong DB -> Tự động chạy ALTER TABLE ADD COLUMN
+                            var sqliteType = GetSqliteType(property.ClrType);
+                            var alterSql = $"ALTER TABLE \"{tableName}\" ADD COLUMN \"{columnName}\" {sqliteType} NULL;";
+                            try
+                            {
+                                using var alterCmd = connection.CreateCommand();
+                                alterCmd.CommandText = alterSql;
+                                await alterCmd.ExecuteNonQueryAsync();
+                            }
+                            catch
+                            {
+                                // Safe ignore if already exists
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (!wasOpen)
+            {
+                await connection.CloseAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[AutoSyncSchema Warning] {ex.Message}");
+        }
+    }
+
+    private static string GetSqliteType(Type type)
+    {
+        var underlying = Nullable.GetUnderlyingType(type) ?? type;
+        if (underlying == typeof(int) || underlying == typeof(long) || underlying == typeof(short) ||
+            underlying == typeof(byte) || underlying == typeof(bool) || underlying.IsEnum)
+        {
+            return "INTEGER";
+        }
+        if (underlying == typeof(double) || underlying == typeof(float) || underlying == typeof(decimal))
+        {
+            return "REAL";
+        }
+        if (underlying == typeof(byte[]))
+        {
+            return "BLOB";
+        }
+        return "TEXT";
+    }
+
+    private static string GenerateCreateTableSql(Microsoft.EntityFrameworkCore.Metadata.IEntityType entityType)
+    {
+        var tableName = entityType.GetTableName();
+        var properties = entityType.GetProperties().ToList();
+        var primaryKey = entityType.FindPrimaryKey();
+        var pkProperties = primaryKey?.Properties.Select(p => p.GetColumnName()).ToHashSet(StringComparer.OrdinalIgnoreCase) ?? new HashSet<string>();
+
+        var columnDefs = new List<string>();
+        foreach (var p in properties)
+        {
+            var colName = p.GetColumnName();
+            var colType = GetSqliteType(p.ClrType);
+            var isPk = pkProperties.Contains(colName);
+
+            var def = $"\"{colName}\" {colType}";
+            if (isPk && pkProperties.Count == 1)
+            {
+                def += " PRIMARY KEY";
+            }
+            columnDefs.Add(def);
+        }
+
+        if (pkProperties.Count > 1)
+        {
+            columnDefs.Add($"PRIMARY KEY ({string.Join(", ", pkProperties.Select(k => $"\"{k}\""))})");
+        }
+
+        return $"CREATE TABLE IF NOT EXISTS \"{tableName}\" (\n  {string.Join(",\n  ", columnDefs)}\n);";
     }
 }
