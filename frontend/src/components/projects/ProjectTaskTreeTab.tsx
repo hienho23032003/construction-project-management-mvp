@@ -100,9 +100,9 @@ export const ProjectTaskTreeTab: React.FC<ProjectTaskTreeTabProps> = memo(({
         <TableHead>
           <TableRow>
             <TableCell sx={{ width: '50px', textAlign: 'center', whiteSpace: 'nowrap', py: 1.5 }}>STT</TableCell>
-            <TableCell sx={{ width: '35%', whiteSpace: 'nowrap', py: 1.5 }}>Hạng Mục / Công Việc</TableCell>
-            <TableCell sx={{ width: '20%', whiteSpace: 'nowrap', py: 1.5 }}>Người Thực Hiện</TableCell>
-            <TableCell sx={{ width: '16%', whiteSpace: 'nowrap', py: 1.5 }}>Thời Gian</TableCell>
+            <TableCell sx={{ width: '30%', whiteSpace: 'nowrap', py: 1.5 }}>Hạng Mục / Công Việc</TableCell>
+            <TableCell sx={{ width: '22%', whiteSpace: 'nowrap', py: 1.5 }}>Người Thực Hiện</TableCell>
+            <TableCell sx={{ width: '15%', whiteSpace: 'nowrap', py: 1.5 }}>Thời Gian</TableCell>
             <TableCell sx={{ width: '14%', whiteSpace: 'nowrap', py: 1.5 }}>Trạng Thái</TableCell>
             <TableCell sx={{ width: '15%', whiteSpace: 'nowrap', py: 1.5 }}>Tiến Độ</TableCell>
             <TableCell align="right" sx={{ whiteSpace: 'nowrap', py: 1.5 }}>Thao Tác</TableCell>

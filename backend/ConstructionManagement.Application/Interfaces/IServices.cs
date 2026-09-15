@@ -38,8 +38,14 @@ public interface IUserSessionService
     Task<bool> CloseSessionAsync(Guid sessionId);
     Task<bool> PingSessionAsync(Guid sessionId, Guid userId);
     Task<bool> LeaveSessionAsync(Guid sessionId);
-    Task<ApiResponse<PagedResult<UserLoginSessionDto>>> GetLoginHistoryAsync(DateTime? fromDate, DateTime? toDate, Guid? userId, string? search, PaginationParams pagination);
-    Task<ApiResponse<LoginSessionStatsDto>> GetSessionStatsAsync();
+    Task<ApiResponse<PagedResult<UserLoginSessionDto>>> GetLoginHistoryAsync(
+        DateTime? fromDate,
+        DateTime? toDate,
+        Guid? userId,
+        string? status,
+        string? search,
+        PaginationParams pagination);
+    Task<ApiResponse<LoginSessionStatsDto>> GetSessionStatsAsync(DateTime? fromDate = null, DateTime? toDate = null);
 }
 
 public interface IUserService

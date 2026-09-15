@@ -187,11 +187,13 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
   });
 
   const handleFormSubmit = async (data: TaskFormData) => {
+    const assignees = Array.isArray(data.assigneeIds) ? data.assigneeIds : [];
     const payload: any = {
       ...data,
       projectId: targetProjectId,
       parentId: parentTaskId || null,
-      assigneeUserIds: data.assigneeIds && data.assigneeIds.length > 0 ? data.assigneeIds : [],
+      assigneeIds: assignees,
+      assigneeUserIds: assignees,
     };
     if (!data.actualEndDate || data.actualEndDate.trim() === '') {
       delete payload.actualEndDate;
@@ -203,12 +205,15 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
     <Dialog
       open={open}
       onClose={onClose}
-      maxWidth="sm"
+      maxWidth="md"
       fullWidth
       PaperProps={{
         sx: {
           borderRadius: '16px',
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+          maxHeight: '90vh',
+          display: 'flex',
+          flexDirection: 'column',
         },
       }}
     >
@@ -217,14 +222,14 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
           fontWeight: 700,
           fontSize: '1.25rem',
           px: 3,
-          pt: 2.5,
-          pb: 1.5,
+          py: 2,
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
+          borderBottom: '1px solid #e2e8f0',
         }}
       >
-        <Typography variant="h3" sx={{ fontWeight: 700, fontSize: '1.15rem', color: '#0f172a' }}>
+        <Typography variant="h3" sx={{ fontWeight: 700, fontSize: '1.15rem', color: '#0f172a', pr: 2, wordBreak: 'break-word' }}>
           {editingTask ? `Chỉnh Sửa Công Việc: ${editingTask.name}` : parentTaskId ? 'Thêm Công Việc Con' : 'Tạo Công Việc Mới'}
         </Typography>
         <IconButton
@@ -233,14 +238,15 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
           size="small"
           sx={{
             color: '#94a3b8',
+            flexShrink: 0,
             '&:hover': { color: '#0f172a', bgcolor: '#f1f5f9' },
           }}
         >
           <X size={20} />
         </IconButton>
       </DialogTitle>
-      <form onSubmit={handleSubmit(handleFormSubmit)}>
-        <DialogContent dividers sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, pt: 2.5 }}>
+      <form onSubmit={handleSubmit(handleFormSubmit)} style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, overflow: 'hidden' }}>
+        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, p: 3, overflowY: 'auto' }}>
           {editingTask && targetProjectId && (
             <CoEditingWarningBanner projectId={targetProjectId} taskId={editingTask.id} />
           )}
@@ -451,7 +457,7 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
                   <TextField
                     {...params}
                     label="Người Thực Hiện (Chỉ nhân sự thuộc dự án)"
-                    placeholder="Chọn nhân sự trong dự án..."
+                    placeholder={field.value?.length ? '' : 'Chọn nhân sự trong dự án...'}
                   />
                 )}
                 renderTags={(value, getTagProps) =>
@@ -461,19 +467,48 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
                       key={option.id}
                       label={option.fullName}
                       size="small"
-                      sx={{ height: 24, fontSize: '0.75rem', fontWeight: 600, bgcolor: '#e0f2fe', color: '#0369a1' }}
+                      sx={{
+                        m: '2px',
+                        height: 26,
+                        fontSize: '0.75rem',
+                        fontWeight: 600,
+                        bgcolor: '#e0f2fe',
+                        color: '#0369a1',
+                        '& .MuiChip-deleteIcon': {
+                          color: '#0284c7',
+                          '&:hover': { color: '#0369a1' },
+                        },
+                      }}
                     />
                   ))
                 }
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    flexWrap: 'wrap',
+                    gap: '4px',
+                    p: '6px 10px',
+                  },
+                }}
               />
             )}
           />
         </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2.5 }}>
-          <Button onClick={onClose} variant="outlined" color="inherit" disabled={isSubmitting}>
+        <DialogActions
+          sx={{
+            px: 3,
+            py: 2,
+            bgcolor: '#f8fafc',
+            borderTop: '1px solid #e2e8f0',
+            flexShrink: 0,
+            display: 'flex',
+            justifyContent: 'flex-end',
+            gap: 1.5,
+          }}
+        >
+          <Button onClick={onClose} variant="outlined" color="inherit" disabled={isSubmitting} sx={{ borderRadius: 1.5, textTransform: 'none', fontWeight: 600 }}>
             Hủy Bỏ
           </Button>
-          <Button type="submit" variant="contained" sx={{ bgcolor: '#0284c7' }} disabled={isSubmitting}>
+          <Button type="submit" variant="contained" sx={{ bgcolor: '#0284c7', borderRadius: 1.5, textTransform: 'none', fontWeight: 600, px: 3 }} disabled={isSubmitting}>
             {isSubmitting ? 'Đang lưu...' : 'Lưu Công Việc'}
           </Button>
         </DialogActions>

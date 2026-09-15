@@ -95,7 +95,10 @@ export const useUpdateProjectMutation = () => {
     onSuccess: (_, variables: any) => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       queryClient.invalidateQueries({ queryKey: ['projects-list'] });
-      queryClient.invalidateQueries({ queryKey: ['project', variables.id] });
+      queryClient.invalidateQueries({ queryKey: ['project'] });
+      if (variables?.id) {
+        queryClient.invalidateQueries({ queryKey: ['project', variables.id] });
+      }
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
       showSuccess('Cập nhật thông tin dự án thành công!');
     },
@@ -114,6 +117,7 @@ export const useDeleteProjectMutation = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       queryClient.invalidateQueries({ queryKey: ['projects-list'] });
+      queryClient.invalidateQueries({ queryKey: ['project'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
       showSuccess('Đã xóa dự án thành công!');
     },
@@ -135,7 +139,9 @@ export const useAddProjectMemberMutation = (projectId?: string) => {
     onSuccess: () => {
       if (projectId) {
         queryClient.invalidateQueries({ queryKey: ['project', projectId] });
+        queryClient.invalidateQueries({ queryKey: ['project-members', projectId] });
       }
+      queryClient.invalidateQueries({ queryKey: ['project-members'] });
       showSuccess('Thêm nhân sự vào ban quản lý dự án thành công!');
     },
     onError: (err: any) => {
@@ -156,7 +162,9 @@ export const useRemoveProjectMemberMutation = (projectId?: string) => {
     onSuccess: () => {
       if (projectId) {
         queryClient.invalidateQueries({ queryKey: ['project', projectId] });
+        queryClient.invalidateQueries({ queryKey: ['project-members', projectId] });
       }
+      queryClient.invalidateQueries({ queryKey: ['project-members'] });
       showSuccess('Đã xóa nhân sự khỏi dự án!');
     },
     onError: (err: any) => {

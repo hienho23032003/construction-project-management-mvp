@@ -67,7 +67,7 @@ export const useTaskDetailQuery = (taskId?: string | null) => {
       return res.data.data;
     },
     enabled: Boolean(taskId),
-    staleTime: 30_000,
+    staleTime: 0,
   });
 };
 
@@ -126,13 +126,17 @@ export const useCreateTaskMutation = () => {
     mutationFn: (data: any) => taskApi.create(data),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['task-detail'] });
       queryClient.invalidateQueries({ queryKey: ['gantt-data'] });
       queryClient.invalidateQueries({ queryKey: ['task-activities'] });
-      if (variables.projectId) {
+      queryClient.invalidateQueries({ queryKey: ['project'] });
+      queryClient.invalidateQueries({ queryKey: ['project-task-tree'] });
+      if (variables?.projectId) {
         queryClient.invalidateQueries({ queryKey: ['project', variables.projectId] });
         queryClient.invalidateQueries({ queryKey: ['project-task-tree', variables.projectId] });
       }
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['users-workload'] });
       showSuccess('Tạo công việc mới thành công!');
     },
     onError: (err: any) => {
@@ -147,13 +151,19 @@ export const useUpdateTaskMutation = () => {
 
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: any }) => taskApi.update(id, data),
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['task-detail'] });
+      if (variables?.id) {
+        queryClient.invalidateQueries({ queryKey: ['task-detail', variables.id] });
+        queryClient.invalidateQueries({ queryKey: ['task', variables.id] });
+      }
       queryClient.invalidateQueries({ queryKey: ['gantt-data'] });
       queryClient.invalidateQueries({ queryKey: ['task-activities'] });
       queryClient.invalidateQueries({ queryKey: ['project'] });
       queryClient.invalidateQueries({ queryKey: ['project-task-tree'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['users-workload'] });
       showSuccess('Cập nhật thông tin công việc thành công!');
     },
     onError: (err: any) => {
@@ -169,8 +179,12 @@ export const useUpdateTaskStatusMutation = () => {
   return useMutation({
     mutationFn: ({ id, status }: { id: string; status: TaskStatus }) =>
       taskApi.updateStatus(id, status),
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['task-detail'] });
+      if (variables?.id) {
+        queryClient.invalidateQueries({ queryKey: ['task-detail', variables.id] });
+      }
       queryClient.invalidateQueries({ queryKey: ['gantt-data'] });
       queryClient.invalidateQueries({ queryKey: ['task-activities'] });
       queryClient.invalidateQueries({ queryKey: ['project'] });
@@ -191,8 +205,12 @@ export const useUpdateTaskProgressMutation = () => {
   return useMutation({
     mutationFn: ({ id, progress }: { id: string; progress: number }) =>
       taskApi.updateProgress(id, progress),
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['task-detail'] });
+      if (variables?.id) {
+        queryClient.invalidateQueries({ queryKey: ['task-detail', variables.id] });
+      }
       queryClient.invalidateQueries({ queryKey: ['gantt-data'] });
       queryClient.invalidateQueries({ queryKey: ['task-activities'] });
       queryClient.invalidateQueries({ queryKey: ['project'] });
@@ -213,8 +231,12 @@ export const useUpdateTaskDatesMutation = () => {
   return useMutation({
     mutationFn: ({ id, startDate, plannedEndDate }: { id: string; startDate: string; plannedEndDate: string }) =>
       taskApi.updateDates(id, startDate, plannedEndDate),
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['task-detail'] });
+      if (variables?.id) {
+        queryClient.invalidateQueries({ queryKey: ['task-detail', variables.id] });
+      }
       queryClient.invalidateQueries({ queryKey: ['gantt-data'] });
       queryClient.invalidateQueries({ queryKey: ['task-activities'] });
       queryClient.invalidateQueries({ queryKey: ['project'] });
@@ -236,6 +258,7 @@ export const useDeleteTaskMutation = () => {
     mutationFn: (id: string) => taskApi.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['task-detail'] });
       queryClient.invalidateQueries({ queryKey: ['gantt-data'] });
       queryClient.invalidateQueries({ queryKey: ['task-activities'] });
       queryClient.invalidateQueries({ queryKey: ['project'] });

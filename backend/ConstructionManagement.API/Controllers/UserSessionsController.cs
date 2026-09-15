@@ -22,19 +22,22 @@ public class UserSessionsController : BaseApiController
         [FromQuery] DateTime? fromDate,
         [FromQuery] DateTime? toDate,
         [FromQuery] Guid? userId,
+        [FromQuery] string? status,
         [FromQuery] string? search,
         [FromQuery] int pageIndex = 1,
         [FromQuery] int pageSize = 15)
     {
         var pagination = new PaginationParams { PageIndex = pageIndex, PageSize = pageSize };
-        var result = await _sessionService.GetLoginHistoryAsync(fromDate, toDate, userId, search, pagination);
+        var result = await _sessionService.GetLoginHistoryAsync(fromDate, toDate, userId, status, search, pagination);
         return Ok(result);
     }
 
     [HttpGet("stats")]
-    public async Task<IActionResult> GetStats()
+    public async Task<IActionResult> GetStats(
+        [FromQuery] DateTime? fromDate,
+        [FromQuery] DateTime? toDate)
     {
-        var result = await _sessionService.GetSessionStatsAsync();
+        var result = await _sessionService.GetSessionStatsAsync(fromDate, toDate);
         return Ok(result);
     }
 

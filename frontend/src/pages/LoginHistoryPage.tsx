@@ -16,6 +16,7 @@ import {
   MenuItem,
   IconButton,
   Tooltip,
+  Button,
 } from '@mui/material';
 import { CommonTable, ColumnDef } from '../components/common/CommonTable';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
@@ -30,6 +31,7 @@ import {
   Monitor,
   Smartphone,
   Globe,
+  X,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { formatDateTime as formatLocalDateTime } from '../utils/dateUtils';
@@ -525,7 +527,10 @@ export const LoginHistoryPage: React.FC = () => {
                 size="small"
                 placeholder="Tìm kiếm nhân sự, email, IP..."
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setPageIndex(1);
+                }}
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
@@ -542,7 +547,10 @@ export const LoginHistoryPage: React.FC = () => {
                 <Select
                   value={selectedUser}
                   label="Nhân Viên"
-                  onChange={(e) => setSelectedUser(e.target.value)}
+                  onChange={(e) => {
+                    setSelectedUser(e.target.value);
+                    setPageIndex(1);
+                  }}
                 >
                   <MenuItem value="">Tất cả nhân viên</MenuItem>
                   {userList.map((u) => (
@@ -560,7 +568,10 @@ export const LoginHistoryPage: React.FC = () => {
                 <Select
                   value={status}
                   label="Trạng Thái"
-                  onChange={(e) => setStatus(e.target.value)}
+                  onChange={(e) => {
+                    setStatus(e.target.value);
+                    setPageIndex(1);
+                  }}
                 >
                   <MenuItem value="">Tất cả trạng thái</MenuItem>
                   <MenuItem value="Active">Đang hoạt động</MenuItem>
@@ -574,7 +585,10 @@ export const LoginHistoryPage: React.FC = () => {
               <DatePicker
                 label="Từ Ngày"
                 value={fromDate}
-                onChange={(newVal) => setFromDate(newVal)}
+                onChange={(newVal) => {
+                  setFromDate(newVal);
+                  setPageIndex(1);
+                }}
                 slotProps={{
                   textField: {
                     size: 'small',
@@ -588,7 +602,10 @@ export const LoginHistoryPage: React.FC = () => {
               <DatePicker
                 label="Đến Ngày"
                 value={toDate}
-                onChange={(newVal) => setToDate(newVal)}
+                onChange={(newVal) => {
+                  setToDate(newVal);
+                  setPageIndex(1);
+                }}
                 slotProps={{
                   textField: {
                     size: 'small',
@@ -598,6 +615,28 @@ export const LoginHistoryPage: React.FC = () => {
               />
             </Grid>
           </Grid>
+
+          {(search || selectedUser || status || fromDate || toDate) && (
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1.5, pt: 1.5, borderTop: '1px dashed #e2e8f0' }}>
+              <Button
+                variant="text"
+                size="small"
+                color="inherit"
+                startIcon={<X size={15} />}
+                onClick={() => {
+                  setSearch('');
+                  setSelectedUser('');
+                  setStatus('');
+                  setFromDate(null);
+                  setToDate(null);
+                  setPageIndex(1);
+                }}
+                sx={{ textTransform: 'none', color: '#64748b', fontSize: '0.8125rem' }}
+              >
+                Xóa tất cả bộ lọc
+              </Button>
+            </Box>
+          )}
         </Paper>
 
         {/* Sessions Table */}

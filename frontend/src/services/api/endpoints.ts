@@ -107,11 +107,15 @@ const sanitizeTaskPayload = (data: any) => {
   if ('parentId' in clean && (!clean.parentId || clean.parentId === 'null' || clean.parentId === 'undefined')) {
     clean.parentId = null;
   }
-  if ('assigneeUserIds' in clean && (!clean.assigneeUserIds || clean.assigneeUserIds.length === 0)) {
-    delete clean.assigneeUserIds;
+  if ('assigneeUserIds' in clean && clean.assigneeUserIds !== undefined && clean.assigneeUserIds !== null) {
+    if (!Array.isArray(clean.assigneeUserIds)) {
+      clean.assigneeUserIds = [clean.assigneeUserIds];
+    }
   }
-  if ('assigneeIds' in clean && (!clean.assigneeIds || clean.assigneeIds.length === 0)) {
-    delete clean.assigneeIds;
+  if ('assigneeIds' in clean && clean.assigneeIds !== undefined && clean.assigneeIds !== null) {
+    if (!Array.isArray(clean.assigneeIds)) {
+      clean.assigneeIds = [clean.assigneeIds];
+    }
   }
   return clean;
 };

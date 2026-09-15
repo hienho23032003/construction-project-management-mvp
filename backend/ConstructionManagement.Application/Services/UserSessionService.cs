@@ -105,28 +105,56 @@ public class UserSessionService : IUserSessionService
         DateTime? fromDate,
         DateTime? toDate,
         Guid? userId,
+        string? status,
         string? search,
         PaginationParams pagination)
     {
+        var now = DateTime.UtcNow;
+        var onlineThreshold = now.AddMinutes(-2);
+
         var query = _context.UserLoginSessions
             .Include(s => s.User)
             .AsNoTracking();
 
-        if (userId.HasValue)
+        if (userId.HasValue && userId.Value != Guid.Empty)
         {
             query = query.Where(s => s.UserId == userId.Value);
         }
 
         if (fromDate.HasValue)
         {
-            var fromUtc = fromDate.Value.Date;
+            // Vietnam UTC+7 -> fromDate 00:00:00 VN corresponds to (fromDate - 7h) in UTC
+            var fromUtc = fromDate.Value.Date.AddHours(-7);
             query = query.Where(s => s.LoginTime >= fromUtc);
         }
 
         if (toDate.HasValue)
         {
-            var toUtc = toDate.Value.Date.AddDays(1);
+            // Vietnam UTC+7 -> toDate 23:59:59 VN corresponds to (toDate + 1 day - 7h) in UTC
+            var toUtc = toDate.Value.Date.AddDays(1).AddHours(-7);
             query = query.Where(s => s.LoginTime < toUtc);
+        }
+
+        if (!string.IsNullOrWhiteSpace(status))
+        {
+            var st = status.Trim();
+            if (st.Equals("Active", StringComparison.OrdinalIgnoreCase))
+            {
+                query = query.Where(s => s.Status == SessionStatus.Active &&
+                    ((s.LastActiveTime.HasValue && s.LastActiveTime.Value >= onlineThreshold) ||
+                     (!s.LastActiveTime.HasValue && s.LoginTime >= onlineThreshold)));
+            }
+            else if (st.Equals("LoggedOut", StringComparison.OrdinalIgnoreCase))
+            {
+                query = query.Where(s => s.Status == SessionStatus.LoggedOut ||
+                    (s.Status == SessionStatus.Active &&
+                     ((s.LastActiveTime.HasValue && s.LastActiveTime.Value < onlineThreshold) ||
+                      (!s.LastActiveTime.HasValue && s.LoginTime < onlineThreshold))));
+            }
+            else if (st.Equals("Expired", StringComparison.OrdinalIgnoreCase))
+            {
+                query = query.Where(s => s.Status == SessionStatus.Expired);
+            }
         }
 
         if (!string.IsNullOrWhiteSpace(search))
@@ -148,9 +176,6 @@ public class UserSessionService : IUserSessionService
             .Take(pageSize)
             .ToListAsync();
 
-        var now = DateTime.UtcNow;
-        var onlineThreshold = now.AddMinutes(-2);
-
         var items = rawItems.Select(s =>
         {
             var lastActivity = s.LastActiveTime ?? s.LoginTime;
@@ -168,7 +193,7 @@ public class UserSessionService : IUserSessionService
             }
             else
             {
-                resolvedStatus = SessionStatus.LoggedOut;
+                resolvedStatus = s.Status == SessionStatus.Expired ? SessionStatus.Expired : SessionStatus.LoggedOut;
                 resolvedLogoutTime = s.LogoutTime ?? lastActivity;
                 resolvedDuration = s.DurationMinutes ?? Math.Round(((s.LogoutTime ?? lastActivity) - s.LoginTime).TotalMinutes, 1);
             }
@@ -204,13 +229,28 @@ public class UserSessionService : IUserSessionService
         return ApiResponse<PagedResult<UserLoginSessionDto>>.Ok(result);
     }
 
-    public async Task<ApiResponse<LoginSessionStatsDto>> GetSessionStatsAsync()
+    public async Task<ApiResponse<LoginSessionStatsDto>> GetSessionStatsAsync(DateTime? fromDate = null, DateTime? toDate = null)
     {
-        var today = DateTime.UtcNow.Date;
+        var now = DateTime.UtcNow;
+        var today = now.Date.AddHours(-7); // Vietnam start of today in UTC
         var tomorrow = today.AddDays(1);
-        var onlineThreshold = DateTime.UtcNow.AddMinutes(-2);
+        var onlineThreshold = now.AddMinutes(-2);
 
-        var totalSessions = await _context.UserLoginSessions.CountAsync();
+        var query = _context.UserLoginSessions.AsNoTracking();
+
+        if (fromDate.HasValue)
+        {
+            var fromUtc = fromDate.Value.Date.AddHours(-7);
+            query = query.Where(s => s.LoginTime >= fromUtc);
+        }
+
+        if (toDate.HasValue)
+        {
+            var toUtc = toDate.Value.Date.AddDays(1).AddHours(-7);
+            query = query.Where(s => s.LoginTime < toUtc);
+        }
+
+        var totalSessions = await query.CountAsync();
 
         var activeOnlineUsers = await _context.UserLoginSessions
             .Where(s => s.Status == SessionStatus.Active &&
@@ -225,12 +265,12 @@ public class UserSessionService : IUserSessionService
                         (s.Status == SessionStatus.Active && (s.LastActiveTime ?? s.LoginTime) < onlineThreshold && (s.LastActiveTime ?? s.LoginTime) >= today))
             .CountAsync();
 
-        var allClosedSessions = await _context.UserLoginSessions
+        var closedSessions = await query
             .Where(s => s.DurationMinutes.HasValue && s.DurationMinutes > 0)
             .Select(s => s.DurationMinutes!.Value)
             .ToListAsync();
 
-        var avgDuration = allClosedSessions.DefaultIfEmpty(0).Average();
+        var avgDuration = closedSessions.DefaultIfEmpty(0).Average();
 
         return ApiResponse<LoginSessionStatsDto>.Ok(new LoginSessionStatsDto
         {
