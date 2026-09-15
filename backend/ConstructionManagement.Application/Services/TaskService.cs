@@ -12,15 +12,18 @@ public class TaskService : ITaskService
     private readonly IAppDbContext _context;
     private readonly IActivityLogService _activityLogService;
     private readonly INotificationService _notificationService;
+    private readonly IFileStorageService _fileStorageService;
 
     public TaskService(
         IAppDbContext context,
         IActivityLogService activityLogService,
-        INotificationService notificationService)
+        INotificationService notificationService,
+        IFileStorageService fileStorageService)
     {
         _context = context;
         _activityLogService = activityLogService;
         _notificationService = notificationService;
+        _fileStorageService = fileStorageService;
     }
 
     public async Task<ApiResponse<PagedResult<TaskDto>>> GetAllTasksAsync(
@@ -120,6 +123,7 @@ public class TaskService : ITaskService
                 FullName = a.User.FullName,
                 Email = a.User.Email,
                 Department = a.User.Department,
+                AvatarUrl = a.User.AvatarUrl,
                 AssignedAt = a.AssignedAt
             }).ToList(),
             SubTaskCount = subtaskCounts.ContainsKey(t.Id) ? subtaskCounts[t.Id] : 0,
@@ -182,6 +186,7 @@ public class TaskService : ITaskService
                 FullName = a.User.FullName,
                 Email = a.User.Email,
                 Department = a.User.Department,
+                AvatarUrl = a.User.AvatarUrl,
                 AssignedAt = a.AssignedAt
             }).ToList(),
             SubTaskCount = subtaskCounts.ContainsKey(t.Id) ? subtaskCounts[t.Id] : 0,
@@ -255,6 +260,7 @@ public class TaskService : ITaskService
                 FullName = a.User.FullName,
                 Email = a.User.Email,
                 Department = a.User.Department,
+                AvatarUrl = a.User.AvatarUrl,
                 AssignedAt = a.AssignedAt
             }).ToList(),
             Dependencies = t.Predecessors.Select(p => new TaskDependencyDto
@@ -292,7 +298,8 @@ public class TaskService : ITaskService
             Priority = request.Priority,
             StartDate = request.StartDate,
             PlannedEndDate = request.PlannedEndDate,
-            Progress = request.Progress,
+            ActualEndDate = request.Status == TaskItemStatus.Completed ? (request.ActualEndDate ?? DateTime.UtcNow) : request.ActualEndDate,
+            Progress = request.Status == TaskItemStatus.Completed ? 100.0 : request.Progress,
             Weight = request.Weight > 0 ? request.Weight : 1.0,
             SortOrder = request.SortOrder,
             CreatedById = currentUserId,
@@ -384,7 +391,7 @@ public class TaskService : ITaskService
         if (request.Status == TaskItemStatus.Completed)
         {
             task.Progress = 100.0;
-            if (!task.ActualEndDate.HasValue) task.ActualEndDate = DateTime.UtcNow;
+            task.ActualEndDate = request.ActualEndDate ?? (oldStatus == TaskItemStatus.Completed ? task.ActualEndDate : DateTime.UtcNow);
         }
         else if (request.Status == TaskItemStatus.NotStarted)
         {
@@ -539,7 +546,7 @@ public class TaskService : ITaskService
         if (request.Status == TaskItemStatus.Completed)
         {
             task.Progress = 100.0;
-            if (!task.ActualEndDate.HasValue) task.ActualEndDate = DateTime.UtcNow;
+            task.ActualEndDate = request.ActualEndDate ?? (oldStatus == TaskItemStatus.Completed ? task.ActualEndDate : DateTime.UtcNow);
         }
         else if (request.Status == TaskItemStatus.NotStarted)
         {
@@ -669,6 +676,7 @@ public class TaskService : ITaskService
         var comments = await _context.TaskComments
             .Where(c => c.TaskId == taskId)
             .Include(c => c.User)
+            .Include(c => c.Attachments)
             .OrderBy(c => c.CreatedAt)
             .Select(c => new TaskCommentDto
             {
@@ -677,9 +685,20 @@ public class TaskService : ITaskService
                 UserId = c.UserId,
                 UserName = c.User.FullName,
                 UserDepartment = c.User.Department,
+                UserAvatarUrl = c.User.AvatarUrl,
                 Content = c.Content,
                 CreatedAt = c.CreatedAt,
-                UpdatedAt = c.UpdatedAt
+                UpdatedAt = c.UpdatedAt,
+                Attachments = c.Attachments.Select(a => new TaskCommentAttachmentDto
+                {
+                    Id = a.Id,
+                    CommentId = a.CommentId,
+                    FileName = a.FileName,
+                    FilePath = a.FilePath,
+                    FileSize = a.FileSize,
+                    ContentType = a.ContentType,
+                    UploadedAt = a.UploadedAt
+                }).ToList()
             })
             .ToListAsync();
 
@@ -688,16 +707,45 @@ public class TaskService : ITaskService
 
     public async Task<ApiResponse<TaskCommentDto>> AddCommentAsync(Guid taskId, CreateCommentRequest request, Guid currentUserId)
     {
+        return await AddCommentWithAttachmentsAsync(taskId, new CreateCommentWithFilesRequest
+        {
+            Content = request.Content
+        }, currentUserId);
+    }
+
+    public async Task<ApiResponse<TaskCommentDto>> AddCommentWithAttachmentsAsync(Guid taskId, CreateCommentWithFilesRequest request, Guid currentUserId)
+    {
         var task = await _context.Tasks.Include(t => t.Assignees).FirstOrDefaultAsync(t => t.Id == taskId);
         if (task == null) return ApiResponse<TaskCommentDto>.Fail("Không tìm thấy công việc.");
+
+        if (string.IsNullOrWhiteSpace(request.Content) && (request.Files == null || !request.Files.Any()))
+        {
+            return ApiResponse<TaskCommentDto>.Fail("Nội dung trao đổi hoặc tệp đính kèm không được để trống.");
+        }
 
         var comment = new TaskComment
         {
             TaskId = taskId,
             UserId = currentUserId,
-            Content = request.Content.Trim(),
+            Content = (request.Content ?? "").Trim(),
             CreatedAt = DateTime.UtcNow
         };
+
+        if (request.Files != null && request.Files.Any())
+        {
+            var savedFiles = await _fileStorageService.SaveMultipleFilesAsync(request.Files, "discussions");
+            foreach (var f in savedFiles)
+            {
+                comment.Attachments.Add(new TaskCommentAttachment
+                {
+                    FileName = f.FileName,
+                    FilePath = f.FilePath,
+                    FileSize = f.FileSize,
+                    ContentType = f.ContentType,
+                    UploadedAt = DateTime.UtcNow
+                });
+            }
+        }
 
         _context.TaskComments.Add(comment);
         await _context.SaveChangesAsync();
@@ -720,7 +768,7 @@ public class TaskService : ITaskService
         await _activityLogService.LogAsync(
             currentUserId,
             ActivityAction.CommentAdded,
-            $"Thêm bình luận trong '{task.Name}'",
+            $"Thêm trao đổi trong '{task.Name}'",
             projectId: task.ProjectId,
             taskId: task.Id
         );
@@ -732,19 +780,39 @@ public class TaskService : ITaskService
             UserId = comment.UserId,
             UserName = user?.FullName ?? "",
             UserDepartment = user?.Department,
+            UserAvatarUrl = user?.AvatarUrl,
             Content = comment.Content,
-            CreatedAt = comment.CreatedAt
-        }, "Đã đăng bình luận.");
+            CreatedAt = comment.CreatedAt,
+            Attachments = comment.Attachments.Select(a => new TaskCommentAttachmentDto
+            {
+                Id = a.Id,
+                CommentId = a.CommentId,
+                FileName = a.FileName,
+                FilePath = a.FilePath,
+                FileSize = a.FileSize,
+                ContentType = a.ContentType,
+                UploadedAt = a.UploadedAt
+            }).ToList()
+        }, "Đã đăng trao đổi thành công.");
     }
 
     public async Task<ApiResponse<bool>> DeleteCommentAsync(Guid commentId, Guid currentUserId)
     {
-        var comment = await _context.TaskComments.FindAsync(commentId);
+        var comment = await _context.TaskComments
+            .Include(c => c.Attachments)
+            .FirstOrDefaultAsync(c => c.Id == commentId);
+
         if (comment == null) return ApiResponse<bool>.Fail("Không tìm thấy bình luận.");
 
         if (comment.UserId != currentUserId)
         {
             return ApiResponse<bool>.Fail("Bạn chỉ có thể xóa bình luận của chính mình.");
+        }
+
+        // Xóa file vật lý của attachments
+        foreach (var att in comment.Attachments)
+        {
+            _fileStorageService.DeleteFile(att.FilePath);
         }
 
         _context.TaskComments.Remove(comment);

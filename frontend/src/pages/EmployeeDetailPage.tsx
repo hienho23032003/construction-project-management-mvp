@@ -44,6 +44,7 @@ import { TaskDetailDrawer } from '../components/tasks/TaskDetailDrawer';
 import { roleLabels } from './EmployeesPage';
 import { EmployeeTaskItem, EmployeeProjectParticipation, EmployeeActivityLog } from '../types';
 import { formatDate, formatShortDateTime } from '../utils/dateUtils';
+import { getMediaUrl } from '../utils/fileUtils';
 
 export const EmployeeDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -97,9 +98,9 @@ export const EmployeeDetailPage: React.FC = () => {
     return opts;
   }, [projects]);
 
-  const handleAddComment = async (content: string) => {
+  const handleAddComment = async (content: string, files?: File[]) => {
     if (selectedTaskId) {
-      await addCommentMutation.mutateAsync(content);
+      await addCommentMutation.mutateAsync({ content, files });
     }
   };
 
@@ -141,19 +142,30 @@ export const EmployeeDetailPage: React.FC = () => {
         id: 'status',
         header: 'Trạng Thái',
         accessorKey: 'status',
-        minWidth: 140,
-        cell: ({ row }) => (
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-            <StatusChip status={row.status} size="small" />
-            {row.isOverdue && row.status !== 'Completed' && (
-              <Chip
-                label="Trễ hạn"
-                size="small"
-                sx={{ bgcolor: '#fee2e2', color: '#ef4444', fontWeight: 700, fontSize: '0.68rem', height: 22 }}
-              />
-            )}
-          </Box>
-        ),
+        minWidth: 150,
+        cell: ({ row }) => {
+          const isDone = row.status === 'Completed';
+          const isCompletedLate = isDone && row.actualEndDate && new Date(row.actualEndDate.split('T')[0]).getTime() > new Date(row.plannedEndDate.split('T')[0]).getTime();
+          return (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, flexWrap: 'wrap' }}>
+              <StatusChip status={row.status} size="small" />
+              {row.isOverdue && !isDone && (
+                <Chip
+                  label="Trễ hạn"
+                  size="small"
+                  sx={{ bgcolor: '#fee2e2', color: '#ef4444', fontWeight: 700, fontSize: '0.68rem', height: 22 }}
+                />
+              )}
+              {isCompletedLate && (
+                <Chip
+                  label="Xong trễ"
+                  size="small"
+                  sx={{ bgcolor: '#fee2e2', color: '#ef4444', fontWeight: 700, fontSize: '0.68rem', height: 22 }}
+                />
+              )}
+            </Box>
+          );
+        },
       },
       {
         id: 'progress',
@@ -192,15 +204,16 @@ export const EmployeeDetailPage: React.FC = () => {
         id: 'plannedEndDate',
         header: 'Hạn Chót',
         accessorKey: 'plannedEndDate',
-        minWidth: 140,
+        minWidth: 150,
         cell: ({ row }) => {
           const isDone = row.status === 'Completed';
+          const isCompletedLate = isDone && row.actualEndDate && new Date(row.actualEndDate.split('T')[0]).getTime() > new Date(row.plannedEndDate.split('T')[0]).getTime();
           return (
             <Box>
               <Typography variant="body2" sx={{ fontSize: '0.8rem', fontWeight: 600 }}>
                 {formatDate(row.plannedEndDate)}
               </Typography>
-              {!isDone && (
+              {!isDone ? (
                 <Typography
                   variant="caption"
                   sx={{
@@ -213,6 +226,14 @@ export const EmployeeDetailPage: React.FC = () => {
                     : row.daysRemaining === 0
                     ? 'Hạn hôm nay'
                     : `Còn ${row.daysRemaining} ngày`}
+                </Typography>
+              ) : isCompletedLate ? (
+                <Typography variant="caption" sx={{ color: '#ef4444', fontWeight: 600, display: 'block' }}>
+                  Xong: {formatDate(row.actualEndDate!)} (Trễ hạn)
+                </Typography>
+              ) : (
+                <Typography variant="caption" sx={{ color: '#10b981', fontWeight: 600, display: 'block' }}>
+                  {row.actualEndDate ? `Xong: ${formatDate(row.actualEndDate)} (Đúng hạn)` : 'Hoàn thành đúng hạn'}
                 </Typography>
               )}
             </Box>
@@ -298,7 +319,7 @@ export const EmployeeDetailPage: React.FC = () => {
       >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2.5 }}>
           <Avatar
-            src={user.avatarUrl}
+            src={getMediaUrl(user.avatarUrl)}
             sx={{
               width: { xs: 60, sm: 72 },
               height: { xs: 60, sm: 72 },
@@ -511,14 +532,46 @@ export const EmployeeDetailPage: React.FC = () => {
               <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 600, textTransform: 'uppercase', fontSize: '0.72rem' }}>
                 Tỷ Lệ Đúng Hạn
               </Typography>
-              <Typography variant="h4" sx={{ fontWeight: 800, color: '#0284c7', mt: 0.5 }}>
-                {stats?.onTimeCompletionRate || 100}%
+              <Typography
+                variant="h4"
+                sx={{
+                  fontWeight: 800,
+                  color: (stats?.totalTasks ?? 0) === 0
+                    ? '#0284c7'
+                    : (stats?.onTimeCompletionRate ?? 100) >= 80
+                    ? '#10b981'
+                    : (stats?.onTimeCompletionRate ?? 100) >= 50
+                    ? '#f59e0b'
+                    : '#ef4444',
+                  mt: 0.5,
+                }}
+              >
+                {(stats?.totalTasks ?? 0) === 0 ? 100 : (stats?.onTimeCompletionRate ?? 0)}%
               </Typography>
               <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 600, display: 'block', mt: 0.25 }}>
                 Tiến độ TB: {stats?.averageTaskProgress || 0}%
               </Typography>
             </Box>
-            <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: '#f0f9ff', color: '#0284c7' }}>
+            <Box
+              sx={{
+                p: 1.5,
+                borderRadius: 2,
+                bgcolor: (stats?.totalTasks ?? 0) === 0
+                  ? '#f0f9ff'
+                  : (stats?.onTimeCompletionRate ?? 100) >= 80
+                  ? '#ecfdf5'
+                  : (stats?.onTimeCompletionRate ?? 100) >= 50
+                  ? '#fffbeb'
+                  : '#fef2f2',
+                color: (stats?.totalTasks ?? 0) === 0
+                  ? '#0284c7'
+                  : (stats?.onTimeCompletionRate ?? 100) >= 80
+                  ? '#10b981'
+                  : (stats?.onTimeCompletionRate ?? 100) >= 50
+                  ? '#f59e0b'
+                  : '#ef4444',
+              }}
+            >
               <TrendingUp size={26} />
             </Box>
           </Paper>

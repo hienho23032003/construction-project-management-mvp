@@ -14,17 +14,20 @@ public class AuthService : IAuthService
     private readonly IJwtTokenService _jwtTokenService;
     private readonly IUserSessionService _userSessionService;
     private readonly IRoleService _roleService;
+    private readonly IFileStorageService _fileStorageService;
 
     public AuthService(
         IAppDbContext context,
         IJwtTokenService jwtTokenService,
         IUserSessionService userSessionService,
-        IRoleService roleService)
+        IRoleService roleService,
+        IFileStorageService fileStorageService)
     {
         _context = context;
         _jwtTokenService = jwtTokenService;
         _userSessionService = userSessionService;
         _roleService = roleService;
+        _fileStorageService = fileStorageService;
     }
 
     public async Task<ApiResponse<LoginResponse>> LoginAsync(LoginRequest request, string? ipAddress = null, string? userAgent = null)
@@ -209,6 +212,59 @@ public class AuthService : IAuthService
             IsActive = user.IsActive,
             CreatedAt = user.CreatedAt
         }, "Cập nhật thông tin cá nhân thành công.");
+    }
+
+    public async Task<ApiResponse<UserDto>> UploadAvatarAsync(Guid userId, Microsoft.AspNetCore.Http.IFormFile file)
+    {
+        var user = await _context.Users
+            .Include(u => u.UserRoles)
+                .ThenInclude(ur => ur.Role)
+            .FirstOrDefaultAsync(u => u.Id == userId);
+
+        if (user == null)
+        {
+            return ApiResponse<UserDto>.Fail("Không tìm thấy thông tin người dùng.");
+        }
+
+        try
+        {
+            var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp", ".gif", ".jfif", ".pjpeg", ".pjp", ".bmp", ".svg", ".ico" };
+            var result = await _fileStorageService.SaveFileAsync(file, "avatars", allowedExtensions, 5 * 1024 * 1024);
+
+            // Xóa avatar cũ nếu có và là file local
+            if (!string.IsNullOrWhiteSpace(user.AvatarUrl) && user.AvatarUrl.StartsWith("/uploads/avatars/"))
+            {
+                _fileStorageService.DeleteFile(user.AvatarUrl);
+            }
+
+            user.AvatarUrl = result.FilePath;
+            user.UpdatedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+
+            var permissions = await _roleService.GetUserPermissionsAsync(user.Id);
+            var roleNames = user.UserRoles.Where(ur => ur.Role != null).Select(ur => ur.Role!.Name).ToList();
+            var roleIds = user.UserRoles.Select(ur => ur.RoleId).ToList();
+
+            return ApiResponse<UserDto>.Ok(new UserDto
+            {
+                Id = user.Id,
+                FullName = user.FullName,
+                Email = user.Email,
+                Phone = user.Phone,
+                Department = user.Department,
+                AvatarUrl = user.AvatarUrl,
+                Role = user.Role,
+                Roles = roleNames.Count > 0 ? roleNames : new List<string> { user.Role.ToString() },
+                RoleIds = roleIds,
+                Permissions = permissions,
+                IsActive = user.IsActive,
+                CreatedAt = user.CreatedAt
+            }, "Cập nhật ảnh đại diện thành công.");
+        }
+        catch (Exception ex)
+        {
+            return ApiResponse<UserDto>.Fail($"Tải lên ảnh đại diện thất bại: {ex.Message}");
+        }
     }
 
     public async Task<ApiResponse<bool>> ChangePasswordAsync(Guid userId, ChangePasswordRequest request)

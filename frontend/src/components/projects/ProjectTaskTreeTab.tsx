@@ -22,6 +22,7 @@ import { Plus, Edit, Trash2, CornerDownRight } from 'lucide-react';
 import { TaskTreeItem, TaskStatus } from '../../types';
 import { StatusSelect } from '../common';
 import { formatDate } from '../../utils/dateUtils';
+import { getMediaUrl } from '../../utils/fileUtils';
 
 interface ProjectTaskTreeTabProps {
   tasks: TaskTreeItem[];
@@ -114,7 +115,7 @@ export const ProjectTaskTreeTab: React.FC<ProjectTaskTreeTabProps> = memo(({
                     key={a.id}
                     label={a.fullName}
                     size="small"
-                    avatar={<Avatar sx={{ width: 18, height: 18, fontSize: '0.65rem' }}>{a.fullName.charAt(0)}</Avatar>}
+                    avatar={<Avatar src={getMediaUrl(a.avatarUrl)} sx={{ width: 18, height: 18, fontSize: '0.65rem' }}>{a.fullName.charAt(0)}</Avatar>}
                     sx={{ height: 22, fontSize: '0.7rem', whiteSpace: 'nowrap' }}
                   />
                 ))

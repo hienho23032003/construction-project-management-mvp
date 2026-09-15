@@ -121,6 +121,14 @@ public class TasksController : BaseApiController
         return Ok(result);
     }
 
+    [HttpPost("{id}/comments-with-attachments")]
+    public async Task<IActionResult> AddCommentWithAttachments(Guid id, [FromForm] CreateCommentWithFilesRequest request)
+    {
+        var result = await _taskService.AddCommentWithAttachmentsAsync(id, request, CurrentUserId);
+        if (!result.Success) return BadRequest(result);
+        return Ok(result);
+    }
+
     [HttpDelete("comments/{commentId}")]
     public async Task<IActionResult> DeleteComment(Guid commentId)
     {

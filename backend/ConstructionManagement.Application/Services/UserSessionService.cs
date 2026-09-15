@@ -181,6 +181,7 @@ public class UserSessionService : IUserSessionService
                 UserEmail = s.User != null ? s.User.Email : string.Empty,
                 UserDepartment = s.User != null ? s.User.Department : null,
                 UserRole = s.User != null ? s.User.Role.ToString() : null,
+                UserAvatarUrl = s.User != null ? s.User.AvatarUrl : null,
                 LoginTime = DateTime.SpecifyKind(s.LoginTime, DateTimeKind.Utc),
                 LogoutTime = resolvedLogoutTime.HasValue ? DateTime.SpecifyKind(resolvedLogoutTime.Value, DateTimeKind.Utc) : null,
                 LastActiveTime = s.LastActiveTime.HasValue ? DateTime.SpecifyKind(s.LastActiveTime.Value, DateTimeKind.Utc) : null,

@@ -33,6 +33,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { formatDateTime as formatLocalDateTime } from '../utils/dateUtils';
+import { getMediaUrl } from '../utils/fileUtils';
 import { useLoginHistoryQuery, useSessionStatsQuery } from '../hooks/useUserSessions';
 import { useUsersListQuery } from '../hooks/useEmployees';
 import { useDebounce } from '../hooks/useDebounce';
@@ -123,6 +124,7 @@ export const LoginHistoryPage: React.FC = () => {
         cell: ({ row }) => (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, whiteSpace: 'nowrap' }}>
             <Avatar
+              src={getMediaUrl(row.userAvatarUrl) || undefined}
               sx={{
                 width: 34,
                 height: 34,

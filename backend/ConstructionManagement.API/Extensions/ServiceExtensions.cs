@@ -3,6 +3,7 @@ using ConstructionManagement.Application.Interfaces;
 using ConstructionManagement.Application.Services;
 using ConstructionManagement.Infrastructure.Authentication;
 using ConstructionManagement.Infrastructure.Persistence;
+using ConstructionManagement.Infrastructure.Services;
 using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -46,6 +47,7 @@ public static class ServiceExtensions
         services.AddScoped<IActivityLogService, ActivityLogService>();
         services.AddScoped<IRoleService, RoleService>();
         services.AddScoped<IUserSessionService, UserSessionService>();
+        services.AddScoped<IFileStorageService, FileStorageService>();
 
         // 3. Validators
         services.AddValidatorsFromAssemblyContaining<AuthService>();

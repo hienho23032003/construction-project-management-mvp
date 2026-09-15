@@ -5,12 +5,13 @@ import {
   Box,
   Typography,
   Chip,
-  Select,
-  MenuItem,
   Slider,
+  Avatar,
 } from '@mui/material';
 import { TaskItem, TaskStatus } from '../../types';
 import { formatDate } from '../../utils/dateUtils';
+import { getMediaUrl } from '../../utils/fileUtils';
+import { PriorityBadge, StatusSelect } from '../common';
 
 interface TaskCardProps {
   task: TaskItem;
@@ -35,6 +36,16 @@ export const TaskCard: React.FC<TaskCardProps> = memo(({
     return formatDate(task.plannedEndDate);
   }, [task.plannedEndDate]);
 
+  const isCompletedLate = task.status === 'Completed' && Boolean(
+    task.isCompletedLate ||
+    (task.actualEndDate && new Date(task.actualEndDate.split('T')[0]).getTime() > new Date(task.plannedEndDate.split('T')[0]).getTime())
+  );
+  const completedLateDays = task.completedLateDays || (
+    isCompletedLate && task.actualEndDate
+      ? Math.max(1, Math.round((new Date(task.actualEndDate.split('T')[0]).getTime() - new Date(task.plannedEndDate.split('T')[0]).getTime()) / 86400000))
+      : 0
+  );
+
   return (
     <Card
       variant="outlined"
@@ -46,67 +57,83 @@ export const TaskCard: React.FC<TaskCardProps> = memo(({
         flexDirection: 'column',
         borderRadius: '8px',
         border: '1px solid #e2e8f0',
-        bgcolor: task.isOverdue ? '#fff5f5' : '#ffffff',
+        bgcolor: task.isOverdue || isCompletedLate ? '#fff5f5' : '#ffffff',
         transition: 'all 0.2s ease',
         '&:hover': {
-          borderColor: '#0284c7',
-          boxShadow: '0 8px 20px -4px rgba(2, 132, 199, 0.20)',
-          transform: 'translateY(-2px)',
+          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+          borderColor: '#94a3b8',
         },
       }}
     >
-      <CardContent sx={{ p: 2.2, flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+      <CardContent sx={{ p: 2, flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
         {/* Header: Project Code & Status */}
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1.5 }}>
           <Chip
-            label={task.projectCode}
+            label={task.projectCode || 'N/A'}
             size="small"
-            sx={{ bgcolor: '#e0f2fe', color: '#0369a1', fontWeight: 800, fontSize: '0.72rem' }}
+            sx={{ bgcolor: '#e0f2fe', color: '#0369a1', fontWeight: 800, fontSize: '0.75rem' }}
           />
           <Box onClick={(e) => e.stopPropagation()}>
-            <Select
-              size="small"
+            <StatusSelect
               value={task.status}
-              onChange={(e) => onStatusChange(task.id, e.target.value as TaskStatus)}
-              sx={{ height: 26, fontSize: '0.72rem', fontWeight: 600, minWidth: 110 }}
-            >
-              <MenuItem value="NotStarted">Chưa bắt đầu</MenuItem>
-              <MenuItem value="InProgress">Đang thực hiện</MenuItem>
-              <MenuItem value="Completed">Hoàn thành</MenuItem>
-              <MenuItem value="OnHold">Tạm dừng</MenuItem>
-            </Select>
+              onChange={(status) => onStatusChange(task.id, status)}
+            />
           </Box>
         </Box>
 
-        {/* Task Name & Parent */}
+        {/* Task Name */}
         <Typography
-          variant="subtitle2"
-          noWrap
-          sx={{ fontWeight: 700, color: '#0f172a', fontSize: '0.9rem', mb: 0.2 }}
-          title={task.name}
+          variant="subtitle1"
+          sx={{
+            fontWeight: 700,
+            color: '#0f172a',
+            lineHeight: 1.3,
+            mb: 0.5,
+          }}
         >
           {task.name}
         </Typography>
 
+        {/* Parent Category */}
         {task.parentName && (
-          <Typography variant="caption" noWrap sx={{ color: '#64748b', mb: 1.5, display: 'block' }}>
-            Thuộc: {task.parentName}
+          <Typography
+            variant="caption"
+            sx={{
+              color: '#64748b',
+              mb: 1.5,
+              display: 'block',
+            }}
+          >
+            Thuộc hạng mục: {task.parentName}
           </Typography>
         )}
 
-        {/* Assignees */}
+        {/* Priority Badge */}
+        <Box sx={{ mb: 1.5 }}>
+          <PriorityBadge priority={task.priority} />
+        </Box>
+
+        {/* Assignees List */}
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 1.5, mt: 'auto' }}>
           {task.assignees.length === 0 ? (
             <Typography variant="caption" sx={{ color: '#94a3b8' }}>
-              Chưa gán người thực hiện
+              Chưa gán
             </Typography>
           ) : (
             task.assignees.map((a) => (
               <Chip
                 key={a.id}
+                avatar={
+                  <Avatar
+                    src={getMediaUrl(a.avatarUrl)}
+                    sx={{ width: 18, height: 18, fontSize: '0.65rem' }}
+                  >
+                    {a.fullName.charAt(0)}
+                  </Avatar>
+                }
                 label={a.fullName}
                 size="small"
-                sx={{ height: 20, fontSize: '0.68rem', bgcolor: '#f1f5f9', color: '#334155' }}
+                sx={{ height: 22, fontSize: '0.7rem' }}
               />
             ))
           )}
@@ -114,12 +141,19 @@ export const TaskCard: React.FC<TaskCardProps> = memo(({
 
         {/* Timeline & Due Date */}
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5, pt: 1, borderTop: '1px solid #f1f5f9' }}>
-          <Typography variant="caption" sx={{ color: '#64748b' }}>
+          <Typography variant="caption" sx={{ color: task.isOverdue || isCompletedLate ? '#dc2626' : '#64748b', fontWeight: task.isOverdue || isCompletedLate ? 600 : 400 }}>
             Hạn: {formattedDate}
           </Typography>
           {task.isOverdue && (
             <Chip
               label={`Trễ ${task.overdueDays} ngày`}
+              size="small"
+              sx={{ height: 20, fontSize: '0.65rem', bgcolor: '#fee2e2', color: '#dc2626', fontWeight: 700 }}
+            />
+          )}
+          {isCompletedLate && (
+            <Chip
+              label={`Xong trễ ${completedLateDays} ngày`}
               size="small"
               sx={{ height: 20, fontSize: '0.65rem', bgcolor: '#fee2e2', color: '#dc2626', fontWeight: 700 }}
             />

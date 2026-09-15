@@ -250,20 +250,24 @@ export const useAddCommentMutation = (taskId?: string) => {
   const { showSuccess, showError } = useToast();
 
   return useMutation({
-    mutationFn: (content: string) => {
+    mutationFn: (param: string | { content: string; files?: File[] }) => {
       if (!taskId) throw new Error('Thiếu mã công việc');
-      return taskApi.addComment(taskId, content);
+      if (typeof param === 'string') {
+        return taskApi.addComment(taskId, param);
+      }
+      return taskApi.addCommentWithAttachments(taskId, param.content, param.files);
     },
     onSuccess: () => {
       if (taskId) {
         queryClient.invalidateQueries({ queryKey: ['task-comments', taskId] });
         queryClient.invalidateQueries({ queryKey: ['task-activities', taskId] });
+        queryClient.invalidateQueries({ queryKey: ['tasks'] });
       }
       queryClient.invalidateQueries({ queryKey: ['task-activities'] });
-      showSuccess('Đã gửi phản hồi / bình luận!');
+      showSuccess('Đã gửi trao đổi thành công!');
     },
     onError: (err: any) => {
-      showError(err.response?.data?.message || err.message || 'Gửi bình luận thất bại');
+      showError(err.response?.data?.message || err.message || 'Gửi trao đổi thất bại');
     },
   });
 };

@@ -27,6 +27,13 @@ export const authApi = {
   getMe: () => apiClient.get<ApiResponse<User>>('/auth/me'),
   updateProfile: (data: { fullName: string; phone?: string; department?: string; avatarUrl?: string }) =>
     apiClient.put<ApiResponse<User>>('/auth/profile', data),
+  uploadAvatar: (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return apiClient.post<ApiResponse<User>>('/auth/avatar', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
   changePassword: (data: { currentPassword: string; newPassword: string }) =>
     apiClient.post<ApiResponse<boolean>>('/auth/change-password', data),
 };
@@ -62,6 +69,13 @@ export const userApi = {
   getProgressSummary: (id: string) => apiClient.get<ApiResponse<any>>(`/users/${id}/progress-summary`),
   create: (data: any) => apiClient.post<ApiResponse<User>>('/users', data),
   update: (id: string, data: any) => apiClient.put<ApiResponse<User>>(`/users/${id}`, data),
+  uploadAvatar: (id: string, file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return apiClient.post<ApiResponse<User>>(`/users/${id}/avatar`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
   delete: (id: string) => apiClient.delete<ApiResponse<boolean>>(`/users/${id}`),
   toggleStatus: (id: string) => apiClient.patch<ApiResponse<boolean>>(`/users/${id}/toggle-status`),
   getWorkload: () => apiClient.get<ApiResponse<any[]>>('/users/workload'),
@@ -106,6 +120,17 @@ export const taskApi = {
   getComments: (taskId: string) => apiClient.get<ApiResponse<TaskComment[]>>(`/tasks/${taskId}/comments`),
   addComment: (taskId: string, content: string) =>
     apiClient.post<ApiResponse<TaskComment>>(`/tasks/${taskId}/comments`, { content }),
+  addCommentWithAttachments: (taskId: string, content: string, files?: File[]) => {
+    if (!files || files.length === 0) {
+      return apiClient.post<ApiResponse<TaskComment>>(`/tasks/${taskId}/comments`, { content });
+    }
+    const formData = new FormData();
+    formData.append('content', content || '');
+    files.forEach((f) => formData.append('files', f));
+    return apiClient.post<ApiResponse<TaskComment>>(`/tasks/${taskId}/comments-with-attachments`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
   deleteComment: (commentId: string) =>
     apiClient.delete<ApiResponse<boolean>>(`/tasks/comments/${commentId}`),
   getDependencies: (taskId: string) => apiClient.get<ApiResponse<TaskDependency[]>>(`/tasks/${taskId}/dependencies`),

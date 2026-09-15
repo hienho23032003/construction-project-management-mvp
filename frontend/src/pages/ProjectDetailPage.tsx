@@ -303,8 +303,8 @@ export const ProjectDetailPage: React.FC = () => {
         comments={comments}
         dependencies={dependencies}
         loadingComments={loadingComments}
-        onAddComment={async (content: string) => {
-          await addCommentMutation.mutateAsync(content);
+        onAddComment={async (content: string, files?: File[]) => {
+          await addCommentMutation.mutateAsync({ content, files });
         }}
       />
     </Box>

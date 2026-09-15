@@ -10,6 +10,7 @@ import { Activity, Clock } from 'lucide-react';
 import { DashboardSummary } from '../../types';
 import { CommonTable, ColumnDef } from '../common/CommonTable';
 import { formatDateTime } from '../../utils/dateUtils';
+import { getMediaUrl } from '../../utils/fileUtils';
 
 interface DashboardActivitiesProps {
   data: DashboardSummary;
@@ -48,6 +49,7 @@ export const DashboardActivities: React.FC<DashboardActivitiesProps> = memo(({ d
         cell: ({ row }) => (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, whiteSpace: 'nowrap' }}>
             <Avatar
+              src={getMediaUrl(row.userAvatarUrl)}
               sx={{
                 width: 26,
                 height: 26,

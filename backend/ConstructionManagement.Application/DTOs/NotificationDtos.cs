@@ -21,6 +21,7 @@ public class ActivityLogDto
     public Guid Id { get; set; }
     public Guid UserId { get; set; }
     public string UserName { get; set; } = string.Empty;
+    public string? UserAvatarUrl { get; set; }
     public Guid? ProjectId { get; set; }
     public string? ProjectCode { get; set; }
     public string? ProjectName { get; set; }

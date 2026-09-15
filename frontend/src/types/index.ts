@@ -73,6 +73,7 @@ export interface UserLoginSession {
   userEmail: string;
   department?: string;
   roleName?: string;
+  userAvatarUrl?: string;
   loginTime: string;
   logoutTime?: string;
   lastActiveTime?: string;
@@ -121,6 +122,7 @@ export interface ProjectMember {
   email: string;
   department?: string;
   roleInProject?: string;
+  avatarUrl?: string;
   joinedAt: string;
 }
 
@@ -130,7 +132,18 @@ export interface TaskAssignee {
   fullName: string;
   email: string;
   department?: string;
+  avatarUrl?: string;
   assignedAt: string;
+}
+
+export interface TaskCommentAttachment {
+  id: string;
+  commentId: string;
+  fileName: string;
+  filePath: string;
+  fileSize: number;
+  contentType?: string;
+  uploadedAt: string;
 }
 
 export interface TaskComment {
@@ -139,9 +152,11 @@ export interface TaskComment {
   userId: string;
   userName: string;
   userDepartment?: string;
+  userAvatarUrl?: string;
   content: string;
   createdAt: string;
   updatedAt?: string;
+  attachments?: TaskCommentAttachment[];
 }
 
 export interface TaskDependency {
@@ -175,6 +190,8 @@ export interface TaskItem {
   level?: number;
   isOverdue?: boolean;
   overdueDays?: number;
+  isCompletedLate?: boolean;
+  completedLateDays?: number;
   assignees: TaskAssignee[];
   dependencies?: TaskDependency[];
   subTaskCount: number;
@@ -293,6 +310,7 @@ export interface ActivityLog {
   id: string;
   userId: string;
   userName: string;
+  userAvatarUrl?: string;
   projectId?: string;
   projectCode?: string;
   projectName?: string;

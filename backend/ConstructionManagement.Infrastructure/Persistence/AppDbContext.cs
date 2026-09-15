@@ -17,6 +17,7 @@ public class AppDbContext : DbContext, IAppDbContext
     public DbSet<TaskAssignee> TaskAssignees => Set<TaskAssignee>();
     public DbSet<TaskDependency> TaskDependencies => Set<TaskDependency>();
     public DbSet<TaskComment> TaskComments => Set<TaskComment>();
+    public DbSet<TaskCommentAttachment> TaskCommentAttachments => Set<TaskCommentAttachment>();
     public DbSet<Notification> Notifications => Set<Notification>();
     public DbSet<ActivityLog> ActivityLogs => Set<ActivityLog>();
     public DbSet<AppRole> Roles => Set<AppRole>();
@@ -149,7 +150,7 @@ public class AppDbContext : DbContext, IAppDbContext
         {
             entity.HasKey(e => e.Id);
             entity.HasIndex(e => e.TaskId);
-            entity.Property(e => e.Content).IsRequired().HasMaxLength(2000);
+            entity.Property(e => e.Content).IsRequired(false).HasMaxLength(2000);
 
             entity.HasOne(e => e.Task)
                 .WithMany(t => t.Comments)
@@ -159,6 +160,20 @@ public class AppDbContext : DbContext, IAppDbContext
             entity.HasOne(e => e.User)
                 .WithMany(u => u.Comments)
                 .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // TaskCommentAttachment
+        modelBuilder.Entity<TaskCommentAttachment>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.CommentId);
+            entity.Property(e => e.FileName).IsRequired().HasMaxLength(255);
+            entity.Property(e => e.FilePath).IsRequired().HasMaxLength(500);
+
+            entity.HasOne(e => e.Comment)
+                .WithMany(c => c.Attachments)
+                .HasForeignKey(e => e.CommentId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
 

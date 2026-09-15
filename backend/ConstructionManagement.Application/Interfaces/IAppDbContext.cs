@@ -12,6 +12,7 @@ public interface IAppDbContext
     DbSet<TaskAssignee> TaskAssignees { get; }
     DbSet<TaskDependency> TaskDependencies { get; }
     DbSet<TaskComment> TaskComments { get; }
+    DbSet<TaskCommentAttachment> TaskCommentAttachments { get; }
     DbSet<Notification> Notifications { get; }
     DbSet<ActivityLog> ActivityLogs { get; }
     DbSet<AppRole> Roles { get; }

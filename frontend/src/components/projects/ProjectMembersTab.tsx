@@ -12,6 +12,7 @@ import {
 } from '@mui/material';
 import { Plus, Trash2, Mail, Briefcase } from 'lucide-react';
 import { ProjectMember } from '../../types';
+import { getMediaUrl } from '../../utils/fileUtils';
 
 interface ProjectMembersTabProps {
   members: ProjectMember[];
@@ -66,7 +67,10 @@ export const ProjectMembersTab: React.FC<ProjectMembersTabProps> = memo(({
                 <CardContent sx={{ p: 2 }}>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center' }}>
-                      <Avatar sx={{ bgcolor: '#0284c7', width: 40, height: 40, fontWeight: 700 }}>
+                      <Avatar
+                        src={getMediaUrl(m.avatarUrl)}
+                        sx={{ bgcolor: '#0284c7', width: 40, height: 40, fontWeight: 700 }}
+                      >
                         {(m.fullName || 'U').charAt(0)}
                       </Avatar>
                       <Box>

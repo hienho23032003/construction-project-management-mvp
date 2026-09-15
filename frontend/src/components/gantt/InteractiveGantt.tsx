@@ -94,13 +94,28 @@ export const InteractiveGantt: React.FC<InteractiveGanttProps> = ({
   const [isLeftCollapsed, setIsLeftCollapsed] = useState<boolean>(false);
   const prevLeftWidth = useRef<number>(360);
 
+  // Right timeline pan (grab-to-scroll) ref state (Ref-based to avoid React re-renders during drag)
+  const isPanningRef = useRef<boolean>(false);
+  const inertiaRafRef = useRef<number | null>(null);
+
   const containerRef = useRef<HTMLDivElement>(null);
   const leftPanelRef = useRef<HTMLDivElement>(null);
   const isSyncingLeftScroll = useRef(false);
   const isSyncingRightScroll = useRef(false);
+  const leftScrollRaf = useRef<number | null>(null);
+  const rightScrollRaf = useRef<number | null>(null);
   const isInitialScrollDone = useRef<boolean>(false);
   const prevMinDateRef = useRef<Date | null>(null);
   const scrollPosRef = useRef<{ top: number; left: number }>({ top: 0, left: 0 });
+
+  // Zero React Re-render DOM Floating Tooltip Refs
+  const tooltipRef = useRef<HTMLDivElement>(null);
+  const tooltipTitleRef = useRef<HTMLDivElement>(null);
+  const tooltipDatesRef = useRef<HTMLSpanElement>(null);
+  const tooltipProgressRef = useRef<HTMLElement>(null);
+  const tooltipStatusRef = useRef<HTMLDivElement>(null);
+  const tooltipAssigneeRef = useRef<HTMLDivElement>(null);
+  const tooltipAssigneeTextRef = useRef<HTMLElement>(null);
 
   const { showSuccess, showError } = useToast();
   const [exporting, setExporting] = useState(false);
@@ -124,9 +139,15 @@ export const InteractiveGantt: React.FC<InteractiveGanttProps> = ({
       return;
     }
     if (leftPanelRef.current && containerRef.current) {
-      isSyncingRightScroll.current = true;
-      containerRef.current.scrollTop = leftPanelRef.current.scrollTop;
-      scrollPosRef.current.top = leftPanelRef.current.scrollTop;
+      if (leftScrollRaf.current !== null) cancelAnimationFrame(leftScrollRaf.current);
+      leftScrollRaf.current = requestAnimationFrame(() => {
+        if (leftPanelRef.current && containerRef.current) {
+          isSyncingRightScroll.current = true;
+          containerRef.current.scrollTop = leftPanelRef.current.scrollTop;
+          scrollPosRef.current.top = leftPanelRef.current.scrollTop;
+        }
+        leftScrollRaf.current = null;
+      });
     }
   };
 
@@ -136,10 +157,16 @@ export const InteractiveGantt: React.FC<InteractiveGanttProps> = ({
       return;
     }
     if (leftPanelRef.current && containerRef.current) {
-      isSyncingLeftScroll.current = true;
-      leftPanelRef.current.scrollTop = containerRef.current.scrollTop;
-      scrollPosRef.current.top = containerRef.current.scrollTop;
-      scrollPosRef.current.left = containerRef.current.scrollLeft;
+      if (rightScrollRaf.current !== null) cancelAnimationFrame(rightScrollRaf.current);
+      rightScrollRaf.current = requestAnimationFrame(() => {
+        if (leftPanelRef.current && containerRef.current) {
+          isSyncingLeftScroll.current = true;
+          leftPanelRef.current.scrollTop = containerRef.current.scrollTop;
+          scrollPosRef.current.top = containerRef.current.scrollTop;
+          scrollPosRef.current.left = containerRef.current.scrollLeft;
+        }
+        rightScrollRaf.current = null;
+      });
     }
   };
 
@@ -288,10 +315,8 @@ export const InteractiveGantt: React.FC<InteractiveGanttProps> = ({
             } else if (prev.has(t.id)) {
               // Node was already collapsed in state -> Keep collapsed
               next.add(t.id);
-            } else if (!hasInitializedCollapse.current) {
-              // Default on initial load: collapse branches
-              next.add(t.id);
             }
+            // Default on initial load: all nodes start expanded (not collapsed)
           }
         });
         hasInitializedCollapse.current = true;
@@ -393,6 +418,67 @@ export const InteractiveGantt: React.FC<InteractiveGanttProps> = ({
     return { left, width };
   };
 
+  // Colors per status
+  const getTaskColor = (task: GanttTask) => {
+    if (task.isOverdue) return { bar: '#ef4444', fill: '#dc2626', bg: '#fee2e2' };
+    if (task.status === 'Completed') return { bar: '#10b981', fill: '#059669', bg: '#d1fae5' };
+    if (task.status === 'InProgress') return { bar: '#0284c7', fill: '#0369a1', bg: '#e0f2fe' };
+    if (task.status === 'OnHold') return { bar: '#f59e0b', fill: '#d97706', bg: '#fef3c7' };
+    return { bar: '#94a3b8', fill: '#64748b', bg: '#f1f5f9' };
+  };
+
+  // Zero React Re-render Tooltip Control Functions
+  const showTooltip = (task: GanttTask, clientX: number, clientY: number) => {
+    if (isPanningRef.current || !tooltipRef.current) return;
+    const el = tooltipRef.current;
+    const s = parseISO(task.start);
+    const en = parseISO(task.end);
+    const colors = getTaskColor(task);
+    const statusText = getVietnameseStatus(task.status);
+
+    if (tooltipTitleRef.current) tooltipTitleRef.current.textContent = task.name;
+    if (tooltipDatesRef.current) {
+      tooltipDatesRef.current.textContent = `${format(s, 'dd/MM/yyyy')} — ${format(en, 'dd/MM/yyyy')}`;
+    }
+    if (tooltipProgressRef.current) {
+      tooltipProgressRef.current.textContent = `${task.progress}%`;
+    }
+    if (tooltipStatusRef.current) {
+      tooltipStatusRef.current.textContent = statusText;
+      tooltipStatusRef.current.style.backgroundColor = colors.bg;
+      tooltipStatusRef.current.style.color = colors.bar;
+      tooltipStatusRef.current.style.borderColor = colors.bar;
+    }
+    if (tooltipAssigneeRef.current) {
+      if (task.assigneeNames && task.assigneeNames.length > 0) {
+        tooltipAssigneeRef.current.style.display = 'flex';
+        if (tooltipAssigneeTextRef.current) {
+          tooltipAssigneeTextRef.current.textContent = task.assigneeNames.join(', ');
+        }
+      } else {
+        tooltipAssigneeRef.current.style.display = 'none';
+      }
+    }
+
+    const posX = Math.min(clientX + 16, window.innerWidth - 320);
+    const posY = Math.min(clientY + 16, window.innerHeight - 180);
+    el.style.transform = `translate3d(${posX}px, ${posY}px, 0)`;
+    el.style.display = 'block';
+  };
+
+  const moveTooltip = (clientX: number, clientY: number) => {
+    if (isPanningRef.current || !tooltipRef.current || tooltipRef.current.style.display === 'none') return;
+    const posX = Math.min(clientX + 16, window.innerWidth - 320);
+    const posY = Math.min(clientY + 16, window.innerHeight - 180);
+    tooltipRef.current.style.transform = `translate3d(${posX}px, ${posY}px, 0)`;
+  };
+
+  const hideTooltip = () => {
+    if (tooltipRef.current) {
+      tooltipRef.current.style.display = 'none';
+    }
+  };
+
   // Handle Splitter Dragging (Left/Right resize) with requestAnimationFrame for 60fps smooth performance
   const handleSplitterMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -444,16 +530,160 @@ export const InteractiveGantt: React.FC<InteractiveGanttProps> = ({
     }
   };
 
-  // Colors per status
-  const getTaskColor = (task: GanttTask) => {
-    if (task.isOverdue) return { bar: '#ef4444', fill: '#dc2626', bg: '#fee2e2' };
-    if (task.status === 'Completed') return { bar: '#10b981', fill: '#059669', bg: '#d1fae5' };
-    if (task.status === 'InProgress') return { bar: '#0284c7', fill: '#0369a1', bg: '#e0f2fe' };
-    if (task.status === 'OnHold') return { bar: '#f59e0b', fill: '#d97706', bg: '#fef3c7' };
-    return { bar: '#94a3b8', fill: '#64748b', bg: '#f1f5f9' };
+  // Cleanup inertia animation on unmount
+  useEffect(() => {
+    return () => {
+      if (inertiaRafRef.current !== null) {
+        cancelAnimationFrame(inertiaRafRef.current);
+      }
+    };
+  }, []);
+
+  // Pan / Drag-to-scroll handler for the timeline canvas (with rAF throttling & momentum glide)
+  const handleTimelineMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.button !== 0) return; // only left click
+    if (isDraggingSplitter) return;
+
+    // Do not pan if clicking on interactive buttons/inputs
+    const target = e.target as HTMLElement;
+    if (
+      target.closest('button') ||
+      target.closest('input') ||
+      target.closest('a') ||
+      target.closest('.MuiIconButton-root') ||
+      target.closest('.MuiButton-root')
+    ) {
+      return;
+    }
+
+    if (!containerRef.current) return;
+
+    // Prevent default selection / drag behavior
+    e.preventDefault();
+
+    // Cancel any ongoing inertia animation
+    if (inertiaRafRef.current !== null) {
+      cancelAnimationFrame(inertiaRafRef.current);
+      inertiaRafRef.current = null;
+    }
+
+    // Dismiss any active hover tooltip immediately
+    hideTooltip();
+
+    const container = containerRef.current;
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const startScrollLeft = container.scrollLeft;
+    const startScrollTop = container.scrollTop;
+
+    let lastX = startX;
+    let lastY = startY;
+    let lastTime = performance.now();
+    let velocityX = 0;
+    let velocityY = 0;
+
+    isPanningRef.current = true;
+    container.style.cursor = 'grabbing';
+    document.body.style.cursor = 'grabbing';
+    document.body.style.userSelect = 'none';
+
+    let targetLeft = startScrollLeft;
+    let targetTop = startScrollTop;
+    let rafId: number | null = null;
+
+    const renderPan = () => {
+      if (containerRef.current) {
+        containerRef.current.scrollLeft = targetLeft;
+        containerRef.current.scrollTop = targetTop;
+        scrollPosRef.current.left = targetLeft;
+        scrollPosRef.current.top = targetTop;
+      }
+      if (leftPanelRef.current) {
+        isSyncingLeftScroll.current = true;
+        leftPanelRef.current.scrollTop = targetTop;
+      }
+      rafId = null;
+    };
+
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      moveEvent.preventDefault();
+      const currentX = moveEvent.clientX;
+      const currentY = moveEvent.clientY;
+      const currentTime = performance.now();
+
+      const deltaX = currentX - startX;
+      const deltaY = currentY - startY;
+
+      const timeElapsed = currentTime - lastTime;
+      if (timeElapsed > 8) {
+        velocityX = (currentX - lastX) / timeElapsed;
+        velocityY = (currentY - lastY) / timeElapsed;
+        lastX = currentX;
+        lastY = currentY;
+        lastTime = currentTime;
+      }
+
+      targetLeft = startScrollLeft - deltaX;
+      targetTop = startScrollTop - deltaY;
+
+      if (rafId === null) {
+        rafId = requestAnimationFrame(renderPan);
+      }
+    };
+
+    const handleMouseUp = () => {
+      if (rafId !== null) {
+        cancelAnimationFrame(rafId);
+        rafId = null;
+      }
+      isPanningRef.current = false;
+      if (containerRef.current) {
+        containerRef.current.style.cursor = 'grab';
+      }
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+
+      // Smooth Inertia Glide (quán tính lướt mượt mà sau khi thả chuột)
+      if (Math.abs(velocityX) > 0.08 || Math.abs(velocityY) > 0.08) {
+        let currentVx = velocityX * 14;
+        let currentVy = velocityY * 14;
+        const friction = 0.92;
+
+        const stepInertia = () => {
+          if (!containerRef.current) return;
+          if (Math.abs(currentVx) < 0.25 && Math.abs(currentVy) < 0.25) {
+            inertiaRafRef.current = null;
+            return;
+          }
+
+          containerRef.current.scrollLeft -= currentVx;
+          containerRef.current.scrollTop -= currentVy;
+          scrollPosRef.current.left = containerRef.current.scrollLeft;
+          scrollPosRef.current.top = containerRef.current.scrollTop;
+
+          if (leftPanelRef.current) {
+            isSyncingLeftScroll.current = true;
+            leftPanelRef.current.scrollTop = containerRef.current.scrollTop;
+          }
+
+          currentVx *= friction;
+          currentVy *= friction;
+
+          inertiaRafRef.current = requestAnimationFrame(stepInertia);
+        };
+
+        inertiaRafRef.current = requestAnimationFrame(stepInertia);
+      }
+    };
+
+    window.addEventListener('mousemove', handleMouseMove, { passive: false });
+    window.addEventListener('mouseup', handleMouseUp);
   };
 
   const effectiveLeftWidth = isLeftCollapsed ? 0 : (isSmall ? 200 : (isMobile ? 260 : leftWidth));
+  const todayIndex = timelineDays.findIndex((d) => isToday(d));
 
   return (
     <Paper
@@ -670,6 +900,8 @@ export const InteractiveGantt: React.FC<InteractiveGanttProps> = ({
               height: '100%',
               overflowY: 'auto',
               overflowX: 'hidden',
+              scrollBehavior: 'auto',
+              willChange: 'scroll-position',
             }}
           >
             {/* Left Table Header (matching 64px height) */}
@@ -731,7 +963,7 @@ export const InteractiveGantt: React.FC<InteractiveGanttProps> = ({
                     bgcolor: isProject ? '#f1f5f9' : isPhase ? '#f8fafc' : '#ffffff',
                     cursor: 'pointer',
                     userSelect: 'none',
-                    transition: 'background-color 0.15s',
+                    contain: 'content',
                     '&:hover': { bgcolor: '#f0f9ff' },
                   }}
                 >
@@ -795,7 +1027,6 @@ export const InteractiveGantt: React.FC<InteractiveGanttProps> = ({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            transition: isDraggingSplitter ? 'none' : 'background-color 0.2s',
             userSelect: 'none',
             '&:hover': {
               bgcolor: '#0284c7',
@@ -812,7 +1043,6 @@ export const InteractiveGantt: React.FC<InteractiveGanttProps> = ({
               height: 28,
               borderRadius: 1,
               bgcolor: isDraggingSplitter ? '#ffffff' : '#94a3b8',
-              transition: 'background-color 0.2s',
             }}
           />
         </Box>
@@ -821,17 +1051,32 @@ export const InteractiveGantt: React.FC<InteractiveGanttProps> = ({
         <Box
           ref={containerRef}
           onScroll={handleRightScroll}
+          onMouseDown={handleTimelineMouseDown}
           sx={{
             flexGrow: 1,
             overflowX: 'auto',
             overflowY: 'auto',
             height: '100%',
             position: 'relative',
-            bgcolor: '#fafafa',
+            bgcolor: '#ffffff',
+            cursor: 'grab',
+            userSelect: 'none',
             pointerEvents: isDraggingSplitter ? 'none' : 'auto',
+            scrollBehavior: 'auto',
+            willChange: 'scroll-position',
+            overscrollBehavior: 'contain',
           }}
         >
-          <Box sx={{ width: timelineDays.length * columnWidth, minWidth: '100%', position: 'relative' }}>
+          <Box
+            sx={{
+              width: timelineDays.length * columnWidth,
+              minWidth: '100%',
+              position: 'relative',
+              backgroundImage: 'linear-gradient(to right, #f1f5f9 1px, transparent 1px)',
+              backgroundSize: `${columnWidth}px 100%`,
+              backgroundRepeat: 'repeat-x',
+            }}
+          >
             {/* 2-Tier Timeline Header (Tier 1: Month Groups, Tier 2: Date Grid) */}
             <Box
               sx={{
@@ -937,14 +1182,30 @@ export const InteractiveGantt: React.FC<InteractiveGanttProps> = ({
               </Box>
             </Box>
 
-            {/* Today Line Indicator */}
-            {timelineDays.some((d) => isToday(d)) && (
+            {/* Today Column Highlight */}
+            {todayIndex >= 0 && (
               <Box
                 sx={{
                   position: 'absolute',
                   top: 0,
                   bottom: 0,
-                  left: timelineDays.findIndex((d) => isToday(d)) * columnWidth + columnWidth / 2,
+                  left: todayIndex * columnWidth,
+                  width: columnWidth,
+                  bgcolor: 'rgba(224, 242, 254, 0.45)',
+                  pointerEvents: 'none',
+                  zIndex: 0,
+                }}
+              />
+            )}
+
+            {/* Today Line Indicator */}
+            {todayIndex >= 0 && (
+              <Box
+                sx={{
+                  position: 'absolute',
+                  top: 0,
+                  bottom: 0,
+                  left: todayIndex * columnWidth + columnWidth / 2,
                   width: '2px',
                   bgcolor: '#ef4444',
                   zIndex: 8,
@@ -969,6 +1230,7 @@ export const InteractiveGantt: React.FC<InteractiveGanttProps> = ({
 
             {/* Timeline Rows */}
             <Box sx={{ position: 'relative' }}>
+              {/* Task Rows */}
               {visibleTasks.map((task) => {
                 const s = parseISO(task.start);
                 const en = parseISO(task.end);
@@ -977,6 +1239,18 @@ export const InteractiveGantt: React.FC<InteractiveGanttProps> = ({
                 const isProject = task.type === 'project';
                 const isPhase = task.type === 'phase';
 
+                const handleTaskBarMouseEnter = (e: React.MouseEvent) => {
+                  showTooltip(task, e.clientX, e.clientY);
+                };
+
+                const handleTaskBarMouseMove = (e: React.MouseEvent) => {
+                  moveTooltip(e.clientX, e.clientY);
+                };
+
+                const handleTaskBarMouseLeave = () => {
+                  hideTooltip();
+                };
+
                 return (
                   <Box
                     key={task.id}
@@ -984,151 +1258,81 @@ export const InteractiveGantt: React.FC<InteractiveGanttProps> = ({
                       height: 44,
                       position: 'relative',
                       borderBottom: '1px solid #f1f5f9',
-                      bgcolor: isProject ? '#f8fafc' : '#ffffff',
+                      bgcolor: isProject ? 'rgba(248, 250, 252, 0.5)' : 'transparent',
+                      zIndex: 1,
+                      contain: 'layout paint',
                     }}
                   >
-                    {/* Background Grid Lines */}
-                    {timelineDays.map((d, i) => (
+                    {/* Task Bar */}
+                    <Box
+                      className="gantt-task-bar"
+                      onMouseEnter={handleTaskBarMouseEnter}
+                      onMouseMove={handleTaskBarMouseMove}
+                      onMouseLeave={handleTaskBarMouseLeave}
+                      sx={{
+                        position: 'absolute',
+                        top: isProject ? 6 : isPhase ? 7 : 7,
+                        height: isProject ? 32 : isPhase ? 30 : 30,
+                        left: `${left}px`,
+                        width: `${Math.max(width, 16)}px`,
+                        bgcolor: colors.bg,
+                        border: `1.5px solid ${colors.bar}`,
+                        borderRadius: isProject ? '4px' : '6px',
+                        cursor: 'grab',
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        overflow: 'hidden',
+                        zIndex: 5,
+                        userSelect: 'none',
+                      }}
+                    >
+                      {/* Progress Fill inside task */}
                       <Box
-                        key={i}
                         sx={{
                           position: 'absolute',
-                          left: i * columnWidth,
+                          left: 0,
                           top: 0,
                           bottom: 0,
-                          width: columnWidth,
-                          borderRight: '1px solid #f1f5f9',
-                          bgcolor: isToday(d) ? 'rgba(239, 246, 255, 0.4)' : d.getDay() === 0 || d.getDay() === 6 ? 'rgba(241, 245, 249, 0.35)' : 'transparent',
+                          width: `${task.progress}%`,
+                          bgcolor: colors.fill,
+                          opacity: 0.85,
+                          borderRadius: '4px 0 0 4px',
                           pointerEvents: 'none',
                         }}
                       />
-                    ))}
 
-                    {/* Task Bar */}
-                    <Tooltip
-                      followCursor
-                      enterDelay={60}
-                      leaveDelay={0}
-                      slotProps={{
-                        popper: {
-                          sx: {
-                            zIndex: 9999,
-                            pointerEvents: 'none',
-                          },
-                        },
-                        tooltip: {
-                          sx: {
-                            bgcolor: '#0f172a',
-                            color: '#ffffff',
-                            p: 1.75,
-                            borderRadius: '8px',
-                            border: '1px solid rgba(56, 189, 248, 0.4)',
-                            boxShadow: '0 12px 28px -4px rgba(0, 0, 0, 0.45)',
-                            maxWidth: 320,
-                          },
-                        },
-                      }}
-                      title={
-                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
-                          <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#38bdf8', fontSize: '0.85rem' }}>
-                            {task.name}
-                          </Typography>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <Calendar size={13} color="#94a3b8" />
-                            <Typography variant="caption" sx={{ color: '#f1f5f9', fontWeight: 600 }}>
-                              {format(s, 'dd/MM/yyyy')} — {format(en, 'dd/MM/yyyy')}
-                            </Typography>
-                          </Box>
-                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 0.5 }}>
-                            <Typography variant="caption" sx={{ color: '#cbd5e1' }}>
-                              Tiến độ: <strong style={{ color: '#34d399' }}>{task.progress}%</strong>
-                            </Typography>
-                            <Chip
-                              label={getVietnameseStatus(task.status)}
-                              size="small"
-                              sx={{
-                                height: 20,
-                                fontSize: '0.65rem',
-                                fontWeight: 700,
-                                bgcolor: colors.bg,
-                                color: colors.bar,
-                                border: `1px solid ${colors.bar}`,
-                              }}
-                            />
-                          </Box>
-                          {task.assigneeNames.length > 0 && (
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
-                              <User size={13} color="#94a3b8" />
-                              <Typography variant="caption" sx={{ color: '#cbd5e1' }}>
-                                Phụ trách: <strong>{task.assigneeNames.join(', ')}</strong>
-                              </Typography>
-                            </Box>
-                          )}
-                        </Box>
-                      }
-                    >
-                      <Box
-                        onClick={() => onTaskClick && onTaskClick(task)}
-                        sx={{
-                          position: 'absolute',
-                          top: isProject ? 6 : isPhase ? 7 : 7,
-                          height: isProject ? 32 : isPhase ? 30 : 30,
-                          left: `${left}px`,
-                          width: `${Math.max(width, 16)}px`,
-                          bgcolor: colors.bg,
-                          border: `1.5px solid ${colors.bar}`,
-                          borderRadius: isProject ? '4px' : '6px',
-                          cursor: 'pointer',
-                          boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          overflow: 'hidden',
-                          zIndex: 5,
-                          userSelect: 'none',
-                        }}
-                      >
-                        {/* Progress Fill inside task */}
-                        <Box
+                      {/* Title text on bar if width is enough */}
+                      {width > 60 && (
+                        <Typography
+                          variant="caption"
+                          noWrap
                           sx={{
-                            position: 'absolute',
-                            left: 0,
-                            top: 0,
-                            bottom: 0,
-                            width: `${task.progress}%`,
-                            bgcolor: colors.fill,
-                            opacity: 0.85,
-                            borderRadius: '4px 0 0 4px',
+                            position: 'relative',
+                            zIndex: 3,
+                            px: 1,
+                            fontSize: '0.75rem',
+                            fontWeight: 700,
+                            color: '#ffffff',
+                            textShadow: '0 1px 3px rgba(0,0,0,0.8), 0 0 2px rgba(0,0,0,0.9)',
+                            letterSpacing: '0.01em',
+                            display: 'block',
+                            pointerEvents: 'none',
                           }}
-                        />
-
-                        {/* Title text on bar if width is enough */}
-                        {width > 60 && (
-                          <Typography
-                            variant="caption"
-                            noWrap
-                            sx={{
-                              position: 'relative',
-                              zIndex: 3,
-                              px: 1,
-                              fontSize: '0.75rem',
-                              fontWeight: 700,
-                              color: '#ffffff',
-                              textShadow: '0 1px 3px rgba(0,0,0,0.8), 0 0 2px rgba(0,0,0,0.9)',
-                              letterSpacing: '0.01em',
-                              display: 'block',
-                            }}
-                          >
-                            {task.name} ({task.progress}%)
-                          </Typography>
-                        )}
-                      </Box>
-                    </Tooltip>
+                        >
+                          {task.name} ({task.progress}%)
+                        </Typography>
+                      )}
+                    </Box>
 
                     {/* Task Title beside bar if width <= 60px */}
                     {width <= 60 && (
                       <Typography
                         variant="caption"
                         noWrap
+                        onMouseEnter={handleTaskBarMouseEnter}
+                        onMouseMove={handleTaskBarMouseMove}
+                        onMouseLeave={handleTaskBarMouseLeave}
                         sx={{
                           position: 'absolute',
                           left: `${left + Math.max(width, 16) + 6}px`,
@@ -1137,7 +1341,7 @@ export const InteractiveGantt: React.FC<InteractiveGanttProps> = ({
                           fontSize: '0.75rem',
                           fontWeight: 700,
                           color: '#0f172a',
-                          pointerEvents: 'none',
+                          cursor: 'grab',
                         }}
                       >
                         {task.name} ({task.progress}%)
@@ -1147,6 +1351,69 @@ export const InteractiveGantt: React.FC<InteractiveGanttProps> = ({
                 );
               })}
             </Box>
+          </Box>
+        </Box>
+      </Box>
+
+      {/* Zero Re-render Hardware-Accelerated Floating Tooltip (Native DOM Performance) */}
+      <Box
+        ref={tooltipRef}
+        sx={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          display: 'none',
+          zIndex: 99999,
+          pointerEvents: 'none',
+          bgcolor: '#0f172a',
+          color: '#ffffff',
+          p: 1.5,
+          borderRadius: '8px',
+          border: '1px solid rgba(56, 189, 248, 0.4)',
+          boxShadow: '0 12px 28px -4px rgba(0, 0, 0, 0.5), 0 4px 10px rgba(0, 0, 0, 0.3)',
+          maxWidth: 320,
+          width: 'max-content',
+          willChange: 'transform',
+        }}
+      >
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
+          <Typography
+            ref={tooltipTitleRef}
+            variant="subtitle2"
+            sx={{ fontWeight: 800, color: '#38bdf8', fontSize: '0.85rem', lineHeight: 1.3 }}
+          />
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Calendar size={13} color="#94a3b8" />
+            <Typography
+              ref={tooltipDatesRef}
+              component="span"
+              variant="caption"
+              sx={{ color: '#f1f5f9', fontWeight: 600 }}
+            />
+          </Box>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 0.5, gap: 1.5 }}>
+            <Typography variant="caption" sx={{ color: '#cbd5e1' }}>
+              Tiến độ: <strong ref={tooltipProgressRef} style={{ color: '#34d399' }}>0%</strong>
+            </Typography>
+            <Box
+              ref={tooltipStatusRef}
+              sx={{
+                height: 20,
+                fontSize: '0.65rem',
+                fontWeight: 700,
+                px: 1,
+                display: 'inline-flex',
+                alignItems: 'center',
+                borderRadius: '16px',
+                border: '1px solid transparent',
+              }}
+            />
+          </Box>
+          <Box ref={tooltipAssigneeRef} sx={{ display: 'none', alignItems: 'center', gap: 1, mt: 0.5 }}>
+            <User size={13} color="#94a3b8" />
+            <Typography variant="caption" sx={{ color: '#cbd5e1', lineHeight: 1.2 }}>
+              Phụ trách: <strong ref={tooltipAssigneeTextRef} />
+            </Typography>
           </Box>
         </Box>
       </Box>

@@ -11,6 +11,7 @@ import { useNavigate } from 'react-router-dom';
 import { Edit2, Lock, Unlock, Trash2, TrendingUp } from 'lucide-react';
 import { User } from '../../types';
 import { roleLabels } from '../../pages/EmployeesPage';
+import { getMediaUrl } from '../../utils/fileUtils';
 import { CommonTable, ColumnDef } from '../common/CommonTable';
 
 interface EmployeeTableProps {
@@ -64,7 +65,10 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = memo(({
               '&:hover .employee-name': { color: '#0284c7', textDecoration: 'underline' },
             }}
           >
-            <Avatar sx={{ width: 32, height: 32, fontSize: '0.85rem', bgcolor: '#0284c7' }}>
+            <Avatar
+              src={getMediaUrl(row.avatarUrl)}
+              sx={{ width: 32, height: 32, fontSize: '0.85rem', bgcolor: '#0284c7' }}
+            >
               {row.fullName.charAt(0)}
             </Avatar>
             <Typography

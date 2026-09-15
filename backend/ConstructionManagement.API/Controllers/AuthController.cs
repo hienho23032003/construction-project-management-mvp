@@ -61,6 +61,20 @@ public class AuthController : BaseApiController
         return Ok(result);
     }
 
+    [HttpPost("avatar")]
+    [Authorize]
+    public async Task<IActionResult> UploadAvatar([FromForm] IFormFile file)
+    {
+        if (file == null || file.Length == 0)
+        {
+            return BadRequest(new { success = false, message = "Vui lòng chọn ảnh đại diện hợp lệ." });
+        }
+
+        var result = await _authService.UploadAvatarAsync(CurrentUserId, file);
+        if (!result.Success) return BadRequest(result);
+        return Ok(result);
+    }
+
     [HttpPost("change-password")]
     [Authorize]
     public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)

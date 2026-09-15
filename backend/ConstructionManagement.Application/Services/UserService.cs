@@ -11,10 +11,12 @@ namespace ConstructionManagement.Application.Services;
 public class UserService : IUserService
 {
     private readonly IAppDbContext _context;
+    private readonly IFileStorageService _fileStorageService;
 
-    public UserService(IAppDbContext context)
+    public UserService(IAppDbContext context, IFileStorageService fileStorageService)
     {
         _context = context;
+        _fileStorageService = fileStorageService;
     }
 
     public async Task<ApiResponse<PagedResult<UserDto>>> GetAllUsersAsync(PaginationParams pagination)
@@ -214,6 +216,40 @@ public class UserService : IUserService
         await _context.SaveChangesAsync();
 
         return await GetUserByIdAsync(user.Id);
+    }
+
+    public async Task<ApiResponse<UserDto>> UploadUserAvatarAsync(Guid userId, Microsoft.AspNetCore.Http.IFormFile file)
+    {
+        var user = await _context.Users
+            .Include(u => u.UserRoles)
+                .ThenInclude(ur => ur.Role)
+            .FirstOrDefaultAsync(u => u.Id == userId);
+
+        if (user == null)
+        {
+            return ApiResponse<UserDto>.Fail("Không tìm thấy nhân viên.");
+        }
+
+        try
+        {
+            var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp", ".gif", ".jfif", ".pjpeg", ".pjp", ".bmp", ".svg", ".ico" };
+            var result = await _fileStorageService.SaveFileAsync(file, "avatars", allowedExtensions, 5 * 1024 * 1024);
+
+            if (!string.IsNullOrWhiteSpace(user.AvatarUrl) && user.AvatarUrl.StartsWith("/uploads/avatars/"))
+            {
+                _fileStorageService.DeleteFile(user.AvatarUrl);
+            }
+
+            user.AvatarUrl = result.FilePath;
+            user.UpdatedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+
+            return await GetUserByIdAsync(user.Id);
+        }
+        catch (Exception ex)
+        {
+            return ApiResponse<UserDto>.Fail($"Tải lên ảnh đại diện thất bại: {ex.Message}");
+        }
     }
 
     public async Task<ApiResponse<bool>> DeleteUserAsync(Guid id)

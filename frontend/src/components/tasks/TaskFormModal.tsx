@@ -29,6 +29,7 @@ export interface TaskFormData {
   description: string;
   startDate: string;
   plannedEndDate: string;
+  actualEndDate?: string;
   priority: PriorityLevel;
   status: TaskStatus;
   assigneeIds: string[];
@@ -127,6 +128,7 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
     handleSubmit,
     reset,
     watch,
+    setValue,
     trigger,
     formState: { errors },
   } = useForm<TaskFormData>({
@@ -135,6 +137,7 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
       description: '',
       startDate: new Date().toISOString().split('T')[0],
       plannedEndDate: new Date(Date.now() + 14 * 86400000).toISOString().split('T')[0],
+      actualEndDate: '',
       priority: 'Medium',
       status: 'NotStarted',
       assigneeIds: [],
@@ -143,6 +146,7 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
 
   const watchedStartDate = watch('startDate');
   const watchedEndDate = watch('plannedEndDate');
+  const watchedStatus = watch('status');
 
   useEffect(() => {
     if (open) {
@@ -152,6 +156,7 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
           description: editingTask.description || '',
           startDate: editingTask.startDate ? editingTask.startDate.split('T')[0] : new Date().toISOString().split('T')[0],
           plannedEndDate: editingTask.plannedEndDate ? editingTask.plannedEndDate.split('T')[0] : new Date().toISOString().split('T')[0],
+          actualEndDate: editingTask.actualEndDate ? editingTask.actualEndDate.split('T')[0] : (editingTask.status === 'Completed' ? (editingTask.plannedEndDate ? editingTask.plannedEndDate.split('T')[0] : new Date().toISOString().split('T')[0]) : ''),
           priority: editingTask.priority,
           status: editingTask.status,
           assigneeIds: editingTask.assignees ? editingTask.assignees.map((a) => a.userId || a.id) : [],
@@ -162,6 +167,7 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
           description: '',
           startDate: new Date().toISOString().split('T')[0],
           plannedEndDate: new Date(Date.now() + 14 * 86400000).toISOString().split('T')[0],
+          actualEndDate: '',
           priority: 'Medium',
           status: 'NotStarted',
           assigneeIds: [],
@@ -173,6 +179,7 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
   const handleFormSubmit = async (data: TaskFormData) => {
     const payload = {
       ...data,
+      actualEndDate: data.status === 'Completed' ? (data.actualEndDate || data.plannedEndDate) : undefined,
       projectId: targetProjectId || undefined,
     };
     await onSubmit(payload);
@@ -383,6 +390,30 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
               />
             </Grid>
           </Grid>
+
+          {watchedStatus === 'Completed' && (
+            <Controller
+              name="actualEndDate"
+              control={control}
+              render={({ field }) => (
+                <DatePicker
+                  label="Ngày Hoàn Thành Thực Tế"
+                  value={field.value ? new Date(field.value) : (watchedEndDate ? new Date(watchedEndDate) : new Date())}
+                  onChange={(newValue) => {
+                    field.onChange(
+                      newValue && !isNaN(newValue.getTime()) ? format(newValue, 'yyyy-MM-dd') : ''
+                    );
+                  }}
+                  slotProps={{
+                    textField: {
+                      fullWidth: true,
+                      helperText: 'Dùng để đánh giá hoàn thành đúng hạn hay trễ hạn',
+                    },
+                  }}
+                />
+              )}
+            />
+          )}
 
           <Controller
             name="assigneeIds"

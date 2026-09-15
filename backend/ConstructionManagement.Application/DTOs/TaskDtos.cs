@@ -32,6 +32,8 @@ public class TaskDto
 
     public bool IsOverdue => Status != TaskItemStatus.Completed && DateTime.UtcNow.Date > PlannedEndDate.Date;
     public int OverdueDays => IsOverdue ? (int)(DateTime.UtcNow.Date - PlannedEndDate.Date).TotalDays : 0;
+    public bool IsCompletedLate => Status == TaskItemStatus.Completed && ActualEndDate.HasValue && ActualEndDate.Value.Date > PlannedEndDate.Date;
+    public int CompletedLateDays => IsCompletedLate && ActualEndDate.HasValue ? (int)(ActualEndDate.Value.Date - PlannedEndDate.Date).TotalDays : 0;
 
     public List<TaskAssigneeDto> Assignees { get; set; } = new List<TaskAssigneeDto>();
     public List<TaskDependencyDto> Dependencies { get; set; } = new List<TaskDependencyDto>();
@@ -55,6 +57,7 @@ public class CreateTaskRequest
     public PriorityLevel Priority { get; set; } = PriorityLevel.Medium;
     public DateTime StartDate { get; set; }
     public DateTime PlannedEndDate { get; set; }
+    public DateTime? ActualEndDate { get; set; }
     public double Progress { get; set; } = 0.0;
     public double Weight { get; set; } = 1.0;
     public int SortOrder { get; set; } = 0;
@@ -82,6 +85,7 @@ public class UpdateTaskRequest
 public class UpdateTaskStatusRequest
 {
     public TaskItemStatus Status { get; set; }
+    public DateTime? ActualEndDate { get; set; }
 }
 
 public class UpdateTaskProgressRequest
@@ -102,7 +106,19 @@ public class TaskAssigneeDto
     public string FullName { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
     public string? Department { get; set; }
+    public string? AvatarUrl { get; set; }
     public DateTime AssignedAt { get; set; }
+}
+
+public class TaskCommentAttachmentDto
+{
+    public Guid Id { get; set; }
+    public Guid CommentId { get; set; }
+    public string FileName { get; set; } = string.Empty;
+    public string FilePath { get; set; } = string.Empty;
+    public long FileSize { get; set; }
+    public string? ContentType { get; set; }
+    public DateTime UploadedAt { get; set; }
 }
 
 public class TaskCommentDto
@@ -112,14 +128,22 @@ public class TaskCommentDto
     public Guid UserId { get; set; }
     public string UserName { get; set; } = string.Empty;
     public string? UserDepartment { get; set; }
+    public string? UserAvatarUrl { get; set; }
     public string Content { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
+    public List<TaskCommentAttachmentDto> Attachments { get; set; } = new();
 }
 
 public class CreateCommentRequest
 {
-    public string Content { get; set; } = string.Empty;
+    public string? Content { get; set; } = string.Empty;
+}
+
+public class CreateCommentWithFilesRequest
+{
+    public string? Content { get; set; }
+    public List<Microsoft.AspNetCore.Http.IFormFile>? Files { get; set; }
 }
 
 public class TaskDependencyDto

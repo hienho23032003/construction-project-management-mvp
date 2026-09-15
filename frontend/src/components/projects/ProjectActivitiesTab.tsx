@@ -1,9 +1,10 @@
 import React, { memo } from 'react';
-import { Box, Typography, Paper, Chip } from '@mui/material';
+import { Box, Typography, Paper, Chip, Avatar } from '@mui/material';
 import { ChevronRight, CheckSquare } from 'lucide-react';
 import { ActivityLog } from '../../types';
 import { getVietnameseStatus } from '../common/StatusChip';
 import { formatDateTime } from '../../utils/dateUtils';
+import { getMediaUrl } from '../../utils/fileUtils';
 
 interface ProjectActivitiesTabProps {
   activities: ActivityLog[];
@@ -61,6 +62,19 @@ export const ProjectActivitiesTab: React.FC<ProjectActivitiesTabProps> = memo(({
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 1 }}>
                   <Box sx={{ flexGrow: 1 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', mb: 0.5 }}>
+                      <Avatar
+                        src={getMediaUrl(act.userAvatarUrl) || undefined}
+                        sx={{
+                          width: 22,
+                          height: 22,
+                          fontSize: '0.65rem',
+                          bgcolor: '#0284c7',
+                          color: '#ffffff',
+                          fontWeight: 700,
+                        }}
+                      >
+                        {act.userName ? act.userName.charAt(0) : 'U'}
+                      </Avatar>
                       <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#0f172a' }}>
                         {act.userName}
                       </Typography>

@@ -52,6 +52,7 @@ public class UserLoginSessionDto
     public string UserEmail { get; set; } = string.Empty;
     public string? UserDepartment { get; set; }
     public string? UserRole { get; set; }
+    public string? UserAvatarUrl { get; set; }
     public DateTime LoginTime { get; set; }
     public DateTime? LogoutTime { get; set; }
     public DateTime? LastActiveTime { get; set; }

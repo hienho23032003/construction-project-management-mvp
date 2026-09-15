@@ -244,11 +244,27 @@ export const theme = createTheme({
         },
       },
     },
+    MuiAvatar: {
+      styleOverrides: {
+        root: {
+          color: '#ffffff !important',
+          backgroundColor: '#0284c7',
+          fontWeight: 700,
+        },
+      },
+    },
     MuiChip: {
       styleOverrides: {
         root: {
           fontWeight: 600,
           borderRadius: '8px',
+        },
+        avatar: {
+          color: '#ffffff !important',
+          backgroundColor: '#0284c7 !important',
+          '& *': {
+            color: '#ffffff !important',
+          },
         },
       },
     },

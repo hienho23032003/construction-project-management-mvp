@@ -47,6 +47,7 @@ import { usePermission } from '../hooks/usePermission';
 import { NotificationItem } from '../types';
 import { UserProfileModal } from '../components/common/UserProfileModal';
 import { formatShortDateTime } from '../utils/dateUtils';
+import { getMediaUrl } from '../utils/fileUtils';
 
 const EXPANDED_DRAWER_WIDTH = 270;
 const COLLAPSED_DRAWER_WIDTH = 76;
@@ -100,6 +101,8 @@ export const MainLayout: React.FC = () => {
     }
     setNotifAnchor(null);
 
+    const isComment = n.type === 'CommentAdded' || (n.title && (n.title.toLowerCase().includes('bình luận') || n.title.toLowerCase().includes('trao đổi')));
+
     if (n.referenceType === 'Project') {
       if (n.referenceId) {
         navigate(`/projects/${n.referenceId}`);
@@ -108,7 +111,7 @@ export const MainLayout: React.FC = () => {
       }
     } else if (n.referenceType === 'Task' || n.type !== 'ProjectAssigned') {
       if (n.referenceId) {
-        navigate(`/tasks?taskId=${n.referenceId}`);
+        navigate(`/tasks?taskId=${n.referenceId}${isComment ? '&tab=comments' : ''}`);
       } else {
         navigate('/tasks');
       }
@@ -303,13 +306,19 @@ export const MainLayout: React.FC = () => {
             placement="right"
             arrow
           >
-            <Avatar sx={{ bgcolor: '#0284c7', width: 36, height: 36, fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer', color: '#ffffff' }}>
+            <Avatar
+              src={getMediaUrl(user?.avatarUrl)}
+              sx={{ bgcolor: '#0284c7', width: 36, height: 36, fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer', color: '#ffffff' }}
+            >
               {user?.fullName?.charAt(0) || 'U'}
             </Avatar>
           </Tooltip>
         ) : (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, width: '100%', overflow: 'hidden' }}>
-            <Avatar sx={{ bgcolor: '#0284c7', width: 36, height: 36, fontWeight: 700, fontSize: '0.9rem', flexShrink: 0, color: '#ffffff' }}>
+            <Avatar
+              src={getMediaUrl(user?.avatarUrl)}
+              sx={{ bgcolor: '#0284c7', width: 36, height: 36, fontWeight: 700, fontSize: '0.9rem', flexShrink: 0, color: '#ffffff' }}
+            >
               {user?.fullName?.charAt(0) || 'U'}
             </Avatar>
             <Box sx={{ minWidth: 0, flexGrow: 1 }}>
@@ -482,7 +491,10 @@ export const MainLayout: React.FC = () => {
                 onClick={(e) => setUserMenuAnchor(e.currentTarget)}
                 sx={{ p: 0.5 }}
               >
-                <Avatar sx={{ bgcolor: '#0284c7', width: 36, height: 36, fontWeight: 700, fontSize: '0.85rem' }}>
+                <Avatar
+                  src={getMediaUrl(user?.avatarUrl)}
+                  sx={{ bgcolor: '#0284c7', width: 36, height: 36, fontWeight: 700, fontSize: '0.85rem' }}
+                >
                   {user?.fullName?.charAt(0) || 'U'}
                 </Avatar>
               </IconButton>

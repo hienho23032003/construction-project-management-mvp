@@ -16,11 +16,13 @@ import {
   Skeleton,
   IconButton,
   Tooltip,
+  Avatar,
 } from '@mui/material';
 import { FolderKanban, ChevronDown, ChevronRight } from 'lucide-react';
 import { TaskItem, TaskStatus } from '../../types';
 import { StatusSelect } from '../common';
 import { formatDate } from '../../utils/dateUtils';
+import { getMediaUrl } from '../../utils/fileUtils';
 
 interface TaskTableRowProps {
   task: TaskItem;
@@ -47,13 +49,23 @@ const TaskTableRow: React.FC<TaskTableRowProps> = memo(({
     return formatDate(task.plannedEndDate);
   }, [task.plannedEndDate]);
 
+  const isCompletedLate = task.status === 'Completed' && Boolean(
+    task.isCompletedLate ||
+    (task.actualEndDate && new Date(task.actualEndDate.split('T')[0]).getTime() > new Date(task.plannedEndDate.split('T')[0]).getTime())
+  );
+  const completedLateDays = task.completedLateDays || (
+    isCompletedLate && task.actualEndDate
+      ? Math.max(1, Math.round((new Date(task.actualEndDate.split('T')[0]).getTime() - new Date(task.plannedEndDate.split('T')[0]).getTime()) / 86400000))
+      : 0
+  );
+
   return (
     <TableRow
       hover
       onClick={() => onRowClick(task)}
       sx={{
         cursor: 'pointer',
-        bgcolor: task.isOverdue ? '#fffdfd' : 'inherit',
+        bgcolor: task.isOverdue || isCompletedLate ? '#fffdfd' : 'inherit',
         '&:hover': { bgcolor: '#f8fafc !important' },
       }}
     >
@@ -103,6 +115,14 @@ const TaskTableRow: React.FC<TaskTableRowProps> = memo(({
             task.assignees.slice(0, 2).map((a) => (
               <Chip
                 key={a.id}
+                avatar={
+                  <Avatar
+                    src={getMediaUrl(a.avatarUrl)}
+                    sx={{ width: 18, height: 18, fontSize: '0.65rem' }}
+                  >
+                    {a.fullName.charAt(0)}
+                  </Avatar>
+                }
                 label={a.fullName}
                 size="small"
                 sx={{ height: 22, fontSize: '0.7rem', whiteSpace: 'nowrap' }}
@@ -123,13 +143,14 @@ const TaskTableRow: React.FC<TaskTableRowProps> = memo(({
           variant="caption"
           sx={{
             fontWeight: 600,
-            color: task.isOverdue ? '#ef4444' : '#334155',
+            color: task.isOverdue || isCompletedLate ? '#ef4444' : '#334155',
             whiteSpace: 'nowrap',
             display: 'block',
           }}
         >
           {formattedDate}
           {task.isOverdue && ` (Trễ ${task.overdueDays} ngày)`}
+          {isCompletedLate && ` (Trễ ${completedLateDays} ngày)`}
         </Typography>
       </TableCell>
       <TableCell onClick={(e) => e.stopPropagation()} sx={{ whiteSpace: 'nowrap' }}>

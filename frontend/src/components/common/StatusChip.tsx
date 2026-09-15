@@ -17,20 +17,34 @@ export const statusMap: Record<string, { label: string; bg: string; color: strin
   Cancelled: { label: 'Đã hủy', bg: '#f1f5f9', color: '#64748b', border: '#cbd5e1' },
 };
 
-export const getVietnameseStatus = (status: string, isOverdue?: boolean): string => {
-  if (!status) return 'Chưa xác định';
-  if (isOverdue && status !== 'Completed') return 'Trễ tiến độ';
+export const getVietnameseStatus = (status?: string | number, isOverdue?: boolean): string => {
+  if (status === undefined || status === null) return 'Chưa xác định';
+  const str = String(status).trim();
+  if (!str) return 'Chưa xác định';
+  if (isOverdue && str !== 'Completed' && str !== '2' && !str.toLowerCase().includes('completed')) {
+    return 'Trễ tiến độ';
+  }
 
-  const exactMatch = Object.keys(statusMap).find((k) => k.toLowerCase() === status.trim().toLowerCase());
+  const exactMatch = Object.keys(statusMap).find((k) => k.toLowerCase() === str.toLowerCase());
   if (exactMatch) return statusMap[exactMatch].label;
 
-  return status
-    .replace(/\bInProgress\b/gi, 'Đang thực hiện')
-    .replace(/\bCompleted\b/gi, 'Hoàn thành')
-    .replace(/\bNotStarted\b/gi, 'Chưa bắt đầu')
-    .replace(/\bOnHold\b/gi, 'Tạm dừng')
-    .replace(/\bOverdue\b/gi, 'Trễ tiến độ')
-    .replace(/\bCancelled\b/gi, 'Đã hủy')
+  if (str === '0') return 'Chưa bắt đầu';
+  if (str === '1') return 'Đang thực hiện';
+  if (str === '2') return 'Hoàn thành';
+  if (str === '3') return 'Tạm dừng';
+  if (str === '4') return 'Đã hủy';
+
+  return str
+    .replace(/InProgress/gi, 'Đang thực hiện')
+    .replace(/In\s*Progress/gi, 'Đang thực hiện')
+    .replace(/NotStarted/gi, 'Chưa bắt đầu')
+    .replace(/Not\s*Started/gi, 'Chưa bắt đầu')
+    .replace(/Completed/gi, 'Hoàn thành')
+    .replace(/OnHold/gi, 'Tạm dừng')
+    .replace(/On\s*Hold/gi, 'Tạm dừng')
+    .replace(/Overdue/gi, 'Trễ tiến độ')
+    .replace(/Cancelled/gi, 'Đã hủy')
+    .replace(/Canceled/gi, 'Đã hủy')
     .replace(/\bUrgent\b/gi, 'Khẩn cấp')
     .replace(/\bHigh\b/gi, 'Cao')
     .replace(/\bMedium\b/gi, 'Trung bình')

@@ -41,6 +41,19 @@ app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.UseDefaultFiles();
 app.UseStaticFiles();
 
+// Serve outside-wwwroot Uploads folder (ContentRootPath/uploads)
+var uploadsPath = Path.Combine(app.Environment.ContentRootPath, "uploads");
+if (!Directory.Exists(uploadsPath))
+{
+    Directory.CreateDirectory(uploadsPath);
+}
+
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(uploadsPath),
+    RequestPath = "/uploads"
+});
+
 // Configure HTTP request pipeline
 if (app.Environment.IsDevelopment() || true) // Enable Swagger for easy API testing
 {
@@ -59,13 +72,13 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-// SPA Fallback: Any non-API route returns index.html for React Router
+// SPA Fallback: Any non-API / non-Upload route returns index.html for React Router
 app.MapFallback(async context =>
 {
-    if (context.Request.Path.StartsWithSegments("/api"))
+    if (context.Request.Path.StartsWithSegments("/api") || context.Request.Path.StartsWithSegments("/uploads"))
     {
         context.Response.StatusCode = StatusCodes.Status404NotFound;
-        await context.Response.WriteAsJsonAsync(new { success = false, message = "API endpoint not found." });
+        await context.Response.WriteAsJsonAsync(new { success = false, message = "Resource not found." });
         return;
     }
 

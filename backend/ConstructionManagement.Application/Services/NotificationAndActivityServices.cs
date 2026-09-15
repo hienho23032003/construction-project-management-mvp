@@ -141,6 +141,7 @@ public class ActivityLogService : IActivityLogService
                 Id = al.Id,
                 UserId = al.UserId,
                 UserName = al.User.FullName,
+                UserAvatarUrl = al.User.AvatarUrl,
                 ProjectId = al.ProjectId,
                 ProjectCode = al.Project != null ? al.Project.Code : null,
                 ProjectName = al.Project != null ? al.Project.Name : null,

@@ -174,6 +174,7 @@ public class ProjectService : IProjectService
                     FullName = a.User.FullName,
                     Email = a.User.Email,
                     Department = a.User.Department,
+                    AvatarUrl = a.User.AvatarUrl,
                     AssignedAt = a.AssignedAt
                 }).ToList(),
                 SubTaskCount = p.Tasks.Count(st => st.ParentId == t.Id),
@@ -190,6 +191,7 @@ public class ProjectService : IProjectService
             Email = m.User.Email,
             Department = m.User.Department,
             RoleInProject = m.RoleInProject,
+            AvatarUrl = m.User.AvatarUrl,
             JoinedAt = m.JoinedAt
         }).ToList();
 
@@ -201,6 +203,7 @@ public class ProjectService : IProjectService
                 Id = al.Id,
                 UserId = al.UserId,
                 UserName = al.User.FullName,
+                UserAvatarUrl = al.User.AvatarUrl,
                 ProjectId = al.ProjectId,
                 ProjectCode = p.Code,
                 ProjectName = p.Name,

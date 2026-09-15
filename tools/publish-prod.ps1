@@ -62,6 +62,16 @@ if (Test-Path $ProdConfigSrc) {
     Copy-Item -Path $ProdConfigSrc -Destination $ProdConfigDest -Force
 }
 
+# Ensure uploads folder is never packaged in publish.zip (preserving production uploaded data)
+$StagingUploads = Join-Path $StagingDir "uploads"
+if (Test-Path $StagingUploads) {
+    Remove-Item -Path $StagingUploads -Recurse -Force -ErrorAction SilentlyContinue
+}
+$StagingWwwrootUploads = Join-Path $StagingDir "wwwroot\uploads"
+if (Test-Path $StagingWwwrootUploads) {
+    Remove-Item -Path $StagingWwwrootUploads -Recurse -Force -ErrorAction SilentlyContinue
+}
+
 Write-Host ""
 Write-Host "============================================================" -ForegroundColor Cyan
 Write-Host " [4/4] Dong goi toan bo ung dung thanh publish.zip..." -ForegroundColor Cyan

@@ -4,6 +4,7 @@ import { Card, CardContent, Box, Typography, Avatar, Chip, IconButton, Tooltip, 
 import { Mail, Phone, Briefcase, Edit2, Lock, Unlock, Trash2, TrendingUp, ChevronRight } from 'lucide-react';
 import { User } from '../../types';
 import { roleLabels } from '../../pages/EmployeesPage';
+import { getMediaUrl } from '../../utils/fileUtils';
 
 interface EmployeeCardProps {
   user: User;
@@ -56,6 +57,7 @@ export const EmployeeCard: React.FC<EmployeeCardProps> = memo(({
             sx={{ display: 'flex', alignItems: 'center', gap: 1.5, minWidth: 0, flexGrow: 1, cursor: 'pointer' }}
           >
             <Avatar
+              src={getMediaUrl(u.avatarUrl)}
               sx={{
                 bgcolor: u.role === 'SuperAdmin' ? '#ef4444' : u.role === 'ProjectManager' ? '#0284c7' : '#10b981',
                 width: 46,

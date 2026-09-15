@@ -38,9 +38,9 @@ export const DashboardPage: React.FC = () => {
   const { data: dependencies = [] } = useTaskDependenciesQuery(selectedTaskId || undefined);
   const addCommentMutation = useAddCommentMutation(selectedTaskId || undefined);
 
-  const handleAddComment = async (content: string) => {
+  const handleAddComment = async (content: string, files?: File[]) => {
     if (!selectedTaskId) return;
-    await addCommentMutation.mutateAsync(content);
+    await addCommentMutation.mutateAsync({ content, files });
   };
 
   // Active query parameters applied

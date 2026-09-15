@@ -71,6 +71,20 @@ public class UsersController : BaseApiController
         return Ok(result);
     }
 
+    [HttpPost("{id:guid}/avatar")]
+    [Authorize(Roles = "SuperAdmin")]
+    public async Task<IActionResult> UploadUserAvatar(Guid id, [FromForm] IFormFile file)
+    {
+        if (file == null || file.Length == 0)
+        {
+            return BadRequest(new { success = false, message = "Vui lòng chọn ảnh đại diện hợp lệ." });
+        }
+
+        var result = await _userService.UploadUserAvatarAsync(id, file);
+        if (!result.Success) return BadRequest(result);
+        return Ok(result);
+    }
+
     [HttpDelete("{id:guid}")]
     [Authorize(Roles = "SuperAdmin")]
     public async Task<IActionResult> DeleteUser(Guid id)

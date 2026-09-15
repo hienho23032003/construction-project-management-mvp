@@ -67,6 +67,12 @@ export const TasksPage: React.FC = () => {
 
   // Selected task for drawer
   const [selectedTask, setSelectedTask] = useState<TaskItem | null>(null);
+  const tabParam = searchParams.get('tab');
+  const initialTab = useMemo(() => {
+    if (tabParam === 'comments' || tabParam === 'discussion' || tabParam === '1') return 1;
+    if (tabParam === 'history' || tabParam === 'activities' || tabParam === '2') return 2;
+    return 0;
+  }, [tabParam]);
 
   // Query single task if specified in URL (e.g. clicked from Notification)
   const { data: taskFromUrl } = useTaskDetailQuery(taskIdParam);
@@ -116,8 +122,8 @@ export const TasksPage: React.FC = () => {
     });
   }, []);
 
-  const handleAddComment = useCallback(async (content: string) => {
-    await addCommentMutation.mutateAsync(content);
+  const handleAddComment = useCallback(async (content: string, files?: File[]) => {
+    await addCommentMutation.mutateAsync({ content, files });
   }, [addCommentMutation]);
 
   const handleRowClick = useCallback((task: TaskItem) => {
@@ -132,9 +138,10 @@ export const TasksPage: React.FC = () => {
   const handleCloseDrawer = useCallback(() => {
     setSelectedTask(null);
     setSearchParams((prevParams) => {
-      if (prevParams.has('taskId')) {
+      if (prevParams.has('taskId') || prevParams.has('tab')) {
         const next = new URLSearchParams(prevParams);
         next.delete('taskId');
+        next.delete('tab');
         return next;
       }
       return prevParams;
@@ -345,6 +352,7 @@ export const TasksPage: React.FC = () => {
         dependencies={dependencies}
         loadingComments={loadingComments}
         onAddComment={handleAddComment}
+        initialTab={initialTab}
       />
     </Box>
   );

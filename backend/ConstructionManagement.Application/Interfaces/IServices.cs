@@ -17,6 +17,7 @@ public interface IAuthService
     Task<ApiResponse<UserDto>> GetCurrentUserAsync(Guid userId);
     Task<ApiResponse<UserDto>> RegisterAsync(CreateUserRequest request);
     Task<ApiResponse<UserDto>> UpdateProfileAsync(Guid userId, UpdateProfileRequest request);
+    Task<ApiResponse<UserDto>> UploadAvatarAsync(Guid userId, Microsoft.AspNetCore.Http.IFormFile file);
     Task<ApiResponse<bool>> ChangePasswordAsync(Guid userId, ChangePasswordRequest request);
 }
 
@@ -48,6 +49,7 @@ public interface IUserService
     Task<ApiResponse<UserDto>> GetUserByIdAsync(Guid id);
     Task<ApiResponse<UserDto>> CreateUserAsync(CreateUserRequest request);
     Task<ApiResponse<UserDto>> UpdateUserAsync(Guid id, UpdateUserRequest request);
+    Task<ApiResponse<UserDto>> UploadUserAvatarAsync(Guid userId, Microsoft.AspNetCore.Http.IFormFile file);
     Task<ApiResponse<bool>> DeleteUserAsync(Guid id);
     Task<ApiResponse<bool>> ToggleUserStatusAsync(Guid id);
     Task<ApiResponse<List<EmployeeWorkloadSummaryDto>>> GetWorkloadSummaryAsync();
@@ -85,6 +87,7 @@ public interface ITaskService
     // Comments
     Task<ApiResponse<List<TaskCommentDto>>> GetTaskCommentsAsync(Guid taskId);
     Task<ApiResponse<TaskCommentDto>> AddCommentAsync(Guid taskId, CreateCommentRequest request, Guid currentUserId);
+    Task<ApiResponse<TaskCommentDto>> AddCommentWithAttachmentsAsync(Guid taskId, CreateCommentWithFilesRequest request, Guid currentUserId);
     Task<ApiResponse<bool>> DeleteCommentAsync(Guid commentId, Guid currentUserId);
 
     // Dependencies

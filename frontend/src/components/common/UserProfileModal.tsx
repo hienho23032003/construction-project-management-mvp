@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -17,6 +17,7 @@ import {
   IconButton,
   InputAdornment,
   Tooltip,
+  CircularProgress,
 } from '@mui/material';
 import {
   User as UserIcon,
@@ -31,12 +32,17 @@ import {
   CheckCircle2,
   Lock,
   X,
+  Camera,
+  Upload,
+  RefreshCw,
 } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../contexts/AuthContext';
 import { authApi } from '../../services/api/endpoints';
 import { useToast } from '../../contexts/ToastContext';
 import { formatDate } from '../../utils/dateUtils';
 import { getVietnamesePermission, getVietnameseRole } from '../../utils/permissionUtils';
+import { getMediaUrl } from '../../utils/fileUtils';
 
 interface UserProfileModalProps {
   open: boolean;
@@ -46,6 +52,8 @@ interface UserProfileModalProps {
 export const UserProfileModal: React.FC<UserProfileModalProps> = ({ open, onClose }) => {
   const { user, updateUser, permissions } = useAuth();
   const { showSuccess, showError } = useToast();
+  const queryClient = useQueryClient();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [activeTab, setActiveTab] = useState<number>(0);
 
@@ -54,6 +62,10 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ open, onClos
   const [phone, setPhone] = useState('');
   const [department, setDepartment] = useState('');
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
+
+  // Local Avatar Preview State (only uploads when clicking "Lưu Thay Đổi")
+  const [selectedAvatarFile, setSelectedAvatarFile] = useState<File | null>(null);
+  const [avatarPreviewUrl, setAvatarPreviewUrl] = useState<string | null>(null);
 
   // Password Form State
   const [currentPassword, setCurrentPassword] = useState('');
@@ -64,6 +76,50 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ open, onClos
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
 
+  const cleanupPreview = () => {
+    if (avatarPreviewUrl && avatarPreviewUrl.startsWith('blob:')) {
+      URL.revokeObjectURL(avatarPreviewUrl);
+    }
+    setAvatarPreviewUrl(null);
+    setSelectedAvatarFile(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const handleModalClose = () => {
+    cleanupPreview();
+    onClose();
+  };
+
+  const handleAvatarFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate size (< 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      showError('Dung lượng ảnh vượt quá 5MB. Vui lòng chọn ảnh nhỏ hơn.');
+      return;
+    }
+
+    // Validate type / extension
+    const ext = (file.name.split('.').pop() || '').toLowerCase();
+    const allowedExtensions = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'jfif', 'pjpeg', 'pjp', 'bmp', 'svg', 'ico'];
+    const isImageMime = file.type.startsWith('image/');
+
+    if (!allowedExtensions.includes(ext) && !isImageMime) {
+      showError('Định dạng ảnh không hợp lệ. Chỉ chấp nhận JPG, PNG, WEBP, JFIF, GIF, BMP, SVG.');
+      return;
+    }
+
+    if (avatarPreviewUrl && avatarPreviewUrl.startsWith('blob:')) {
+      URL.revokeObjectURL(avatarPreviewUrl);
+    }
+
+    const preview = URL.createObjectURL(file);
+    setSelectedAvatarFile(file);
+    setAvatarPreviewUrl(preview);
+    showSuccess('Đã chọn ảnh đại diện. Vui lòng bấm "Lưu Thay Đổi" để lưu và cập nhật hệ thống.');
+  };
+
   useEffect(() => {
     if (user && open) {
       setFullName(user.fullName || '');
@@ -73,6 +129,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ open, onClos
       setNewPassword('');
       setConfirmPassword('');
       setActiveTab(0);
+      cleanupPreview();
     }
   }, [user, open]);
 
@@ -85,18 +142,41 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ open, onClos
 
     try {
       setIsUpdatingProfile(true);
+      let latestUser = user;
+
+      // 1. Upload avatar if user selected a new file
+      if (selectedAvatarFile) {
+        const avatarRes = await authApi.uploadAvatar(selectedAvatarFile);
+        if (avatarRes.data.success && avatarRes.data.data) {
+          latestUser = avatarRes.data.data;
+        } else {
+          showError(avatarRes.data.message || 'Tải ảnh đại diện lên thất bại.');
+          setIsUpdatingProfile(false);
+          return;
+        }
+      }
+
+      // 2. Update text fields (fullName, phone, department, avatarUrl)
       const res = await authApi.updateProfile({
         fullName: fullName.trim(),
         phone: phone.trim() || undefined,
         department: department.trim() || undefined,
+        avatarUrl: latestUser?.avatarUrl,
       });
 
       if (res.data.success && res.data.data) {
-        updateUser(res.data.data);
-        showSuccess('Cập nhật thông tin cá nhân thành công!');
-        onClose();
+        latestUser = res.data.data;
+      }
+
+      if (latestUser) {
+        updateUser(latestUser);
+        queryClient.invalidateQueries({ queryKey: ['users'] });
+        queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+        queryClient.invalidateQueries({ queryKey: ['employees'] });
+        showSuccess('Cập nhật thông tin và ảnh đại diện thành công!');
+        handleModalClose();
       } else {
-        showError(res.data.message || 'Cập nhật thất bại.');
+        showError('Cập nhật thất bại.');
       }
     } catch (err: any) {
       showError(err.response?.data?.message || err.message || 'Có lỗi xảy ra khi cập nhật.');
@@ -134,7 +214,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ open, onClos
         setCurrentPassword('');
         setNewPassword('');
         setConfirmPassword('');
-        onClose();
+        handleModalClose();
       } else {
         showError(res.data.message || 'Đổi mật khẩu thất bại.');
       }
@@ -147,8 +227,10 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ open, onClos
 
   if (!user) return null;
 
+  const currentDisplayAvatar = getMediaUrl(avatarPreviewUrl || user.avatarUrl);
+
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+    <Dialog open={open} onClose={handleModalClose} maxWidth="sm" fullWidth>
       {/* Header Banner */}
       <Box
         sx={{
@@ -161,19 +243,51 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ open, onClos
           gap: 2,
         }}
       >
-        <Avatar
-          sx={{
-            bgcolor: '#ffffff',
-            color: '#0284c7',
-            width: 60,
-            height: 60,
-            fontWeight: 800,
-            fontSize: '1.5rem',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-          }}
-        >
-          {user.fullName?.charAt(0) || 'U'}
-        </Avatar>
+        {/* Hidden File Input */}
+        <input
+          type="file"
+          ref={fileInputRef}
+          onChange={handleAvatarFileChange}
+          accept="image/*, .jfif, .pjpeg, .pjp, .bmp, .png, .jpg, .jpeg, .webp"
+          style={{ display: 'none' }}
+        />
+
+        <Box sx={{ position: 'relative' }}>
+          <Avatar
+            src={currentDisplayAvatar}
+            sx={{
+              bgcolor: '#ffffff',
+              color: '#0284c7',
+              width: 64,
+              height: 64,
+              fontWeight: 800,
+              fontSize: '1.5rem',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+              border: '2px solid rgba(255, 255, 255, 0.8)',
+            }}
+          >
+            {user.fullName?.charAt(0) || 'U'}
+          </Avatar>
+          <Tooltip title={selectedAvatarFile ? "Đã chọn ảnh mới (Chưa lưu)" : "Chọn ảnh đại diện"}>
+            <IconButton
+              size="small"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isUpdatingProfile}
+              sx={{
+                position: 'absolute',
+                bottom: -4,
+                right: -4,
+                bgcolor: selectedAvatarFile ? '#16a34a' : '#ffffff',
+                color: selectedAvatarFile ? '#ffffff' : '#0284c7',
+                boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
+                p: 0.6,
+                '&:hover': { bgcolor: selectedAvatarFile ? '#15803d' : '#f0f9ff' },
+              }}
+            >
+              <Camera size={14} />
+            </IconButton>
+          </Tooltip>
+        </Box>
 
         <Box sx={{ minWidth: 0, flexGrow: 1, pr: 4 }}>
           <Typography variant="h5" sx={{ fontWeight: 800, color: '#ffffff', fontSize: '1.2rem' }}>
@@ -211,7 +325,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ open, onClos
 
         <IconButton
           aria-label="close"
-          onClick={onClose}
+          onClick={handleModalClose}
           size="small"
           sx={{
             position: 'absolute',

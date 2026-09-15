@@ -336,7 +336,7 @@ export const GanttPage: React.FC = () => {
         overflow: 'hidden',
       }}
     >
-      {/* Header & Main Create Button */}
+      {/* Header */}
       <Box
         sx={{
           display: 'flex',
@@ -353,29 +353,9 @@ export const GanttPage: React.FC = () => {
             Biểu Đồ Tiến Độ Gantt Toàn Hệ Thống
           </Typography>
           <Typography variant="body2" sx={{ color: '#64748b', mt: 0.25, fontSize: { xs: '0.78rem', sm: '0.875rem' } }}>
-            Theo dõi dòng thời gian thi công, phân cấp công việc và nhấp vào công việc để chỉnh sửa chi tiết
+            Theo dõi dòng thời gian thi công, phân cấp công việc và kéo thả timeline để di chuyển góc nhìn trực quan
           </Typography>
         </Box>
-
-        {canEditTask && (
-          <Button
-            variant="contained"
-            startIcon={<Plus size={18} />}
-            onClick={handleOpenCreate}
-            sx={{
-              bgcolor: '#0284c7',
-              '&:hover': { bgcolor: '#0369a1' },
-              borderRadius: '8px',
-              fontWeight: 600,
-              px: 2,
-              py: 0.8,
-              whiteSpace: 'nowrap',
-              boxShadow: '0 2px 8px rgba(2, 132, 199, 0.25)',
-            }}
-          >
-            Thêm Công Việc
-          </Button>
-        )}
       </Box>
 
       {/* Interactive Gantt Component or Skeleton Loading or Empty State */}
@@ -388,7 +368,6 @@ export const GanttPage: React.FC = () => {
             links={linksList}
             canEdit={canEditTask}
             onTaskUpdated={refetch}
-            onTaskClick={handleTaskClick}
             filterBar={filterBar}
           />
         </Box>
