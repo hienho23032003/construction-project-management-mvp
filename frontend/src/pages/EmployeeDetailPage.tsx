@@ -33,14 +33,19 @@ import {
   ExternalLink,
   ChevronRight,
   TrendingUp,
+  KeyRound,
 } from 'lucide-react';
-import { useUserProgressQuery } from '../hooks/useEmployees';
+import { useAuth } from '../contexts/AuthContext';
+import { usePermission } from '../hooks/usePermission';
+import { PERMISSIONS } from '../constants/permissions';
+import { useUserProgressQuery, useResetUserPasswordMutation } from '../hooks/useEmployees';
 import { useTaskDetailQuery, useTaskCommentsQuery, useTaskDependenciesQuery, useAddCommentMutation } from '../hooks/useTasks';
 import { CommonTable, ColumnDef } from '../components/common/CommonTable';
 import { CommonSelect } from '../components/common/CommonSelect';
 import { StatusChip } from '../components/common/StatusChip';
 import { PriorityBadge } from '../components/common/PriorityBadge';
 import { TaskDetailDrawer } from '../components/tasks/TaskDetailDrawer';
+import { ResetPasswordModal } from '../components/employees/ResetPasswordModal';
 import { roleLabels } from './EmployeesPage';
 import { EmployeeTaskItem, EmployeeProjectParticipation, EmployeeActivityLog } from '../types';
 import { formatDate, formatShortDateTime } from '../utils/dateUtils';
@@ -49,12 +54,16 @@ import { getMediaUrl } from '../utils/fileUtils';
 export const EmployeeDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { isAdmin } = useAuth();
+  const { can } = usePermission();
+  const canResetPassword = isAdmin || can(PERMISSIONS.EMPLOYEES_RESET_PASSWORD);
 
   const [activeTab, setActiveTab] = useState(0);
   const [taskSearch, setTaskSearch] = useState('');
   const [taskStatusFilter, setTaskStatusFilter] = useState('ALL');
   const [taskProjectFilter, setTaskProjectFilter] = useState('ALL');
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const [openResetPassword, setOpenResetPassword] = useState(false);
 
   // Queries
   const { data: progressData, isLoading, error } = useUserProgressQuery(id);
@@ -62,12 +71,18 @@ export const EmployeeDetailPage: React.FC = () => {
   const { data: taskComments = [], isLoading: isLoadingComments } = useTaskCommentsQuery(selectedTaskId || undefined);
   const { data: taskDependencies = [] } = useTaskDependenciesQuery(selectedTaskId || undefined);
   const addCommentMutation = useAddCommentMutation(selectedTaskId || undefined);
+  const resetPasswordMutation = useResetUserPasswordMutation();
 
   const user = progressData?.user;
   const stats = progressData?.stats;
   const projects: EmployeeProjectParticipation[] = progressData?.projects || [];
   const tasks: EmployeeTaskItem[] = progressData?.tasks || [];
   const activities: EmployeeActivityLog[] = progressData?.recentActivities || [];
+
+  const handleResetPassword = async (userId: string, newPassword: string) => {
+    await resetPasswordMutation.mutateAsync({ id: userId, newPassword });
+    setOpenResetPassword(false);
+  };
 
   // Filtered Tasks
   const filteredTasks = useMemo(() => {
@@ -380,7 +395,30 @@ export const EmployeeDetailPage: React.FC = () => {
           </Box>
         </Box>
 
-        <Box sx={{ display: 'flex', gap: 1.5, width: { xs: '100%', md: 'auto' }, justifyContent: { xs: 'flex-start', md: 'flex-end' } }}>
+        <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', width: { xs: '100%', md: 'auto' }, justifyContent: { xs: 'flex-start', md: 'flex-end' } }}>
+          {canResetPassword && (
+            <Button
+              variant="outlined"
+              size="small"
+              color="warning"
+              onClick={() => setOpenResetPassword(true)}
+              startIcon={<KeyRound size={16} />}
+              sx={{
+                borderRadius: 1.5,
+                textTransform: 'none',
+                fontWeight: 600,
+                color: '#d97706',
+                borderColor: '#fcd34d',
+                bgcolor: '#fffbeb',
+                '&:hover': {
+                  borderColor: '#d97706',
+                  bgcolor: '#fef3c7',
+                },
+              }}
+            >
+              Đặt Lại Mật Khẩu
+            </Button>
+          )}
           <Button
             variant="outlined"
             size="small"
@@ -853,6 +891,15 @@ export const EmployeeDetailPage: React.FC = () => {
         dependencies={taskDependencies}
         loadingComments={isLoadingComments}
         onAddComment={handleAddComment}
+      />
+
+      {/* Reset Password Modal */}
+      <ResetPasswordModal
+        open={openResetPassword}
+        onClose={() => setOpenResetPassword(false)}
+        onSubmit={handleResetPassword}
+        user={user || null}
+        isSubmitting={resetPasswordMutation.isPending}
       />
     </Box>
   );

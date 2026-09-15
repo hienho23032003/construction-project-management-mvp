@@ -81,6 +81,8 @@ export const userApi = {
   },
   delete: (id: string) => apiClient.delete<ApiResponse<boolean>>(`/users/${id}`),
   toggleStatus: (id: string) => apiClient.patch<ApiResponse<boolean>>(`/users/${id}/toggle-status`),
+  resetPassword: (id: string, newPassword: string) =>
+    apiClient.post<ApiResponse<boolean>>(`/users/${id}/reset-password`, { newPassword }),
   getWorkload: () => apiClient.get<ApiResponse<any[]>>('/users/workload'),
 };
 

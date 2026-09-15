@@ -502,4 +502,19 @@ public class UserService : IUserService
 
         return ApiResponse<EmployeeProgressDetailDto>.Ok(result);
     }
+
+    public async Task<ApiResponse<bool>> ResetPasswordAsync(Guid userId, string newPassword, Guid currentUserId)
+    {
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+        if (user == null)
+        {
+            return ApiResponse<bool>.Fail("Không tìm thấy nhân viên.");
+        }
+
+        user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
+        user.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+        return ApiResponse<bool>.Ok(true, "Đặt lại mật khẩu thành công.");
+    }
 }

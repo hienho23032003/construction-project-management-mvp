@@ -86,6 +86,8 @@ public class AppDbContext : DbContext, IAppDbContext
             entity.HasIndex(e => e.Status);
             entity.HasIndex(e => e.StartDate);
             entity.HasIndex(e => e.PlannedEndDate);
+            entity.HasIndex(e => new { e.ProjectId, e.Status, e.PlannedEndDate });
+            entity.HasIndex(e => new { e.ProjectId, e.ParentId, e.SortOrder });
 
             entity.Property(e => e.Name).IsRequired().HasMaxLength(250);
 
@@ -115,6 +117,7 @@ public class AppDbContext : DbContext, IAppDbContext
         {
             entity.HasKey(e => e.Id);
             entity.HasIndex(e => new { e.TaskId, e.UserId }).IsUnique();
+            entity.HasIndex(e => new { e.UserId, e.TaskId });
             entity.HasIndex(e => e.UserId);
 
             entity.HasOne(e => e.Task)
@@ -183,6 +186,7 @@ public class AppDbContext : DbContext, IAppDbContext
             entity.HasKey(e => e.Id);
             entity.HasIndex(e => e.UserId);
             entity.HasIndex(e => e.IsRead);
+            entity.HasIndex(e => new { e.UserId, e.IsRead, e.CreatedAt });
 
             entity.HasOne(e => e.User)
                 .WithMany(u => u.Notifications)
@@ -197,6 +201,7 @@ public class AppDbContext : DbContext, IAppDbContext
             entity.HasIndex(e => e.ProjectId);
             entity.HasIndex(e => e.TaskId);
             entity.HasIndex(e => e.CreatedAt);
+            entity.HasIndex(e => new { e.ProjectId, e.CreatedAt });
 
             entity.HasOne(e => e.User)
                 .WithMany(u => u.ActivityLogs)

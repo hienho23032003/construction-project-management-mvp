@@ -8,7 +8,7 @@ import {
   Tooltip,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import { Edit2, Lock, Unlock, Trash2, TrendingUp } from 'lucide-react';
+import { Edit2, Lock, Unlock, Trash2, TrendingUp, KeyRound } from 'lucide-react';
 import { User } from '../../types';
 import { roleLabels } from '../../pages/EmployeesPage';
 import { getMediaUrl } from '../../utils/fileUtils';
@@ -23,7 +23,9 @@ interface EmployeeTableProps {
   isDescending: boolean;
   onSort: (field: string) => void;
   isAdmin?: boolean;
+  canResetPassword?: boolean;
   onEdit?: (user: User) => void;
+  onResetPassword?: (user: User) => void;
   onToggleStatus?: (user: User) => void;
   onDelete?: (user: User) => void;
   loading?: boolean;
@@ -38,7 +40,9 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = memo(({
   isDescending,
   onSort,
   isAdmin = false,
+  canResetPassword = false,
   onEdit,
+  onResetPassword,
   onToggleStatus,
   onDelete,
   loading = false,
@@ -183,7 +187,7 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = memo(({
         id: 'actions',
         header: 'Thao Tác',
         align: 'center' as const,
-        minWidth: isAdmin ? 140 : 80,
+        minWidth: isAdmin || canResetPassword ? 160 : 80,
         cell: ({ row }: { row: User }) => {
           const isUserActive = row.isActive ?? true;
           return (
@@ -205,6 +209,18 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = memo(({
                   <TrendingUp size={16} />
                 </IconButton>
               </Tooltip>
+
+              {(isAdmin || canResetPassword) && onResetPassword && (
+                <Tooltip title="Đặt lại mật khẩu">
+                  <IconButton
+                    size="small"
+                    onClick={() => onResetPassword(row)}
+                    sx={{ color: '#d97706', '&:hover': { bgcolor: '#fef3c7' } }}
+                  >
+                    <KeyRound size={16} />
+                  </IconButton>
+                </Tooltip>
+              )}
 
               {isAdmin && (
                 <>
@@ -247,7 +263,7 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = memo(({
         },
       },
     ],
-    [isAdmin, navigate, onDelete, onEdit, onToggleStatus, workloads]
+    [isAdmin, canResetPassword, navigate, onDelete, onEdit, onResetPassword, onToggleStatus, workloads]
   );
 
   return (

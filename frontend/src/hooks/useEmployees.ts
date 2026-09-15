@@ -132,3 +132,19 @@ export const useDeleteUserMutation = () => {
     },
   });
 };
+
+export const useResetUserPasswordMutation = () => {
+  const { showSuccess, showError } = useToast();
+
+  return useMutation({
+    mutationFn: ({ id, newPassword }: { id: string; newPassword: string }) =>
+      userApi.resetPassword(id, newPassword),
+    onSuccess: (res) => {
+      showSuccess(res.data.message || 'Đặt lại mật khẩu thành công!');
+    },
+    onError: (err: any) => {
+      showError(err.response?.data?.message || err.message || 'Đặt lại mật khẩu thất bại');
+    },
+  });
+};
+

@@ -25,11 +25,18 @@ public static class ServiceExtensions
         {
             if (dbProvider.Equals("MySql", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrEmpty(mySqlConnectionString))
             {
-                options.UseMySql(mySqlConnectionString, ServerVersion.AutoDetect(mySqlConnectionString));
+                options.UseMySql(
+                    mySqlConnectionString,
+                    ServerVersion.AutoDetect(mySqlConnectionString),
+                    b => b.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery)
+                );
             }
             else
             {
-                options.UseSqlite(sqliteConnectionString);
+                options.UseSqlite(
+                    sqliteConnectionString,
+                    b => b.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery)
+                );
             }
         });
 

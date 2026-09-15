@@ -19,10 +19,13 @@ import {
   List as ListIcon,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { usePermission } from '../hooks/usePermission';
+import { PERMISSIONS } from '../constants/permissions';
 import { User } from '../types';
 import { EmployeeCard } from '../components/employees/EmployeeCard';
 import { EmployeeTable } from '../components/employees/EmployeeTable';
 import { EmployeeFormModal, EmployeeFormData } from '../components/employees/EmployeeFormModal';
+import { ResetPasswordModal } from '../components/employees/ResetPasswordModal';
 import { ConfirmDialog } from '../components/common/ConfirmDialog';
 import { CardGridSkeleton } from '../components/common/CardGridSkeleton';
 import { TableSkeleton } from '../components/common/TableSkeleton';
@@ -35,6 +38,7 @@ import {
   useUpdateUserMutation,
   useToggleUserStatusMutation,
   useDeleteUserMutation,
+  useResetUserPasswordMutation,
 } from '../hooks/useEmployees';
 
 export const roleLabels: Record<string, string> = {
@@ -46,6 +50,10 @@ export const roleLabels: Record<string, string> = {
 
 export const EmployeesPage: React.FC = () => {
   const { isAdmin } = useAuth();
+  const { can } = usePermission();
+  const canCreate = isAdmin || can(PERMISSIONS.EMPLOYEES_CREATE);
+  const canResetPassword = isAdmin || can(PERMISSIONS.EMPLOYEES_RESET_PASSWORD);
+
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('table');
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(9);
@@ -57,6 +65,7 @@ export const EmployeesPage: React.FC = () => {
   // Modal & Dialog state
   const [openModal, setOpenModal] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [resetPasswordTarget, setResetPasswordTarget] = useState<User | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
   const [toggleTarget, setToggleTarget] = useState<User | null>(null);
 
@@ -77,6 +86,7 @@ export const EmployeesPage: React.FC = () => {
   const updateMutation = useUpdateUserMutation();
   const toggleStatusMutation = useToggleUserStatusMutation();
   const deleteMutation = useDeleteUserMutation();
+  const resetPasswordMutation = useResetUserPasswordMutation();
 
   const users = data?.items || [];
   const totalCount = data?.totalCount || 0;
@@ -98,6 +108,11 @@ export const EmployeesPage: React.FC = () => {
   const handleOpenEdit = (user: User) => {
     setEditingUser(user);
     setOpenModal(true);
+  };
+
+  const handleResetPassword = async (userId: string, newPassword: string) => {
+    await resetPasswordMutation.mutateAsync({ id: userId, newPassword });
+    setResetPasswordTarget(null);
   };
 
   const handleSubmitUser = async (formData: EmployeeFormData) => {
@@ -148,7 +163,7 @@ export const EmployeesPage: React.FC = () => {
           </Typography>
         </Box>
 
-        {isAdmin && (
+        {canCreate && (
           <Button
             variant="contained"
             startIcon={<Plus size={18} />}
@@ -176,79 +191,72 @@ export const EmployeesPage: React.FC = () => {
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
-                  <Search size={18} color="#94a3b8" />
+                  <Search size={16} color="#94a3b8" />
                 </InputAdornment>
               ),
             }}
           />
         </Box>
 
-        <Box sx={{ width: { xs: '100%', sm: 'auto' } }}>
+        {/* Role Filter */}
+        <Box sx={{ minWidth: 160, flex: { xs: '1 1 100%', sm: '0 0 auto' } }}>
           <CommonSelect
-            label="Phân Quyền Vai Trò"
+            size="small"
             value={roleFilter}
             onChange={(val) => {
               setRoleFilter(val);
               setPage(0);
             }}
-            minWidth={190}
             options={[
-              { value: 'ALL', label: 'Tất cả vai trò' },
-              { value: 'Employee', label: 'Kỹ Sư / Nhân Viên', color: '#10b981' },
-              { value: 'Supervisor', label: 'Giám Sát Hiện Trường', color: '#f59e0b' },
-              { value: 'ProjectManager', label: 'Người Quản Lý (PM)', color: '#0284c7' },
-              { value: 'SuperAdmin', label: 'Super Admin', color: '#ef4444' },
+              { value: 'ALL', label: 'Tất Cả Vai Trò' },
+              { value: 'SuperAdmin', label: 'Quản Trị Viên (Admin)' },
+              { value: 'ProjectManager', label: 'Quản Lý Dự Án (PM)' },
+              { value: 'Supervisor', label: 'Giám Sát Hiện Trường' },
+              { value: 'Employee', label: 'Kỹ Sư / Nhân Viên' },
             ]}
           />
         </Box>
 
-        <Box sx={{ ml: { xs: 0, sm: 'auto' } }}>
+        {/* View mode toggle */}
+        <Box sx={{ ml: 'auto' }}>
           <ToggleButtonGroup
-            size="small"
             value={viewMode}
             exclusive
             onChange={(_, val) => val && setViewMode(val)}
+            size="small"
           >
-            <ToggleButton value="table">
-              <ListIcon size={18} />
+            <ToggleButton value="table" aria-label="table view">
+              <ListIcon size={16} />
             </ToggleButton>
-            <ToggleButton value="grid">
-              <LayoutGrid size={18} />
+            <ToggleButton value="grid" aria-label="grid view">
+              <LayoutGrid size={16} />
             </ToggleButton>
           </ToggleButtonGroup>
         </Box>
       </Paper>
 
-      {/* Employees Content */}
+      {/* Content Section */}
       {viewMode === 'grid' ? (
-        isLoading || (isFetching && users.length === 0) ? (
-          <CardGridSkeleton count={rowsPerPage > 6 ? 6 : rowsPerPage} />
-        ) : users.length === 0 ? (
-          <Paper sx={{ p: { xs: 3, sm: 6 }, textAlign: 'center', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-            <Users size={48} color="#94a3b8" style={{ marginBottom: 12 }} />
-            <Typography variant="h4" sx={{ color: '#475569', fontWeight: 600 }}>
-              Không tìm thấy nhân viên nào
-            </Typography>
-            <Typography variant="body2" sx={{ color: '#94a3b8', mt: 1 }}>
-              Hãy thử tìm kiếm với từ khóa khác hoặc xóa bộ lọc.
-            </Typography>
-          </Paper>
+        isLoading ? (
+          <CardGridSkeleton count={rowsPerPage} />
         ) : (
           <>
-            <Grid container spacing={{ xs: 2, sm: 2.5 }} sx={{ width: '100%', m: 0 }}>
+            <Grid container spacing={2}>
               {users.map((u) => {
-                const workload = workloads.find((w) => w.userId === u.id) || {
+                const workload = workloads.find((w: any) => w.userId === u.id) || {
                   activeTasks: 0,
                   completedTasks: 0,
                   overdueTasks: 0,
                 };
                 return (
-                  <Grid item xs={12} sm={6} md={4} key={u.id} sx={{ minWidth: 0, width: '100%', pl: { xs: '0 !important', sm: '20px !important' }, pt: { xs: '16px !important', sm: '20px !important' } }}>
+                  <Grid item xs={12} sm={6} md={4} key={u.id}>
                     <EmployeeCard
                       user={u}
                       workload={workload}
                       isAdmin={isAdmin}
+                      canResetPassword={canResetPassword}
                       onEdit={handleOpenEdit}
+                      onResetPassword={(target) => setResetPasswordTarget(target)}
                       onToggleStatus={(target) => setToggleTarget(target)}
                       onDelete={(target) => setDeleteTarget(target)}
                     />
@@ -283,7 +291,9 @@ export const EmployeesPage: React.FC = () => {
             isDescending={isDescending}
             onSort={handleSort}
             isAdmin={isAdmin}
+            canResetPassword={canResetPassword}
             onEdit={handleOpenEdit}
+            onResetPassword={(target) => setResetPasswordTarget(target)}
             onToggleStatus={(target) => setToggleTarget(target)}
             onDelete={(target) => setDeleteTarget(target)}
           />
@@ -311,6 +321,15 @@ export const EmployeesPage: React.FC = () => {
         onSubmit={handleSubmitUser}
         editingUser={editingUser}
         isSubmitting={createMutation.isPending || updateMutation.isPending}
+      />
+
+      {/* Reset Password Modal */}
+      <ResetPasswordModal
+        open={Boolean(resetPasswordTarget)}
+        onClose={() => setResetPasswordTarget(null)}
+        onSubmit={handleResetPassword}
+        user={resetPasswordTarget}
+        isSubmitting={resetPasswordMutation.isPending}
       />
 
       {/* Lock / Unlock Confirmation Dialog */}

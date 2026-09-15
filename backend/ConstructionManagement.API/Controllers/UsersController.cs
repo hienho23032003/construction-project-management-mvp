@@ -10,10 +10,12 @@ namespace ConstructionManagement.API.Controllers;
 public class UsersController : BaseApiController
 {
     private readonly IUserService _userService;
+    private readonly IRoleService _roleService;
 
-    public UsersController(IUserService userService)
+    public UsersController(IUserService userService, IRoleService roleService)
     {
         _userService = userService;
+        _roleService = roleService;
     }
 
     [HttpGet]
@@ -99,6 +101,24 @@ public class UsersController : BaseApiController
     public async Task<IActionResult> ToggleUserStatus(Guid id)
     {
         var result = await _userService.ToggleUserStatusAsync(id);
+        if (!result.Success) return BadRequest(result);
+        return Ok(result);
+    }
+
+    [HttpPost("{id:guid}/reset-password")]
+    public async Task<IActionResult> ResetPassword(Guid id, [FromBody] AdminResetPasswordRequest request)
+    {
+        var isSuperAdmin = CurrentUserRole == "SuperAdmin";
+        if (!isSuperAdmin)
+        {
+            var userPermissions = await _roleService.GetUserPermissionsAsync(CurrentUserId);
+            if (!userPermissions.Contains("employees.reset_password"))
+            {
+                return StatusCode(403, ApiResponse<bool>.Fail("Bạn không có quyền đặt lại mật khẩu cho nhân viên."));
+            }
+        }
+
+        var result = await _userService.ResetPasswordAsync(id, request.NewPassword, CurrentUserId);
         if (!result.Success) return BadRequest(result);
         return Ok(result);
     }

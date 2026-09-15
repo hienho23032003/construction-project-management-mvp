@@ -18,65 +18,134 @@ public class DashboardService : IDashboardService
     public async Task<ApiResponse<DashboardSummaryDto>> GetDashboardSummaryAsync(DateTime? fromDate = null, DateTime? toDate = null)
     {
         var now = DateTime.UtcNow.Date;
+        var sevenDaysFromNow = now.AddDays(7);
 
-        var projectsQuery = _context.Projects
-            .Include(p => p.Tasks)
-            .AsNoTracking()
-            .AsQueryable();
-
+        // 1. Projects Query Filter
+        var projectsQuery = _context.Projects.AsNoTracking().AsQueryable();
         if (fromDate.HasValue)
         {
             var fDate = fromDate.Value.Date;
             projectsQuery = projectsQuery.Where(p => p.PlannedEndDate >= fDate);
         }
-
         if (toDate.HasValue)
         {
             var tDate = toDate.Value.Date;
             projectsQuery = projectsQuery.Where(p => p.StartDate <= tDate);
         }
 
-        var projects = await projectsQuery.ToListAsync();
+        // Project Counts - Executed in SQL
+        var totalProjects = await projectsQuery.CountAsync();
+        var inProgressProjects = await projectsQuery.CountAsync(p => p.Status == ProjectStatus.InProgress);
+        var completedProjects = await projectsQuery.CountAsync(p => p.Status == ProjectStatus.Completed);
+        var overdueProjects = await projectsQuery.CountAsync(p => p.Status != ProjectStatus.Completed && p.PlannedEndDate < now);
 
-        var tasksQuery = _context.Tasks
-            .Include(t => t.Project)
-            .Include(t => t.Assignees).ThenInclude(a => a.User)
-            .AsNoTracking()
-            .AsQueryable();
+        // Top 6 Recent Projects with Progress - Server-side Projection
+        var projectProgressList = await projectsQuery
+            .OrderByDescending(p => p.CreatedAt)
+            .Take(6)
+            .Select(p => new ProjectProgressSummaryDto
+            {
+                ProjectId = p.Id,
+                ProjectCode = p.Code,
+                ProjectName = p.Name,
+                Progress = p.Progress,
+                Status = p.Status,
+                PlannedEndDate = p.PlannedEndDate,
+                TotalTasks = p.Tasks.Count,
+                CompletedTasks = p.Tasks.Count(t => t.Status == TaskItemStatus.Completed)
+            })
+            .ToListAsync();
 
+        // 2. Tasks Query Filter
+        var tasksQuery = _context.Tasks.AsNoTracking().AsQueryable();
         if (fromDate.HasValue)
         {
             var fDate = fromDate.Value.Date;
             tasksQuery = tasksQuery.Where(t => t.PlannedEndDate >= fDate);
         }
-
         if (toDate.HasValue)
         {
             var tDate = toDate.Value.Date;
             tasksQuery = tasksQuery.Where(t => t.StartDate <= tDate);
         }
 
-        var tasks = await tasksQuery.ToListAsync();
+        // Task Counts - Executed in SQL
+        var totalTasks = await tasksQuery.CountAsync();
+        var completedTasks = await tasksQuery.CountAsync(t => t.Status == TaskItemStatus.Completed);
+        var inProgressTasks = await tasksQuery.CountAsync(t => t.Status == TaskItemStatus.InProgress);
+        var notStartedTasks = await tasksQuery.CountAsync(t => t.Status == TaskItemStatus.NotStarted);
+        var onHoldTasks = await tasksQuery.CountAsync(t => t.Status == TaskItemStatus.OnHold);
+        var overdueTasksCount = await tasksQuery.CountAsync(t => t.Status != TaskItemStatus.Completed && t.PlannedEndDate < now);
 
-        var users = await _context.Users
-            .Where(u => u.IsActive)
-            .Include(u => u.TaskAssignments).ThenInclude(ta => ta.Task)
-            .AsNoTracking()
+        // Task Distribution Chart Data
+        var taskDistribution = new List<TaskStatusDistributionDto>
+        {
+            new() { Status = "Đã hoàn thành", Count = completedTasks, Color = "#10b981" },
+            new() { Status = "Đang thực hiện", Count = inProgressTasks, Color = "#0284c7" },
+            new() { Status = "Chưa bắt đầu", Count = notStartedTasks, Color = "#64748b" },
+            new() { Status = "Tạm dừng", Count = onHoldTasks, Color = "#f59e0b" },
+            new() { Status = "Quá hạn", Count = overdueTasksCount, Color = "#ef4444" }
+        };
+
+        // 3. Overdue Tasks - Take 20 directly from SQL
+        var overdueTasks = await tasksQuery
+            .Where(t => t.Status != TaskItemStatus.Completed && t.PlannedEndDate < now)
+            .OrderBy(t => t.PlannedEndDate)
+            .Take(20)
+            .Select(t => new OverdueTaskDto
+            {
+                TaskId = t.Id,
+                TaskName = t.Name,
+                ProjectId = t.ProjectId,
+                ProjectCode = t.Project.Code,
+                ProjectName = t.Project.Name,
+                PlannedEndDate = t.PlannedEndDate,
+                OverdueDays = (int)(now - t.PlannedEndDate).TotalDays,
+                Progress = t.Progress,
+                AssigneeNames = t.Assignees.Select(a => a.User.FullName).ToList()
+            })
             .ToListAsync();
 
-        var activitiesQuery = _context.ActivityLogs
-            .Include(al => al.User)
-            .Include(al => al.Project)
-            .Include(al => al.Task)
-            .AsNoTracking()
-            .AsQueryable();
+        // 4. Upcoming Deadlines - Take 20 directly from SQL
+        var upcomingDeadlines = await tasksQuery
+            .Where(t => t.Status != TaskItemStatus.Completed && t.PlannedEndDate >= now && t.PlannedEndDate <= sevenDaysFromNow)
+            .OrderBy(t => t.PlannedEndDate)
+            .Take(20)
+            .Select(t => new UpcomingDeadlineDto
+            {
+                TaskId = t.Id,
+                TaskName = t.Name,
+                ProjectCode = t.Project.Code,
+                PlannedEndDate = t.PlannedEndDate,
+                DaysRemaining = (int)(t.PlannedEndDate - now).TotalDays,
+                Progress = t.Progress,
+                AssigneeNames = t.Assignees.Select(a => a.User.FullName).ToList()
+            })
+            .ToListAsync();
 
+        // 5. Employee Workload - Top 6 directly computed via SQL
+        var employeeWorkload = await _context.Users
+            .Where(u => u.IsActive)
+            .Select(u => new EmployeeWorkloadSummaryDto
+            {
+                UserId = u.Id,
+                FullName = u.FullName,
+                Department = u.Department,
+                ActiveTasks = u.TaskAssignments.Count(ta => ta.Task.Status == TaskItemStatus.InProgress || ta.Task.Status == TaskItemStatus.NotStarted || ta.Task.Status == TaskItemStatus.OnHold),
+                CompletedTasks = u.TaskAssignments.Count(ta => ta.Task.Status == TaskItemStatus.Completed),
+                OverdueTasks = u.TaskAssignments.Count(ta => ta.Task.Status != TaskItemStatus.Completed && ta.Task.PlannedEndDate < now)
+            })
+            .OrderByDescending(x => x.ActiveTasks)
+            .Take(6)
+            .ToListAsync();
+
+        // 6. Recent Activities - Take 10 directly from SQL
+        var activitiesQuery = _context.ActivityLogs.AsNoTracking().AsQueryable();
         if (fromDate.HasValue)
         {
             var fDate = fromDate.Value.Date;
             activitiesQuery = activitiesQuery.Where(al => al.CreatedAt >= fDate);
         }
-
         if (toDate.HasValue)
         {
             var tDateEnd = toDate.Value.Date.AddDays(1);
@@ -105,97 +174,17 @@ public class DashboardService : IDashboardService
             })
             .ToListAsync();
 
-        // Project progress list
-        var projectProgressList = projects
-            .OrderByDescending(p => p.CreatedAt)
-            .Take(6)
-            .Select(p => new ProjectProgressSummaryDto
-            {
-                ProjectId = p.Id,
-                ProjectCode = p.Code,
-                ProjectName = p.Name,
-                Progress = p.Progress,
-                Status = p.Status,
-                PlannedEndDate = p.PlannedEndDate,
-                TotalTasks = p.Tasks.Count,
-                CompletedTasks = p.Tasks.Count(t => t.Status == TaskItemStatus.Completed)
-            }).ToList();
-
-        // Task distribution
-        var totalTaskCount = tasks.Count;
-        var taskDistribution = new List<TaskStatusDistributionDto>
-        {
-            new() { Status = "Đã hoàn thành", Count = tasks.Count(t => t.Status == TaskItemStatus.Completed), Color = "#10b981" },
-            new() { Status = "Đang thực hiện", Count = tasks.Count(t => t.Status == TaskItemStatus.InProgress), Color = "#0284c7" },
-            new() { Status = "Chưa bắt đầu", Count = tasks.Count(t => t.Status == TaskItemStatus.NotStarted), Color = "#64748b" },
-            new() { Status = "Tạm dừng", Count = tasks.Count(t => t.Status == TaskItemStatus.OnHold), Color = "#f59e0b" },
-            new() { Status = "Quá hạn", Count = tasks.Count(t => t.Status != TaskItemStatus.Completed && t.PlannedEndDate.Date < now), Color = "#ef4444" }
-        };
-
-        // Overdue tasks
-        var overdueTasks = tasks
-            .Where(t => t.Status != TaskItemStatus.Completed && t.PlannedEndDate.Date < now)
-            .OrderBy(t => t.PlannedEndDate)
-            .Take(20)
-            .Select(t => new OverdueTaskDto
-            {
-                TaskId = t.Id,
-                TaskName = t.Name,
-                ProjectId = t.ProjectId,
-                ProjectCode = t.Project.Code,
-                ProjectName = t.Project.Name,
-                PlannedEndDate = t.PlannedEndDate,
-                OverdueDays = (int)(now - t.PlannedEndDate.Date).TotalDays,
-                Progress = t.Progress,
-                AssigneeNames = t.Assignees.Select(a => a.User.FullName).ToList()
-            }).ToList();
-
-        // Upcoming deadlines
-        var upcomingDeadlines = tasks
-            .Where(t => t.Status != TaskItemStatus.Completed && t.PlannedEndDate.Date >= now && t.PlannedEndDate.Date <= now.AddDays(7))
-            .OrderBy(t => t.PlannedEndDate)
-            .Take(20)
-            .Select(t => new UpcomingDeadlineDto
-            {
-                TaskId = t.Id,
-                TaskName = t.Name,
-                ProjectCode = t.Project.Code,
-                PlannedEndDate = t.PlannedEndDate,
-                DaysRemaining = (int)(t.PlannedEndDate.Date - now).TotalDays,
-                Progress = t.Progress,
-                AssigneeNames = t.Assignees.Select(a => a.User.FullName).ToList()
-            }).ToList();
-
-        // Employee workload
-        var employeeWorkload = users
-            .Select(u =>
-            {
-                var userTasks = tasks.Where(t => t.Assignees.Any(a => a.UserId == u.Id)).ToList();
-                return new EmployeeWorkloadSummaryDto
-                {
-                    UserId = u.Id,
-                    FullName = u.FullName,
-                    Department = u.Department,
-                    ActiveTasks = userTasks.Count(t => t.Status == TaskItemStatus.InProgress || t.Status == TaskItemStatus.NotStarted || t.Status == TaskItemStatus.OnHold),
-                    CompletedTasks = userTasks.Count(t => t.Status == TaskItemStatus.Completed),
-                    OverdueTasks = userTasks.Count(t => t.Status != TaskItemStatus.Completed && t.PlannedEndDate.Date < now)
-                };
-            })
-            .OrderByDescending(x => x.ActiveTasks)
-            .Take(6)
-            .ToList();
-
         var summary = new DashboardSummaryDto
         {
-            TotalProjects = projects.Count,
-            InProgressProjects = projects.Count(p => p.Status == ProjectStatus.InProgress),
-            CompletedProjects = projects.Count(p => p.Status == ProjectStatus.Completed),
-            OverdueProjects = projects.Count(p => p.Status != ProjectStatus.Completed && p.PlannedEndDate.Date < now),
+            TotalProjects = totalProjects,
+            InProgressProjects = inProgressProjects,
+            CompletedProjects = completedProjects,
+            OverdueProjects = overdueProjects,
 
-            TotalTasks = tasks.Count,
-            CompletedTasks = tasks.Count(t => t.Status == TaskItemStatus.Completed),
-            InProgressTasks = tasks.Count(t => t.Status == TaskItemStatus.InProgress),
-            OverdueTasks = tasks.Count(t => t.Status != TaskItemStatus.Completed && t.PlannedEndDate.Date < now),
+            TotalTasks = totalTasks,
+            CompletedTasks = completedTasks,
+            InProgressTasks = inProgressTasks,
+            OverdueTasks = overdueTasksCount,
 
             ProjectProgressList = projectProgressList,
             TaskStatusDistribution = taskDistribution,

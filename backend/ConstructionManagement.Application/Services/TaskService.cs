@@ -226,6 +226,7 @@ public class TaskService : ITaskService
             .Include(t => t.Comments).ThenInclude(c => c.User)
             .Include(t => t.Predecessors).ThenInclude(p => p.PredecessorTask)
             .Include(t => t.Successors).ThenInclude(s => s.SuccessorTask)
+            .AsNoTracking()
             .FirstOrDefaultAsync(t => t.Id == id);
 
         if (t == null)
@@ -1114,39 +1115,68 @@ public class TaskService : ITaskService
     {
         if (!parentTaskId.HasValue) return;
 
-        var parent = await _context.Tasks
-            .Include(t => t.SubTasks)
-            .FirstOrDefaultAsync(t => t.Id == parentTaskId.Value);
+        var currentParentId = parentTaskId;
+        Guid? rootProjectId = null;
 
-        if (parent == null || !parent.SubTasks.Any()) return;
-
-        var totalWeight = parent.SubTasks.Sum(st => st.Weight > 0 ? st.Weight : 1.0);
-        var weighted = parent.SubTasks.Sum(st => st.Progress * (st.Weight > 0 ? st.Weight : 1.0));
-        var progress = totalWeight > 0 ? Math.Round(weighted / totalWeight, 1) : 0;
-
-        parent.Progress = Math.Min(100.0, Math.Max(0.0, progress));
-
-        if (parent.Progress >= 100.0)
+        while (currentParentId.HasValue)
         {
-            parent.Status = TaskItemStatus.Completed;
-            if (!parent.ActualEndDate.HasValue) parent.ActualEndDate = DateTime.UtcNow;
+            var parent = await _context.Tasks
+                .Include(t => t.SubTasks)
+                .FirstOrDefaultAsync(t => t.Id == currentParentId.Value);
+
+            if (parent == null || !parent.SubTasks.Any()) break;
+
+            rootProjectId = parent.ProjectId;
+
+            var totalWeight = parent.SubTasks.Sum(st => st.Weight > 0 ? st.Weight : 1.0);
+            var weighted = parent.SubTasks.Sum(st => st.Progress * (st.Weight > 0 ? st.Weight : 1.0));
+            var progress = totalWeight > 0 ? Math.Round(weighted / totalWeight, 1) : 0;
+
+            parent.Progress = Math.Min(100.0, Math.Max(0.0, progress));
+
+            if (parent.Progress >= 100.0)
+            {
+                parent.Status = TaskItemStatus.Completed;
+                if (!parent.ActualEndDate.HasValue) parent.ActualEndDate = DateTime.UtcNow;
+            }
+            else if (parent.Progress > 0 && parent.Status == TaskItemStatus.NotStarted)
+            {
+                parent.Status = TaskItemStatus.InProgress;
+            }
+
+            currentParentId = parent.ParentId;
         }
-        else if (parent.Progress > 0 && parent.Status == TaskItemStatus.NotStarted)
+
+        if (rootProjectId.HasValue)
         {
-            parent.Status = TaskItemStatus.InProgress;
+            var project = await _context.Projects
+                .Include(p => p.Tasks)
+                .FirstOrDefaultAsync(p => p.Id == rootProjectId.Value);
+
+            if (project != null && project.Tasks.Any())
+            {
+                var topLevelTasks = project.Tasks.Where(t => t.ParentId == null).ToList();
+                if (!topLevelTasks.Any()) topLevelTasks = project.Tasks.ToList();
+
+                var totalWeight = topLevelTasks.Sum(t => t.Weight > 0 ? t.Weight : 1.0);
+                var weighted = topLevelTasks.Sum(t => t.Progress * (t.Weight > 0 ? t.Weight : 1.0));
+                var progress = totalWeight > 0 ? Math.Round(weighted / totalWeight, 1) : 0;
+
+                project.Progress = Math.Min(100.0, Math.Max(0.0, progress));
+
+                if (project.Progress >= 100.0)
+                {
+                    project.Status = ProjectStatus.Completed;
+                    if (!project.ActualEndDate.HasValue) project.ActualEndDate = DateTime.UtcNow;
+                }
+                else if (project.Progress > 0)
+                {
+                    project.Status = DateTime.UtcNow.Date > project.PlannedEndDate.Date ? ProjectStatus.Overdue : ProjectStatus.InProgress;
+                }
+            }
         }
 
         await _context.SaveChangesAsync();
-
-        // Recursively rollup to grand-parent if exists
-        if (parent.ParentId.HasValue)
-        {
-            await RecalculateParentTaskProgressAsync(parent.ParentId.Value);
-        }
-        else
-        {
-            await RecalculateProjectProgressInternalAsync(parent.ProjectId);
-        }
     }
 
     private async Task RecalculateProjectProgressInternalAsync(Guid projectId)

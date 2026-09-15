@@ -1,7 +1,7 @@
 import React, { memo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, Box, Typography, Avatar, Chip, IconButton, Tooltip, Divider, Button } from '@mui/material';
-import { Mail, Phone, Briefcase, Edit2, Lock, Unlock, Trash2, TrendingUp, ChevronRight } from 'lucide-react';
+import { Mail, Phone, Briefcase, Edit2, Lock, Unlock, Trash2, TrendingUp, ChevronRight, KeyRound } from 'lucide-react';
 import { User } from '../../types';
 import { roleLabels } from '../../pages/EmployeesPage';
 import { getMediaUrl } from '../../utils/fileUtils';
@@ -14,7 +14,9 @@ interface EmployeeCardProps {
     overdueTasks: number;
   };
   isAdmin?: boolean;
+  canResetPassword?: boolean;
   onEdit?: (user: User) => void;
+  onResetPassword?: (user: User) => void;
   onToggleStatus?: (user: User) => void;
   onDelete?: (user: User) => void;
 }
@@ -23,7 +25,9 @@ export const EmployeeCard: React.FC<EmployeeCardProps> = memo(({
   user: u,
   workload,
   isAdmin = false,
+  canResetPassword = false,
   onEdit,
+  onResetPassword,
   onToggleStatus,
   onDelete,
 }) => {
@@ -193,42 +197,58 @@ export const EmployeeCard: React.FC<EmployeeCardProps> = memo(({
         </Button>
       </CardContent>
 
-      {isAdmin && (
+      {(isAdmin || canResetPassword) && (
         <Box sx={{ px: 2, pb: 1.5, pt: 0 }}>
           <Divider sx={{ mb: 1.25, borderColor: '#f1f5f9' }} />
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 1 }}>
-            <Tooltip title="Chỉnh sửa thông tin">
-              <IconButton
-                size="small"
-                onClick={() => onEdit && onEdit(u)}
-                sx={{ color: '#0284c7', '&:hover': { bgcolor: '#e0f2fe' } }}
-              >
-                <Edit2 size={16} />
-              </IconButton>
-            </Tooltip>
+            {(isAdmin || canResetPassword) && onResetPassword && (
+              <Tooltip title="Đặt lại mật khẩu">
+                <IconButton
+                  size="small"
+                  onClick={() => onResetPassword(u)}
+                  sx={{ color: '#d97706', '&:hover': { bgcolor: '#fef3c7' } }}
+                >
+                  <KeyRound size={16} />
+                </IconButton>
+              </Tooltip>
+            )}
 
-            <Tooltip title={isUserActive ? 'Khóa tài khoản' : 'Mở khóa tài khoản'}>
-              <IconButton
-                size="small"
-                onClick={() => onToggleStatus && onToggleStatus(u)}
-                sx={{
-                  color: isUserActive ? '#f59e0b' : '#10b981',
-                  '&:hover': { bgcolor: isUserActive ? '#fef3c7' : '#dcfce7' },
-                }}
-              >
-                {isUserActive ? <Lock size={16} /> : <Unlock size={16} />}
-              </IconButton>
-            </Tooltip>
+            {isAdmin && (
+              <>
+                <Tooltip title="Chỉnh sửa thông tin">
+                  <IconButton
+                    size="small"
+                    onClick={() => onEdit && onEdit(u)}
+                    sx={{ color: '#0284c7', '&:hover': { bgcolor: '#e0f2fe' } }}
+                  >
+                    <Edit2 size={16} />
+                  </IconButton>
+                </Tooltip>
 
-            <Tooltip title="Xóa tài khoản">
-              <IconButton
-                size="small"
-                onClick={() => onDelete && onDelete(u)}
-                sx={{ color: '#ef4444', '&:hover': { bgcolor: '#fee2e2' } }}
-              >
-                <Trash2 size={16} />
-              </IconButton>
-            </Tooltip>
+                <Tooltip title={isUserActive ? 'Khóa tài khoản' : 'Mở khóa tài khoản'}>
+                  <IconButton
+                    size="small"
+                    onClick={() => onToggleStatus && onToggleStatus(u)}
+                    sx={{
+                      color: isUserActive ? '#f59e0b' : '#10b981',
+                      '&:hover': { bgcolor: isUserActive ? '#fef3c7' : '#dcfce7' },
+                    }}
+                  >
+                    {isUserActive ? <Lock size={16} /> : <Unlock size={16} />}
+                  </IconButton>
+                </Tooltip>
+
+                <Tooltip title="Xóa tài khoản">
+                  <IconButton
+                    size="small"
+                    onClick={() => onDelete && onDelete(u)}
+                    sx={{ color: '#ef4444', '&:hover': { bgcolor: '#fee2e2' } }}
+                  >
+                    <Trash2 size={16} />
+                  </IconButton>
+                </Tooltip>
+              </>
+            )}
           </Box>
         </Box>
       )}

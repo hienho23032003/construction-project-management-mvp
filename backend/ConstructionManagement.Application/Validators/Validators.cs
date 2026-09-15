@@ -146,3 +146,13 @@ public class CreateCommentRequestValidator : AbstractValidator<CreateCommentRequ
             .MaximumLength(2000).WithMessage("Nội dung bình luận tối đa 2000 ký tự.");
     }
 }
+
+public class AdminResetPasswordRequestValidator : AbstractValidator<AdminResetPasswordRequest>
+{
+    public AdminResetPasswordRequestValidator()
+    {
+        RuleFor(x => x.NewPassword)
+            .NotEmpty().WithMessage("Vui lòng nhập mật khẩu mới.")
+            .MinimumLength(6).WithMessage("Mật khẩu mới phải từ 6 ký tự trở lên.");
+    }
+}

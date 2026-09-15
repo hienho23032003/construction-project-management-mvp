@@ -18,4 +18,19 @@ export default defineConfig({
       },
     },
   },
+  build: {
+    target: 'esnext',
+    chunkSizeWarningLimit: 600,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          'vendor-mui': ['@mui/material', '@mui/icons-material', '@emotion/react', '@emotion/styled'],
+          'vendor-query': ['@tanstack/react-query'],
+          'vendor-charts': ['recharts', 'lucide-react'],
+          'vendor-date': ['date-fns', '@mui/x-date-pickers'],
+        },
+      },
+    },
+  },
 });

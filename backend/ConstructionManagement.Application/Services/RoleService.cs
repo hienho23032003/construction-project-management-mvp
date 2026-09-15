@@ -59,7 +59,8 @@ public class RoleService : IRoleService
                 new() { Code = "employees.view", Name = "Xem nhân sự", Description = "Tra cứu danh sách nhân sự và biểu đồ khối lượng công việc" },
                 new() { Code = "employees.create", Name = "Thêm nhân viên", Description = "Tạo tài khoản và phân bổ nhân sự mới" },
                 new() { Code = "employees.edit", Name = "Sửa thông tin & vai trò", Description = "Chỉnh sửa phòng ban, số điện thoại, gán vai trò" },
-                new() { Code = "employees.delete", Name = "Khóa / Xóa tài khoản", Description = "Vô hiệu hóa hoặc xóa nhân viên khỏi hệ thống" }
+                new() { Code = "employees.delete", Name = "Khóa / Xóa tài khoản", Description = "Vô hiệu hóa hoặc xóa nhân viên khỏi hệ thống" },
+                new() { Code = "employees.reset_password", Name = "Đặt lại mật khẩu", Description = "Đặt lại mật khẩu cho tài khoản người dùng" }
             }
         },
         new PermissionModuleGroupDto

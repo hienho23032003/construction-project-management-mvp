@@ -52,6 +52,7 @@ public interface IUserService
     Task<ApiResponse<UserDto>> UploadUserAvatarAsync(Guid userId, Microsoft.AspNetCore.Http.IFormFile file);
     Task<ApiResponse<bool>> DeleteUserAsync(Guid id);
     Task<ApiResponse<bool>> ToggleUserStatusAsync(Guid id);
+    Task<ApiResponse<bool>> ResetPasswordAsync(Guid userId, string newPassword, Guid currentUserId);
     Task<ApiResponse<List<EmployeeWorkloadSummaryDto>>> GetWorkloadSummaryAsync();
     Task<ApiResponse<EmployeeProgressDetailDto>> GetUserProgressSummaryAsync(Guid userId);
 }

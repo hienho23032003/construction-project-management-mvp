@@ -28,6 +28,7 @@ export const PERMISSIONS = {
   EMPLOYEES_CREATE: 'employees.create',
   EMPLOYEES_EDIT: 'employees.edit',
   EMPLOYEES_DELETE: 'employees.delete',
+  EMPLOYEES_RESET_PASSWORD: 'employees.reset_password',
 
   // Reports
   REPORTS_VIEW: 'reports.view',
@@ -67,6 +68,7 @@ export const PERMISSION_LABELS: Record<string, string> = {
   [PERMISSIONS.EMPLOYEES_CREATE]: 'Thêm nhân sự mới',
   [PERMISSIONS.EMPLOYEES_EDIT]: 'Sửa thông tin & vai trò nhân sự',
   [PERMISSIONS.EMPLOYEES_DELETE]: 'Khóa / Xóa tài khoản nhân sự',
+  [PERMISSIONS.EMPLOYEES_RESET_PASSWORD]: 'Đặt lại mật khẩu nhân viên',
 
   // Reports & Analytics
   [PERMISSIONS.REPORTS_VIEW]: 'Xem báo cáo & thống kê',
