@@ -7,7 +7,8 @@ import {
   IconButton,
   Tooltip,
 } from '@mui/material';
-import { Edit2, Lock, Unlock, Trash2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Edit2, Lock, Unlock, Trash2, TrendingUp } from 'lucide-react';
 import { User } from '../../types';
 import { roleLabels } from '../../pages/EmployeesPage';
 import { CommonTable, ColumnDef } from '../common/CommonTable';
@@ -41,6 +42,8 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = memo(({
   onDelete,
   loading = false,
 }) => {
+  const navigate = useNavigate();
+
   const columns: ColumnDef<User>[] = useMemo(
     () => [
       {
@@ -50,15 +53,27 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = memo(({
         sortable: true,
         minWidth: 180,
         cell: ({ row }) => (
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, whiteSpace: 'nowrap' }}>
-            <Avatar sx={{ width: 32, height: 32, fontSize: '0.85rem' }}>
+          <Box
+            onClick={() => navigate(`/employees/${row.id}`)}
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1.5,
+              whiteSpace: 'nowrap',
+              cursor: 'pointer',
+              '&:hover .employee-name': { color: '#0284c7', textDecoration: 'underline' },
+            }}
+          >
+            <Avatar sx={{ width: 32, height: 32, fontSize: '0.85rem', bgcolor: '#0284c7' }}>
               {row.fullName.charAt(0)}
             </Avatar>
             <Typography
               variant="body2"
+              className="employee-name"
               sx={{
                 fontWeight: 700,
                 whiteSpace: 'nowrap',
+                transition: 'color 0.15s ease',
               }}
             >
               {row.fullName}
@@ -160,65 +175,75 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = memo(({
           );
         },
       },
-      ...(isAdmin
-        ? [
-            {
-              id: 'actions',
-              header: 'Thao Tác',
-              align: 'center' as const,
-              minWidth: 110,
-              cell: ({ row }: { row: User }) => {
-                const isUserActive = row.isActive ?? true;
-                return (
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: 0.5,
-                    }}
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <Tooltip title="Chỉnh sửa thông tin">
-                      <IconButton
-                        size="small"
-                        onClick={() => onEdit && onEdit(row)}
-                        sx={{ color: '#0284c7', '&:hover': { bgcolor: '#e0f2fe' } }}
-                      >
-                        <Edit2 size={16} />
-                      </IconButton>
-                    </Tooltip>
+      {
+        id: 'actions',
+        header: 'Thao Tác',
+        align: 'center' as const,
+        minWidth: isAdmin ? 140 : 80,
+        cell: ({ row }: { row: User }) => {
+          const isUserActive = row.isActive ?? true;
+          return (
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 0.5,
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <Tooltip title="Xem tiến độ & dự án">
+                <IconButton
+                  size="small"
+                  onClick={() => navigate(`/employees/${row.id}`)}
+                  sx={{ color: '#0284c7', '&:hover': { bgcolor: '#e0f2fe' } }}
+                >
+                  <TrendingUp size={16} />
+                </IconButton>
+              </Tooltip>
 
-                    <Tooltip title={isUserActive ? 'Khóa tài khoản' : 'Mở khóa tài khoản'}>
-                      <IconButton
-                        size="small"
-                        onClick={() => onToggleStatus && onToggleStatus(row)}
-                        sx={{
-                          color: isUserActive ? '#f59e0b' : '#10b981',
-                          '&:hover': { bgcolor: isUserActive ? '#fef3c7' : '#dcfce7' },
-                        }}
-                      >
-                        {isUserActive ? <Lock size={16} /> : <Unlock size={16} />}
-                      </IconButton>
-                    </Tooltip>
+              {isAdmin && (
+                <>
+                  <Tooltip title="Chỉnh sửa thông tin">
+                    <IconButton
+                      size="small"
+                      onClick={() => onEdit && onEdit(row)}
+                      sx={{ color: '#475569', '&:hover': { bgcolor: '#f1f5f9' } }}
+                    >
+                      <Edit2 size={16} />
+                    </IconButton>
+                  </Tooltip>
 
-                    <Tooltip title="Xóa tài khoản">
-                      <IconButton
-                        size="small"
-                        onClick={() => onDelete && onDelete(row)}
-                        sx={{ color: '#ef4444', '&:hover': { bgcolor: '#fee2e2' } }}
-                      >
-                        <Trash2 size={16} />
-                      </IconButton>
-                    </Tooltip>
-                  </Box>
-                );
-              },
-            },
-          ]
-        : []),
+                  <Tooltip title={isUserActive ? 'Khóa tài khoản' : 'Mở khóa tài khoản'}>
+                    <IconButton
+                      size="small"
+                      onClick={() => onToggleStatus && onToggleStatus(row)}
+                      sx={{
+                        color: isUserActive ? '#f59e0b' : '#10b981',
+                        '&:hover': { bgcolor: isUserActive ? '#fef3c7' : '#dcfce7' },
+                      }}
+                    >
+                      {isUserActive ? <Lock size={16} /> : <Unlock size={16} />}
+                    </IconButton>
+                  </Tooltip>
+
+                  <Tooltip title="Xóa tài khoản">
+                    <IconButton
+                      size="small"
+                      onClick={() => onDelete && onDelete(row)}
+                      sx={{ color: '#ef4444', '&:hover': { bgcolor: '#fee2e2' } }}
+                    >
+                      <Trash2 size={16} />
+                    </IconButton>
+                  </Tooltip>
+                </>
+              )}
+            </Box>
+          );
+        },
+      },
     ],
-    [isAdmin, onDelete, onEdit, onToggleStatus, workloads]
+    [isAdmin, navigate, onDelete, onEdit, onToggleStatus, workloads]
   );
 
   return (

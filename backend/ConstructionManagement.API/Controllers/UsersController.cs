@@ -30,10 +30,25 @@ public class UsersController : BaseApiController
         return Ok(result);
     }
 
-    [HttpGet("{id}")]
+    [HttpGet("workload")]
+    public async Task<IActionResult> GetWorkloadSummary()
+    {
+        var result = await _userService.GetWorkloadSummaryAsync();
+        return Ok(result);
+    }
+
+    [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetUserById(Guid id)
     {
         var result = await _userService.GetUserByIdAsync(id);
+        if (!result.Success) return NotFound(result);
+        return Ok(result);
+    }
+
+    [HttpGet("{id:guid}/progress-summary")]
+    public async Task<IActionResult> GetProgressSummary(Guid id)
+    {
+        var result = await _userService.GetUserProgressSummaryAsync(id);
         if (!result.Success) return NotFound(result);
         return Ok(result);
     }
@@ -47,7 +62,7 @@ public class UsersController : BaseApiController
         return Ok(result);
     }
 
-    [HttpPut("{id}")]
+    [HttpPut("{id:guid}")]
     [Authorize(Roles = "SuperAdmin")]
     public async Task<IActionResult> UpdateUser(Guid id, [FromBody] UpdateUserRequest request)
     {
@@ -56,7 +71,7 @@ public class UsersController : BaseApiController
         return Ok(result);
     }
 
-    [HttpDelete("{id}")]
+    [HttpDelete("{id:guid}")]
     [Authorize(Roles = "SuperAdmin")]
     public async Task<IActionResult> DeleteUser(Guid id)
     {
@@ -65,19 +80,12 @@ public class UsersController : BaseApiController
         return Ok(result);
     }
 
-    [HttpPatch("{id}/toggle-status")]
+    [HttpPatch("{id:guid}/toggle-status")]
     [Authorize(Roles = "SuperAdmin")]
     public async Task<IActionResult> ToggleUserStatus(Guid id)
     {
         var result = await _userService.ToggleUserStatusAsync(id);
         if (!result.Success) return BadRequest(result);
-        return Ok(result);
-    }
-
-    [HttpGet("workload")]
-    public async Task<IActionResult> GetWorkloadSummary()
-    {
-        var result = await _userService.GetWorkloadSummaryAsync();
         return Ok(result);
     }
 }

@@ -163,7 +163,7 @@ export const EmployeesPage: React.FC = () => {
       {/* Filter & Toolbar */}
       <Paper sx={{ p: { xs: 1.5, sm: 2 }, border: '1px solid #e2e8f0', borderRadius: '8px', display: 'flex', gap: 1.5, flexWrap: 'wrap', alignItems: 'center', width: '100%', maxWidth: '100%' }}>
         {/* Compact Search Input */}
-        <Box sx={{ width: { xs: '100%', sm: 280 }, flexGrow: 1, minWidth: 0 }}>
+        <Box sx={{ width: { xs: '100%', sm: 300, md: 360 }, minWidth: 0 }}>
           <TextField
             size="small"
             fullWidth

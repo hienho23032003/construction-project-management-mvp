@@ -285,4 +285,185 @@ public class UserService : IUserService
 
         return ApiResponse<List<EmployeeWorkloadSummaryDto>>.Ok(list);
     }
+
+    public async Task<ApiResponse<EmployeeProgressDetailDto>> GetUserProgressSummaryAsync(Guid userId)
+    {
+        var user = await _context.Users
+            .Include(u => u.UserRoles)
+                .ThenInclude(ur => ur.Role)
+            .Include(u => u.ProjectMemberships)
+                .ThenInclude(pm => pm.Project)
+            .Include(u => u.TaskAssignments)
+                .ThenInclude(ta => ta.Task)
+                    .ThenInclude(t => t.Project)
+            .FirstOrDefaultAsync(u => u.Id == userId);
+
+        if (user == null)
+        {
+            return ApiResponse<EmployeeProgressDetailDto>.Fail("Không tìm thấy thông tin nhân sự.");
+        }
+
+        var now = DateTime.UtcNow.Date;
+        var userDto = new UserDto
+        {
+            Id = user.Id,
+            FullName = user.FullName,
+            Email = user.Email,
+            Phone = user.Phone,
+            Department = user.Department,
+            AvatarUrl = user.AvatarUrl,
+            Role = user.Role,
+            Roles = user.UserRoles.Where(ur => ur.Role != null).Select(ur => ur.Role!.Name).ToList(),
+            RoleIds = user.UserRoles.Select(ur => ur.RoleId).ToList(),
+            IsActive = user.IsActive,
+            CreatedAt = user.CreatedAt
+        };
+
+        // Tasks assigned to user
+        var taskItems = user.TaskAssignments
+            .Where(ta => ta.Task != null)
+            .Select(ta =>
+            {
+                var t = ta.Task!;
+                var isOverdue = t.Status != TaskItemStatus.Completed && t.PlannedEndDate.Date < now;
+                var daysRemaining = (t.PlannedEndDate.Date - now).Days;
+
+                return new EmployeeTaskItemDto
+                {
+                    TaskId = t.Id,
+                    ProjectId = t.ProjectId,
+                    ProjectCode = t.Project?.Code ?? string.Empty,
+                    ProjectName = t.Project?.Name ?? string.Empty,
+                    Name = t.Name,
+                    Status = t.Status,
+                    Priority = t.Priority,
+                    Progress = t.Progress,
+                    StartDate = t.StartDate,
+                    PlannedEndDate = t.PlannedEndDate,
+                    ActualEndDate = t.ActualEndDate,
+                    IsOverdue = isOverdue,
+                    DaysRemaining = daysRemaining,
+                    AssignedAt = ta.AssignedAt
+                };
+            })
+            .OrderByDescending(t => t.IsOverdue)
+            .ThenBy(t => t.PlannedEndDate)
+            .ToList();
+
+        // KPI Stats
+        var totalTasks = taskItems.Count;
+        var completedTasks = taskItems.Count(t => t.Status == TaskItemStatus.Completed);
+        var inProgressTasks = taskItems.Count(t => t.Status == TaskItemStatus.InProgress);
+        var notStartedTasks = taskItems.Count(t => t.Status == TaskItemStatus.NotStarted);
+        var overdueTasks = taskItems.Count(t => t.IsOverdue);
+
+        var avgProgress = totalTasks > 0 ? Math.Round(taskItems.Average(t => t.Progress), 1) : 0;
+        
+        var onTimeCount = taskItems.Count(t =>
+            (t.Status == TaskItemStatus.Completed && (t.ActualEndDate == null || t.ActualEndDate.Value.Date <= t.PlannedEndDate.Date)) ||
+            (t.Status != TaskItemStatus.Completed && !t.IsOverdue)
+        );
+        var onTimeRate = totalTasks > 0 ? Math.Round((double)onTimeCount / totalTasks * 100, 1) : 100.0;
+
+        // Projects participated
+        var projects = user.ProjectMemberships
+            .Where(pm => pm.Project != null)
+            .Select(pm =>
+            {
+                var p = pm.Project!;
+                var projectTasks = taskItems.Where(t => t.ProjectId == p.Id).ToList();
+                var pTotal = projectTasks.Count;
+                var pCompleted = projectTasks.Count(t => t.Status == TaskItemStatus.Completed);
+                var pInProgress = projectTasks.Count(t => t.Status == TaskItemStatus.InProgress);
+                var pOverdue = projectTasks.Count(t => t.IsOverdue);
+                var pAvgProg = pTotal > 0 ? Math.Round(projectTasks.Average(t => t.Progress), 1) : p.Progress;
+
+                return new EmployeeProjectParticipationDto
+                {
+                    ProjectId = p.Id,
+                    ProjectCode = p.Code,
+                    ProjectName = p.Name,
+                    ProjectLocation = p.Location,
+                    ProjectStatus = p.Status,
+                    ProjectProgress = p.Progress,
+                    RoleInProject = pm.RoleInProject,
+                    JoinedAt = pm.JoinedAt,
+                    TotalTasks = pTotal,
+                    CompletedTasks = pCompleted,
+                    InProgressTasks = pInProgress,
+                    OverdueTasks = pOverdue,
+                    AverageProgress = pAvgProg
+                };
+            })
+            .OrderByDescending(p => p.ProjectStatus == ProjectStatus.InProgress)
+            .ThenByDescending(p => p.JoinedAt)
+            .ToList();
+
+        // Check if user has tasks in projects they aren't explicitly in ProjectMemberships
+        var projectIdsInMemberships = projects.Select(p => p.ProjectId).ToHashSet();
+        var extraProjectTasks = taskItems.Where(t => !projectIdsInMemberships.Contains(t.ProjectId)).GroupBy(t => t.ProjectId).ToList();
+        foreach (var grp in extraProjectTasks)
+        {
+            var firstTask = grp.First();
+            var pTotal = grp.Count();
+            var pCompleted = grp.Count(t => t.Status == TaskItemStatus.Completed);
+            var pInProgress = grp.Count(t => t.Status == TaskItemStatus.InProgress);
+            var pOverdue = grp.Count(t => t.IsOverdue);
+            var pAvgProg = Math.Round(grp.Average(t => t.Progress), 1);
+
+            projects.Add(new EmployeeProjectParticipationDto
+            {
+                ProjectId = firstTask.ProjectId,
+                ProjectCode = firstTask.ProjectCode,
+                ProjectName = firstTask.ProjectName,
+                ProjectStatus = ProjectStatus.InProgress,
+                RoleInProject = "Thành viên phân công",
+                JoinedAt = firstTask.AssignedAt,
+                TotalTasks = pTotal,
+                CompletedTasks = pCompleted,
+                InProgressTasks = pInProgress,
+                OverdueTasks = pOverdue,
+                AverageProgress = pAvgProg
+            });
+        }
+
+        // Recent Activities by user
+        var activities = await _context.ActivityLogs
+            .Where(a => a.UserId == userId)
+            .OrderByDescending(a => a.CreatedAt)
+            .Take(15)
+            .Select(a => new EmployeeActivityLogDto
+            {
+                Id = a.Id,
+                Action = a.Action,
+                Details = a.Details,
+                ProjectName = a.Project != null ? a.Project.Name : null,
+                TaskName = a.Task != null ? a.Task.Name : null,
+                OldValue = a.OldValue,
+                NewValue = a.NewValue,
+                CreatedAt = a.CreatedAt
+            })
+            .ToListAsync();
+
+        var result = new EmployeeProgressDetailDto
+        {
+            User = userDto,
+            Stats = new EmployeeKpiStatsDto
+            {
+                TotalProjects = projects.Count,
+                TotalTasks = totalTasks,
+                CompletedTasks = completedTasks,
+                InProgressTasks = inProgressTasks,
+                NotStartedTasks = notStartedTasks,
+                OverdueTasks = overdueTasks,
+                AverageTaskProgress = avgProgress,
+                OnTimeCompletionRate = onTimeRate
+            },
+            Projects = projects,
+            Tasks = taskItems,
+            RecentActivities = activities
+        };
+
+        return ApiResponse<EmployeeProgressDetailDto>.Ok(result);
+    }
 }

@@ -9,6 +9,7 @@ import { ProjectDetailPage } from '../pages/ProjectDetailPage';
 import { TasksPage } from '../pages/TasksPage';
 import { GanttPage } from '../pages/GanttPage';
 import { EmployeesPage } from '../pages/EmployeesPage';
+import { EmployeeDetailPage } from '../pages/EmployeeDetailPage';
 import { ReportsPage } from '../pages/ReportsPage';
 import { RolesPage } from '../pages/RolesPage';
 import { LoginHistoryPage } from '../pages/LoginHistoryPage';
@@ -51,6 +52,7 @@ export const AppRoutes: React.FC = () => {
         <Route path="tasks" element={<TasksPage />} />
         <Route path="gantt" element={<GanttPage />} />
         <Route path="employees" element={<EmployeesPage />} />
+        <Route path="employees/:id" element={<EmployeeDetailPage />} />
         <Route path="reports" element={<ReportsPage />} />
         <Route path="roles" element={<RolesPage />} />
         <Route path="login-history" element={<LoginHistoryPage />} />

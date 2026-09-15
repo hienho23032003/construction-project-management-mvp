@@ -168,7 +168,7 @@ export const ProjectsPage: React.FC = () => {
           maxWidth: '100%',
         }}
       >
-        <Box sx={{ width: { xs: '100%', sm: 320 }, flexGrow: 1, minWidth: 0 }}>
+        <Box sx={{ width: { xs: '100%', sm: 300, md: 360 }, minWidth: 0 }}>
           <TextField
             size="small"
             fullWidth

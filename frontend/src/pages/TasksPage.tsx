@@ -175,7 +175,7 @@ export const TasksPage: React.FC = () => {
       {/* Filters Toolbar */}
       <Paper sx={{ p: { xs: 1.5, sm: 2 }, border: '1px solid #e2e8f0', borderRadius: '8px', display: 'flex', gap: 1.5, flexWrap: 'wrap', alignItems: 'center', width: '100%', maxWidth: '100%' }}>
         {/* Compact Search Input */}
-        <Box sx={{ width: { xs: '100%', sm: 240 }, flexGrow: 1, minWidth: 0 }}>
+        <Box sx={{ width: { xs: '100%', sm: 260, md: 320 }, minWidth: 0 }}>
           <TextField
             size="small"
             fullWidth

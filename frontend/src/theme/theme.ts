@@ -216,10 +216,31 @@ export const theme = createTheme({
         },
       },
     },
+    MuiAppBar: {
+      styleOverrides: {
+        root: {
+          borderRadius: '0 !important',
+          borderLeft: 'none',
+          borderRight: 'none',
+          borderTop: 'none',
+          boxShadow: 'none',
+        },
+      },
+    },
     MuiDrawer: {
       styleOverrides: {
         paper: {
           borderRadius: 0,
+        },
+      },
+    },
+    MuiDivider: {
+      styleOverrides: {
+        root: {
+          borderColor: '#f1f5f9',
+          marginTop: '0 !important',
+          marginBottom: '0 !important',
+          margin: '0 !important',
         },
       },
     },

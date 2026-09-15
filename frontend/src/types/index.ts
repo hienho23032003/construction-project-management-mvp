@@ -331,3 +331,66 @@ export interface PagedResult<T> {
   hasNextPage: boolean;
 }
 
+export interface EmployeeKpiStats {
+  totalProjects: number;
+  totalTasks: number;
+  completedTasks: number;
+  inProgressTasks: number;
+  notStartedTasks: number;
+  overdueTasks: number;
+  averageTaskProgress: number;
+  onTimeCompletionRate: number;
+}
+
+export interface EmployeeProjectParticipation {
+  projectId: string;
+  projectCode: string;
+  projectName: string;
+  projectLocation?: string;
+  projectStatus: ProjectStatus;
+  projectProgress: number;
+  roleInProject?: string;
+  joinedAt?: string;
+  totalTasks: number;
+  completedTasks: number;
+  inProgressTasks: number;
+  overdueTasks: number;
+  averageProgress: number;
+}
+
+export interface EmployeeTaskItem {
+  taskId: string;
+  projectId: string;
+  projectCode: string;
+  projectName: string;
+  name: string;
+  status: TaskStatus;
+  priority: PriorityLevel;
+  progress: number;
+  startDate: string;
+  plannedEndDate: string;
+  actualEndDate?: string;
+  isOverdue: boolean;
+  daysRemaining: number;
+  assignedAt: string;
+}
+
+export interface EmployeeActivityLog {
+  id: string;
+  action: string;
+  details?: string;
+  projectName?: string;
+  taskName?: string;
+  oldValue?: string;
+  newValue?: string;
+  createdAt: string;
+}
+
+export interface EmployeeProgressDetail {
+  user: User;
+  stats: EmployeeKpiStats;
+  projects: EmployeeProjectParticipation[];
+  tasks: EmployeeTaskItem[];
+  recentActivities: EmployeeActivityLog[];
+}
+

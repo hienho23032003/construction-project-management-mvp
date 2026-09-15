@@ -226,17 +226,23 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ open, onClos
       </Box>
 
       {/* Tabs */}
-      <Box sx={{ borderBottom: 1, borderColor: '#e2e8f0', bgcolor: '#f8fafc', px: 2 }}>
+      <Box sx={{ borderBottom: 1, borderColor: '#e2e8f0', bgcolor: '#f8fafc', px: { xs: 1, sm: 2 } }}>
         <Tabs
           value={activeTab}
           onChange={(_, val) => setActiveTab(val)}
+          variant="scrollable"
+          scrollButtons="auto"
+          allowScrollButtonsMobile
           sx={{
             minHeight: 48,
             '& .MuiTab-root': {
               textTransform: 'none',
               fontWeight: 600,
-              fontSize: '0.875rem',
+              fontSize: { xs: '0.8125rem', sm: '0.875rem' },
               minHeight: 48,
+              px: { xs: 1.5, sm: 2 },
+              minWidth: 'auto',
+              whiteSpace: 'nowrap',
               gap: 1,
             },
           }}

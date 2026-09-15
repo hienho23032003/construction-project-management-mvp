@@ -18,9 +18,23 @@ export const statusMap: Record<string, { label: string; bg: string; color: strin
 };
 
 export const getVietnameseStatus = (status: string, isOverdue?: boolean): string => {
+  if (!status) return 'Chưa xác định';
   if (isOverdue && status !== 'Completed') return 'Trễ tiến độ';
-  const found = Object.keys(statusMap).find((k) => k.toLowerCase() === (status || '').toLowerCase());
-  return found ? statusMap[found].label : status || 'Chưa xác định';
+
+  const exactMatch = Object.keys(statusMap).find((k) => k.toLowerCase() === status.trim().toLowerCase());
+  if (exactMatch) return statusMap[exactMatch].label;
+
+  return status
+    .replace(/\bInProgress\b/gi, 'Đang thực hiện')
+    .replace(/\bCompleted\b/gi, 'Hoàn thành')
+    .replace(/\bNotStarted\b/gi, 'Chưa bắt đầu')
+    .replace(/\bOnHold\b/gi, 'Tạm dừng')
+    .replace(/\bOverdue\b/gi, 'Trễ tiến độ')
+    .replace(/\bCancelled\b/gi, 'Đã hủy')
+    .replace(/\bUrgent\b/gi, 'Khẩn cấp')
+    .replace(/\bHigh\b/gi, 'Cao')
+    .replace(/\bMedium\b/gi, 'Trung bình')
+    .replace(/\bLow\b/gi, 'Thấp');
 };
 
 export const StatusChip: React.FC<StatusChipProps> = ({ status, size = 'small', isOverdue }) => {

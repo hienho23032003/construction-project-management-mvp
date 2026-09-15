@@ -224,7 +224,7 @@ export const RolesPage: React.FC = () => {
           placeholder="Tìm kiếm vai trò theo tên, mã hoặc mô tả..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          sx={{ width: { xs: '100%', sm: 380 } }}
+          sx={{ width: { xs: '100%', sm: 320, md: 360 } }}
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">

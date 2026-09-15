@@ -223,7 +223,7 @@ export const GanttPage: React.FC = () => {
             }}
           />
         )}
-        sx={{ width: { xs: '100%', sm: 220 }, minWidth: { xs: '100%', sm: 220 } }}
+        sx={{ width: { xs: '100%', sm: 240, md: 280 } }}
       />
 
       <Box sx={{ display: 'flex', gap: 1, width: { xs: '100%', sm: 'auto' }, flexWrap: 'nowrap' }}>

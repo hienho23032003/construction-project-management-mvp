@@ -42,6 +42,21 @@ export const useUserWorkloadQuery = () => {
   });
 };
 
+export const useUserProgressQuery = (userId?: string) => {
+  return useQuery({
+    queryKey: ['users-progress', userId],
+    queryFn: async () => {
+      if (!userId) return null;
+      const res = await userApi.getProgressSummary(userId);
+      if (!res.data.success || !res.data.data) {
+        throw new Error(res.data.message || 'Không thể tải thông tin tiến độ nhân viên');
+      }
+      return res.data.data;
+    },
+    enabled: !!userId,
+  });
+};
+
 export const useCreateUserMutation = () => {
   const queryClient = useQueryClient();
   const { showSuccess, showError } = useToast();

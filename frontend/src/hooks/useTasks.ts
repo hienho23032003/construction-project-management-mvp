@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
-import { taskApi } from '../services/api/endpoints';
+import { taskApi, activityLogApi } from '../services/api/endpoints';
 import { PaginationParams, TaskStatus } from '../types';
 import { useToast } from '../contexts/ToastContext';
 
@@ -99,6 +99,21 @@ export const useTaskDependenciesQuery = (taskId?: string) => {
   });
 };
 
+export const useTaskActivitiesQuery = (taskId?: string) => {
+  return useQuery({
+    queryKey: ['task-activities', taskId],
+    queryFn: async () => {
+      if (!taskId) return [];
+      const res = await activityLogApi.getLogs(undefined, taskId, 100);
+      if (!res.data.success || !res.data.data) {
+        throw new Error(res.data.message || 'Không thể tải lịch sử biến động');
+      }
+      return res.data.data;
+    },
+    enabled: Boolean(taskId),
+  });
+};
+
 export const useCreateTaskMutation = () => {
   const queryClient = useQueryClient();
   const { showSuccess, showError } = useToast();
@@ -108,6 +123,7 @@ export const useCreateTaskMutation = () => {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       queryClient.invalidateQueries({ queryKey: ['gantt-data'] });
+      queryClient.invalidateQueries({ queryKey: ['task-activities'] });
       if (variables.projectId) {
         queryClient.invalidateQueries({ queryKey: ['project', variables.projectId] });
         queryClient.invalidateQueries({ queryKey: ['project-task-tree', variables.projectId] });
@@ -130,6 +146,7 @@ export const useUpdateTaskMutation = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       queryClient.invalidateQueries({ queryKey: ['gantt-data'] });
+      queryClient.invalidateQueries({ queryKey: ['task-activities'] });
       queryClient.invalidateQueries({ queryKey: ['project'] });
       queryClient.invalidateQueries({ queryKey: ['project-task-tree'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
@@ -151,6 +168,7 @@ export const useUpdateTaskStatusMutation = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       queryClient.invalidateQueries({ queryKey: ['gantt-data'] });
+      queryClient.invalidateQueries({ queryKey: ['task-activities'] });
       queryClient.invalidateQueries({ queryKey: ['project'] });
       queryClient.invalidateQueries({ queryKey: ['project-task-tree'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
@@ -172,6 +190,7 @@ export const useUpdateTaskProgressMutation = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       queryClient.invalidateQueries({ queryKey: ['gantt-data'] });
+      queryClient.invalidateQueries({ queryKey: ['task-activities'] });
       queryClient.invalidateQueries({ queryKey: ['project'] });
       queryClient.invalidateQueries({ queryKey: ['project-task-tree'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
@@ -193,6 +212,7 @@ export const useUpdateTaskDatesMutation = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       queryClient.invalidateQueries({ queryKey: ['gantt-data'] });
+      queryClient.invalidateQueries({ queryKey: ['task-activities'] });
       queryClient.invalidateQueries({ queryKey: ['project'] });
       queryClient.invalidateQueries({ queryKey: ['project-task-tree'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
@@ -213,6 +233,7 @@ export const useDeleteTaskMutation = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       queryClient.invalidateQueries({ queryKey: ['gantt-data'] });
+      queryClient.invalidateQueries({ queryKey: ['task-activities'] });
       queryClient.invalidateQueries({ queryKey: ['project'] });
       queryClient.invalidateQueries({ queryKey: ['project-task-tree'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
@@ -236,7 +257,9 @@ export const useAddCommentMutation = (taskId?: string) => {
     onSuccess: () => {
       if (taskId) {
         queryClient.invalidateQueries({ queryKey: ['task-comments', taskId] });
+        queryClient.invalidateQueries({ queryKey: ['task-activities', taskId] });
       }
+      queryClient.invalidateQueries({ queryKey: ['task-activities'] });
       showSuccess('Đã gửi phản hồi / bình luận!');
     },
     onError: (err: any) => {

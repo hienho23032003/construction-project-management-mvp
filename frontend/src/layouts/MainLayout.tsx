@@ -140,12 +140,15 @@ export const MainLayout: React.FC = () => {
       {/* Brand Header */}
       <Box
         sx={{
-          p: collapsed && !isMobile ? 1.5 : 2,
+          px: collapsed && !isMobile ? 1.5 : 2,
           display: 'flex',
           alignItems: 'center',
           justifyContent: collapsed && !isMobile ? 'center' : 'space-between',
           borderBottom: '1px solid #e2e8f0',
+          height: 64,
           minHeight: 64,
+          maxHeight: 64,
+          boxSizing: 'border-box',
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, overflow: 'hidden', width: '100%', justifyContent: collapsed && !isMobile ? 'center' : 'flex-start' }}>
@@ -339,7 +342,7 @@ export const MainLayout: React.FC = () => {
   );
 
   return (
-    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#f8fafc', maxWidth: '100vw', overflowX: 'hidden' }}>
+    <Box sx={{ display: 'flex', height: '100vh', maxHeight: '100vh', bgcolor: '#f8fafc', width: '100vw', maxWidth: '100vw', overflow: 'hidden' }}>
       {/* Sidebar Navigation */}
       <Box
         component="nav"
@@ -347,6 +350,7 @@ export const MainLayout: React.FC = () => {
           width: { md: currentDrawerWidth },
           flexShrink: { md: 0 },
           transition: 'width 0.25s ease',
+          height: '100vh',
         }}
       >
         {/* Mobile Drawer */}
@@ -376,6 +380,7 @@ export const MainLayout: React.FC = () => {
               bgcolor: '#ffffff',
               transition: 'width 0.25s ease',
               overflowX: 'hidden',
+              height: '100vh',
             },
           }}
           open
@@ -391,23 +396,44 @@ export const MainLayout: React.FC = () => {
           display: 'flex',
           flexDirection: 'column',
           minWidth: 0,
+          height: '100vh',
+          maxHeight: '100vh',
           width: { xs: '100%', md: `calc(100% - ${currentDrawerWidth}px)` },
           maxWidth: { xs: '100%', md: `calc(100% - ${currentDrawerWidth}px)` },
           transition: 'width 0.25s ease',
-          overflowX: 'hidden',
+          overflow: 'hidden',
         }}
       >
         {/* Header Bar */}
         <AppBar
-          position="sticky"
+          position="static"
           elevation={0}
           sx={{
+            flexShrink: 0,
             bgcolor: '#ffffff',
             borderBottom: '1px solid #e2e8f0',
+            borderTop: 'none',
+            borderLeft: 'none',
+            borderRight: 'none',
+            borderRadius: 0,
             color: '#0f172a',
+            zIndex: 1100,
+            height: 64,
+            minHeight: 64,
+            maxHeight: 64,
+            boxSizing: 'border-box',
           }}
         >
-          <Toolbar sx={{ justifyContent: 'space-between', px: { xs: 2, md: 3 } }}>
+          <Toolbar
+            sx={{
+              height: 64,
+              minHeight: '64px !important',
+              maxHeight: 64,
+              justifyContent: 'space-between',
+              px: { xs: 2, md: 3 },
+              boxSizing: 'border-box',
+            }}
+          >
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
               {/* Mobile hamburger menu */}
               <IconButton
@@ -549,31 +575,70 @@ export const MainLayout: React.FC = () => {
           onClose={() => setUserMenuAnchor(null)}
           transformOrigin={{ horizontal: 'right', vertical: 'top' }}
           anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
-          PaperProps={{ sx: { width: 230, borderRadius: '8px', mt: 1, boxShadow: '0 10px 25px rgba(0,0,0,0.1)' } }}
+          PaperProps={{
+            sx: {
+              width: 230,
+              borderRadius: '8px',
+              mt: 1,
+              boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
+              border: '1px solid #e2e8f0',
+              overflow: 'hidden',
+              '& .MuiMenu-list': {
+                padding: '0 !important',
+                paddingTop: '0 !important',
+                paddingBottom: '0 !important',
+              },
+              '& .MuiDivider-root': {
+                margin: '0 !important',
+                marginTop: '0 !important',
+                marginBottom: '0 !important',
+              },
+            },
+          }}
         >
-          <Box sx={{ px: 2, py: 1.5 }}>
-            <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+          <Box sx={{ px: 2, py: 1.5, bgcolor: '#ffffff' }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#0f172a' }}>
               {user?.fullName}
             </Typography>
             <Typography variant="caption" sx={{ color: '#64748b' }}>
               {user?.email}
             </Typography>
           </Box>
-          <Divider />
+          <Divider sx={{ margin: '0 !important', my: '0 !important' }} />
           <MenuItem
             onClick={() => {
               setUserMenuAnchor(null);
               setProfileOpen(true);
             }}
-            sx={{ gap: 1.25 }}
+            sx={{
+              gap: 1.25,
+              m: '0 !important',
+              my: '0 !important',
+              borderRadius: 0,
+              py: 1.25,
+              px: 2,
+              '&:hover': { bgcolor: '#f0f9ff' },
+            }}
           >
             <UserIcon size={16} color="#0284c7" />
             <Typography variant="body2" sx={{ fontWeight: 600 }}>
               Thông Tin Cá Nhân
             </Typography>
           </MenuItem>
-          <Divider />
-          <MenuItem onClick={logout} sx={{ color: '#ef4444', gap: 1.25 }}>
+          <Divider sx={{ margin: '0 !important', my: '0 !important' }} />
+          <MenuItem
+            onClick={logout}
+            sx={{
+              color: '#ef4444',
+              gap: 1.25,
+              m: '0 !important',
+              my: '0 !important',
+              borderRadius: 0,
+              py: 1.25,
+              px: 2,
+              '&:hover': { bgcolor: '#fef2f2' },
+            }}
+          >
             <LogOut size={16} />
             <Typography variant="body2" sx={{ fontWeight: 600 }}>
               Đăng Xuất
@@ -589,13 +654,14 @@ export const MainLayout: React.FC = () => {
           component="main"
           sx={{
             flexGrow: 1,
+            height: 'calc(100vh - 64px)',
+            overflowY: 'auto',
+            overflowX: 'hidden',
             p: { xs: 1.5, sm: 2.5, md: 3 },
             pb: { xs: 9, md: 3 },
             minWidth: 0,
             width: '100%',
             maxWidth: '100%',
-            overflowY: 'auto',
-            overflowX: 'hidden',
             boxSizing: 'border-box',
           }}
         >

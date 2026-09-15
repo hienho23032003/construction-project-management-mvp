@@ -51,6 +51,7 @@ public interface IUserService
     Task<ApiResponse<bool>> DeleteUserAsync(Guid id);
     Task<ApiResponse<bool>> ToggleUserStatusAsync(Guid id);
     Task<ApiResponse<List<EmployeeWorkloadSummaryDto>>> GetWorkloadSummaryAsync();
+    Task<ApiResponse<EmployeeProgressDetailDto>> GetUserProgressSummaryAsync(Guid userId);
 }
 
 public interface IProjectService

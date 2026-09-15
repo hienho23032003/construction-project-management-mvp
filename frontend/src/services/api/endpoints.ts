@@ -59,6 +59,7 @@ export const userApi = {
     apiClient.get<ApiResponse<PagedResult<User>>>('/users', { params }),
   getAllList: () => apiClient.get<ApiResponse<User[]>>('/users/all'),
   getById: (id: string) => apiClient.get<ApiResponse<User>>(`/users/${id}`),
+  getProgressSummary: (id: string) => apiClient.get<ApiResponse<any>>(`/users/${id}/progress-summary`),
   create: (data: any) => apiClient.post<ApiResponse<User>>('/users', data),
   update: (id: string, data: any) => apiClient.put<ApiResponse<User>>(`/users/${id}`, data),
   delete: (id: string) => apiClient.delete<ApiResponse<boolean>>(`/users/${id}`),

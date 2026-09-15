@@ -1,6 +1,7 @@
 import React, { memo } from 'react';
-import { Card, CardContent, Box, Typography, Avatar, Chip, IconButton, Tooltip, Divider } from '@mui/material';
-import { Mail, Phone, Briefcase, Edit2, Lock, Unlock, Trash2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Card, CardContent, Box, Typography, Avatar, Chip, IconButton, Tooltip, Divider, Button } from '@mui/material';
+import { Mail, Phone, Briefcase, Edit2, Lock, Unlock, Trash2, TrendingUp, ChevronRight } from 'lucide-react';
 import { User } from '../../types';
 import { roleLabels } from '../../pages/EmployeesPage';
 
@@ -25,6 +26,7 @@ export const EmployeeCard: React.FC<EmployeeCardProps> = memo(({
   onToggleStatus,
   onDelete,
 }) => {
+  const navigate = useNavigate();
   const isUserActive = u.isActive ?? true;
 
   return (
@@ -46,10 +48,13 @@ export const EmployeeCard: React.FC<EmployeeCardProps> = memo(({
         },
       }}
     >
-      <CardContent sx={{ p: 2.5, pb: isAdmin ? 1.5 : 2.5 }}>
+      <CardContent sx={{ p: 2.5, pb: 1.5 }}>
         {/* User Header */}
         <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 1, mb: 2 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, minWidth: 0, flexGrow: 1 }}>
+          <Box
+            onClick={() => navigate(`/employees/${u.id}`)}
+            sx={{ display: 'flex', alignItems: 'center', gap: 1.5, minWidth: 0, flexGrow: 1, cursor: 'pointer' }}
+          >
             <Avatar
               sx={{
                 bgcolor: u.role === 'SuperAdmin' ? '#ef4444' : u.role === 'ProjectManager' ? '#0284c7' : '#10b981',
@@ -62,7 +67,16 @@ export const EmployeeCard: React.FC<EmployeeCardProps> = memo(({
               {u.fullName.charAt(0)}
             </Avatar>
             <Box sx={{ minWidth: 0, flexGrow: 1 }}>
-              <Typography variant="subtitle1" sx={{ fontWeight: 700, color: '#0f172a' }} noWrap>
+              <Typography
+                variant="subtitle1"
+                sx={{
+                  fontWeight: 700,
+                  color: '#0f172a',
+                  '&:hover': { color: '#0284c7' },
+                  transition: 'color 0.15s ease',
+                }}
+                noWrap
+              >
                 {u.fullName}
               </Typography>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mt: 0.25, flexWrap: 'wrap' }}>
@@ -94,7 +108,7 @@ export const EmployeeCard: React.FC<EmployeeCardProps> = memo(({
         </Box>
 
         {/* Contact details */}
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75, mb: 2.5 }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75, mb: 2 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <Mail size={15} color="#94a3b8" />
             <Typography variant="caption" sx={{ color: '#475569' }} noWrap>
@@ -149,6 +163,32 @@ export const EmployeeCard: React.FC<EmployeeCardProps> = memo(({
             </Box>
           </Box>
         </Box>
+
+        {/* View Progress Action Button */}
+        <Button
+          size="small"
+          variant="outlined"
+          fullWidth
+          onClick={() => navigate(`/employees/${u.id}`)}
+          startIcon={<TrendingUp size={15} />}
+          endIcon={<ChevronRight size={15} />}
+          sx={{
+            mt: 1.5,
+            textTransform: 'none',
+            fontWeight: 600,
+            fontSize: '0.8125rem',
+            borderRadius: '6px',
+            borderColor: '#bae6fd',
+            color: '#0284c7',
+            bgcolor: '#f0f9ff',
+            '&:hover': {
+              bgcolor: '#e0f2fe',
+              borderColor: '#0284c7',
+            },
+          }}
+        >
+          Xem Tiến Độ & Dự Án
+        </Button>
       </CardContent>
 
       {isAdmin && (
