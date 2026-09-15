@@ -14,7 +14,10 @@ import {
   Grid,
   FormControlLabel,
   Switch,
+  IconButton,
+  Typography,
 } from '@mui/material';
+import { X } from 'lucide-react';
 import { User, UserRole, RoleItem } from '../../types';
 import { useRolesQuery } from '../../hooks/useRoles';
 
@@ -159,8 +162,31 @@ export const EmployeeFormModal: React.FC<EmployeeFormModalProps> = ({
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <form onSubmit={handleSubmit(handleFormSubmit)}>
-        <DialogTitle sx={{ fontWeight: 700, px: 3, pt: 2.5, pb: 1 }}>
-          {editingUser ? `Chỉnh Sửa Nhân Sự: ${editingUser.fullName}` : 'Thêm Nhân Viên / Người Dùng Mới'}
+        <DialogTitle
+          sx={{
+            fontWeight: 700,
+            px: 3,
+            pt: 2.5,
+            pb: 1.5,
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}
+        >
+          <Typography variant="h3" sx={{ fontWeight: 700, fontSize: '1.15rem', color: '#0f172a' }}>
+            {editingUser ? `Chỉnh Sửa Nhân Sự: ${editingUser.fullName}` : 'Thêm Nhân Viên / Người Dùng Mới'}
+          </Typography>
+          <IconButton
+            aria-label="close"
+            onClick={onClose}
+            size="small"
+            sx={{
+              color: '#94a3b8',
+              '&:hover': { color: '#0f172a', bgcolor: '#f1f5f9' },
+            }}
+          >
+            <X size={20} />
+          </IconButton>
         </DialogTitle>
         <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, pt: '24px !important', px: 3 }}>
           <Controller

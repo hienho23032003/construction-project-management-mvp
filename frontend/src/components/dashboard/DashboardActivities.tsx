@@ -7,15 +7,16 @@ import {
   Chip,
 } from '@mui/material';
 import { Activity, Clock } from 'lucide-react';
-import { format } from 'date-fns';
 import { DashboardSummary } from '../../types';
 import { CommonTable, ColumnDef } from '../common/CommonTable';
+import { formatDateTime } from '../../utils/dateUtils';
 
 interface DashboardActivitiesProps {
   data: DashboardSummary;
+  onSelectTask?: (taskId: string) => void;
 }
 
-export const DashboardActivities: React.FC<DashboardActivitiesProps> = memo(({ data }) => {
+export const DashboardActivities: React.FC<DashboardActivitiesProps> = memo(({ data, onSelectTask }) => {
   const [page, setPage] = useState<number>(0);
   const [rowsPerPage, setRowsPerPage] = useState<number>(5);
 
@@ -31,14 +32,7 @@ export const DashboardActivities: React.FC<DashboardActivitiesProps> = memo(({ d
         header: 'Thời Gian',
         width: 155,
         cell: ({ row }) => {
-          let formattedTime = '-';
-          try {
-            if (row.createdAt) {
-              formattedTime = format(new Date(row.createdAt), 'HH:mm dd/MM/yyyy');
-            }
-          } catch {
-            formattedTime = row.createdAt || '-';
-          }
+          const formattedTime = formatDateTime(row.createdAt);
           return (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, color: '#475569', fontSize: '0.8125rem' }}>
               <Clock size={13} color="#94a3b8" />
@@ -50,7 +44,7 @@ export const DashboardActivities: React.FC<DashboardActivitiesProps> = memo(({ d
       {
         id: 'userName',
         header: 'Người Thực Hiện',
-        width: 180,
+        width: '15%',
         cell: ({ row }) => (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <Avatar
@@ -76,7 +70,7 @@ export const DashboardActivities: React.FC<DashboardActivitiesProps> = memo(({ d
       {
         id: 'project',
         header: 'Dự Án / Công Trình',
-        width: 170,
+        width: '20%',
         cell: ({ row }) =>
           row.projectCode ? (
             <Box sx={{ display: 'flex', flexDirection: 'column' }}>
@@ -99,7 +93,7 @@ export const DashboardActivities: React.FC<DashboardActivitiesProps> = memo(({ d
                   sx={{
                     color: '#64748b',
                     fontSize: '0.75rem',
-                    maxWidth: 160,
+                    maxWidth: 400,
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
                     whiteSpace: 'nowrap',
@@ -119,16 +113,19 @@ export const DashboardActivities: React.FC<DashboardActivitiesProps> = memo(({ d
       {
         id: 'task',
         header: 'Hạng Mục / Công Việc',
-        width: 200,
+        width: '20%',
         cell: ({ row }) =>
           row.taskName ? (
             <Typography
               variant="body2"
+              onClick={() => row.taskId && onSelectTask && onSelectTask(row.taskId)}
               sx={{
-                fontWeight: 500,
+                fontWeight: 600,
                 fontSize: '0.8125rem',
-                color: '#334155',
-                maxWidth: 220,
+                color: row.taskId && onSelectTask ? '#0284c7' : '#334155',
+                cursor: row.taskId && onSelectTask ? 'pointer' : 'default',
+                '&:hover': row.taskId && onSelectTask ? { textDecoration: 'underline' } : {},
+                maxWidth: 400,
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
                 whiteSpace: 'nowrap',
@@ -146,18 +143,24 @@ export const DashboardActivities: React.FC<DashboardActivitiesProps> = memo(({ d
       {
         id: 'details',
         header: 'Nội Dung & Biến Động',
-        cell: ({ row }) => (
-          <Typography
-            variant="body2"
-            sx={{
-              fontSize: '0.8125rem',
-              color: '#1e293b',
-              wordBreak: 'break-word',
-            }}
-          >
-            {row.details || row.actionName || row.action || '-'}
-          </Typography>
-        ),
+        cell: ({ row }) => {
+          const raw = row.details || row.actionName || row.action || '-';
+          const clean = typeof raw === 'string'
+            ? raw.replace(/:\s*['"]?[\w\d_-]+['"]?\s*(->|→|➔|-->)\s*['"]?[\w\d_-]+['"]?/gi, '').trim()
+            : raw;
+          return (
+            <Typography
+              variant="body2"
+              sx={{
+                fontSize: '0.8125rem',
+                color: '#1e293b',
+                wordBreak: 'break-word',
+              }}
+            >
+              {clean}
+            </Typography>
+          );
+        },
       },
     ],
     []
@@ -231,6 +234,18 @@ export const DashboardActivities: React.FC<DashboardActivitiesProps> = memo(({ d
         density="compact"
         maxHeight={440}
         emptyMessage="Chưa có hoạt động nào được ghi nhận gần đây."
+        onRowClick={(row: any) => {
+          if (row.taskId && onSelectTask) {
+            onSelectTask(row.taskId);
+          }
+        }}
+        rowSx={(row: any) => ({
+          cursor: row.taskId && onSelectTask ? 'pointer' : 'default',
+          transition: 'background-color 0.15s ease',
+          '&:hover': {
+            bgcolor: row.taskId && onSelectTask ? '#f0f9ff !important' : undefined,
+          },
+        })}
         pagination={{
           page,
           rowsPerPage,

@@ -1,8 +1,8 @@
 import React, { memo } from 'react';
 import { Box, Grid, Typography, Paper } from '@mui/material';
-import { format } from 'date-fns';
 import { Project, ProjectMember, TaskItem } from '../../types';
 import { ProgressBar } from '../common/PriorityBadge';
+import { formatDate } from '../../utils/dateUtils';
 
 interface ProjectOverviewTabProps {
   project: Project & { members: ProjectMember[]; tasks: TaskItem[] };
@@ -20,21 +20,21 @@ export const ProjectOverviewTab: React.FC<ProjectOverviewTabProps> = memo(({ pro
             {project.description || 'Chưa có mô tả chi tiết.'}
           </Typography>
 
-          <Typography variant="h4" sx={{ fontWeight: 700, mb: 1.5 }}>
+          <Typography variant="h4" sx={{ fontWeight: 700, mb: 2 }}>
             Thông Tin Chi Tiết
           </Typography>
           <Grid container spacing={2}>
             <Grid item xs={6}>
               <Typography variant="caption" sx={{ color: '#64748b' }}>
-                Địa điểm thi công
+                Mã công trình
               </Typography>
               <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                {project.location || 'Chưa cập nhật'}
+                {project.code}
               </Typography>
             </Grid>
             <Grid item xs={6}>
               <Typography variant="caption" sx={{ color: '#64748b' }}>
-                Người quản lý (PM)
+                Chỉ huy trưởng / Quản lý
               </Typography>
               <Typography variant="body2" sx={{ fontWeight: 600 }}>
                 {project.managerName || 'Chưa phân công'}
@@ -45,7 +45,7 @@ export const ProjectOverviewTab: React.FC<ProjectOverviewTabProps> = memo(({ pro
                 Ngày khởi công
               </Typography>
               <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                {format(new Date(project.startDate), 'dd/MM/yyyy')}
+                {formatDate(project.startDate)}
               </Typography>
             </Grid>
             <Grid item xs={6}>
@@ -53,7 +53,7 @@ export const ProjectOverviewTab: React.FC<ProjectOverviewTabProps> = memo(({ pro
                 Hạn hoàn thành dự kiến
               </Typography>
               <Typography variant="body2" sx={{ fontWeight: 600, color: project.isOverdue ? '#ef4444' : '#0f172a' }}>
-                {format(new Date(project.plannedEndDate), 'dd/MM/yyyy')}
+                {formatDate(project.plannedEndDate)}
               </Typography>
             </Grid>
           </Grid>

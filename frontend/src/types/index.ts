@@ -75,6 +75,7 @@ export interface UserLoginSession {
   roleName?: string;
   loginTime: string;
   logoutTime?: string;
+  lastActiveTime?: string;
   durationMinutes?: number;
   ipAddress?: string;
   userAgent?: string;

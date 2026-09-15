@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User, UserRole } from '../types';
-import { authApi } from '../services/api/endpoints';
+import { authApi, sessionApi } from '../services/api/endpoints';
+import { API_BASE_URL } from '../services/api/apiClient';
 
 interface AuthContextType {
   user: User | null;
@@ -38,6 +39,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   useEffect(() => {
     const initAuth = async () => {
       const savedToken = localStorage.getItem('token');
+      const savedSessionId = localStorage.getItem('sessionId');
       if (savedToken) {
         try {
           const res = await authApi.getMe();
@@ -48,6 +50,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             if (userData.permissions && userData.permissions.length > 0) {
               setPermissions(userData.permissions);
               localStorage.setItem('permissions', JSON.stringify(userData.permissions));
+            }
+
+            // Immediately ping server to mark user as Active online
+            if (savedSessionId) {
+              sessionApi.ping(savedSessionId).catch((err) => {
+                console.warn('Session ping error on startup:', err);
+              });
             }
           }
         } catch (err) {
@@ -60,6 +69,53 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     initAuth();
   }, []);
+
+  // Setup periodic Heartbeat (every 30 seconds) and pagehide beacon when user is active
+  useEffect(() => {
+    const currentSessionId = sessionId || localStorage.getItem('sessionId');
+    if (!token || !user || !currentSessionId) return;
+
+    // 1. Initial and recurring Heartbeat ping
+    const sendPing = () => {
+      const sId = sessionId || localStorage.getItem('sessionId');
+      if (sId && localStorage.getItem('token')) {
+        sessionApi.ping(sId).catch(() => {});
+      }
+    };
+
+    sendPing();
+    const interval = setInterval(sendPing, 30000);
+
+    // 2. Handle tab close / browser exit with sendBeacon (without logging out token)
+    const handleLeave = () => {
+      const sId = sessionId || localStorage.getItem('sessionId');
+      if (sId && localStorage.getItem('token')) {
+        const url = `${API_BASE_URL}/user-sessions/leave`;
+        const payload = JSON.stringify({ sessionId: sId });
+        const blob = new Blob([payload], { type: 'application/json' });
+
+        if (navigator.sendBeacon) {
+          navigator.sendBeacon(url, blob);
+        } else {
+          fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: payload,
+            keepalive: true,
+          }).catch(() => {});
+        }
+      }
+    };
+
+    window.addEventListener('pagehide', handleLeave);
+    window.addEventListener('beforeunload', handleLeave);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('pagehide', handleLeave);
+      window.removeEventListener('beforeunload', handleLeave);
+    };
+  }, [token, user, sessionId]);
 
   const login = async (email: string, password: string): Promise<{ success: boolean; message?: string }> => {
     try {

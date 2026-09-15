@@ -54,6 +54,7 @@ public class UserLoginSessionDto
     public string? UserRole { get; set; }
     public DateTime LoginTime { get; set; }
     public DateTime? LogoutTime { get; set; }
+    public DateTime? LastActiveTime { get; set; }
     public double? DurationMinutes { get; set; }
     public string? IpAddress { get; set; }
     public string? UserAgent { get; set; }
@@ -77,6 +78,16 @@ public class LoginSessionStatsDto
 }
 
 public class LogoutRequest
+{
+    public Guid? SessionId { get; set; }
+}
+
+public class PingSessionRequest
+{
+    public Guid? SessionId { get; set; }
+}
+
+public class LeaveSessionRequest
 {
     public Guid? SessionId { get; set; }
 }

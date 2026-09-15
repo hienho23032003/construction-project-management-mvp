@@ -20,7 +20,7 @@ import {
   Divider,
 } from '@mui/material';
 import {
-  ShieldCheck,
+  Settings,
   Plus,
   Search,
   Edit2,
@@ -31,6 +31,7 @@ import {
   Sparkles,
   LayoutGrid,
   List as ListIcon,
+  X,
 } from 'lucide-react';
 import { ToggleButtonGroup, ToggleButton } from '@mui/material';
 import { RoleItem } from '../types';
@@ -165,7 +166,7 @@ export const RolesPage: React.FC = () => {
                 alignItems: 'center',
               }}
             >
-              <ShieldCheck size={26} />
+              <Settings size={26} />
             </Box>
             <Box>
               <Typography variant="h5" sx={{ fontWeight: 800, color: '#0f172a' }}>
@@ -264,7 +265,7 @@ export const RolesPage: React.FC = () => {
             border: '1px dashed #cbd5e1',
           }}
         >
-          <ShieldCheck size={48} color="#94a3b8" style={{ marginBottom: 12 }} />
+          <Settings size={48} color="#94a3b8" style={{ marginBottom: 12 }} />
           <Typography variant="h6" sx={{ fontWeight: 700, color: '#334155', mb: 0.5 }}>
             Không tìm thấy vai trò nào
           </Typography>
@@ -486,7 +487,31 @@ export const RolesPage: React.FC = () => {
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={deleteConfirmOpen} onClose={() => setDeleteConfirmOpen(false)} maxWidth="xs" fullWidth>
-        <DialogTitle sx={{ fontWeight: 700, color: '#ef4444' }}>Xác Nhận Xóa Vai Trò</DialogTitle>
+        <DialogTitle
+          sx={{
+            fontWeight: 700,
+            color: '#ef4444',
+            px: 3,
+            pt: 2.5,
+            pb: 1.5,
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}
+        >
+          <span>Xác Nhận Xóa Vai Trò</span>
+          <IconButton
+            aria-label="close"
+            onClick={() => setDeleteConfirmOpen(false)}
+            size="small"
+            sx={{
+              color: '#94a3b8',
+              '&:hover': { color: '#0f172a', bgcolor: '#f1f5f9' },
+            }}
+          >
+            <X size={18} />
+          </IconButton>
+        </DialogTitle>
         <DialogContent>
           <Typography variant="body2" sx={{ color: '#475569' }}>
             Bạn có chắc chắn muốn xóa vai trò <strong>"{roleToDelete?.name}"</strong>? Các nhân sự đang được gán vai trò này sẽ bị hủy liên kết.

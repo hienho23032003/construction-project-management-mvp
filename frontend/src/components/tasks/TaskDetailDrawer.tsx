@@ -15,11 +15,11 @@ import {
   CircularProgress,
 } from '@mui/material';
 import { X, SendHorizontal } from 'lucide-react';
-import { format } from 'date-fns';
 import { TaskItem, TaskComment, TaskDependency } from '../../types';
 import { useAuth } from '../../contexts/AuthContext';
 import { StatusChip } from '../common/StatusChip';
 import { PriorityBadge, ProgressBar } from '../common/PriorityBadge';
+import { formatDate, formatDateTime } from '../../utils/dateUtils';
 
 interface TaskDetailDrawerProps {
   task: TaskItem | null;
@@ -129,7 +129,7 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
               Hạn hoàn thành:
             </Typography>
             <Typography variant="caption" sx={{ fontWeight: 700, color: task.isOverdue ? '#ef4444' : '#0f172a' }}>
-              {format(new Date(task.plannedEndDate), 'dd/MM/yyyy')}
+              {formatDate(task.plannedEndDate)}
               {task.isOverdue && ` (Trễ ${task.overdueDays} ngày)`}
             </Typography>
           </Box>
@@ -301,7 +301,7 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
                             whiteSpace: 'nowrap',
                           }}
                         >
-                          {format(new Date(c.createdAt), 'HH:mm dd/MM/yyyy')}
+                          {formatDateTime(c.createdAt)}
                         </Typography>
                       </Box>
                       <Typography

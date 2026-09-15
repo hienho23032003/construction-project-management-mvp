@@ -31,7 +31,8 @@ import {
   Smartphone,
   Globe,
 } from 'lucide-react';
-import { format, parseISO } from 'date-fns';
+import { format } from 'date-fns';
+import { formatDateTime as formatLocalDateTime } from '../utils/dateUtils';
 import { useLoginHistoryQuery, useSessionStatsQuery } from '../hooks/useUserSessions';
 import { useUsersListQuery } from '../hooks/useEmployees';
 import { useDebounce } from '../hooks/useDebounce';
@@ -106,6 +107,10 @@ export const LoginHistoryPage: React.FC = () => {
     return ua.length > 25 ? `${ua.substring(0, 25)}...` : ua;
   };
 
+  const formatDateTime = (dateStr?: string, pattern: string = 'HH:mm:ss') => {
+    return formatLocalDateTime(dateStr, pattern);
+  };
+
   const columns: ColumnDef<UserLoginSession>[] = useMemo(
     () => [
       {
@@ -146,13 +151,14 @@ export const LoginHistoryPage: React.FC = () => {
                 noWrap
                 sx={{
                   color: '#66594d',
+                  fontSize: '0.75rem',
+                  display: 'block',
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
                   whiteSpace: 'nowrap',
-                  display: 'block',
                 }}
               >
-                {row.userEmail} {row.roleName ? `• ${row.roleName}` : ''}
+                {row.userEmail}
               </Typography>
             </Box>
           </Box>
@@ -167,10 +173,10 @@ export const LoginHistoryPage: React.FC = () => {
               variant="body2"
               sx={{ fontWeight: 600, color: '#2e251e', fontSize: '0.8125rem', whiteSpace: 'nowrap' }}
             >
-              {row.loginTime ? format(parseISO(row.loginTime), 'HH:mm:ss') : '-'}
+              {formatDateTime(row.loginTime, 'HH:mm:ss')}
             </Typography>
             <Typography variant="caption" sx={{ color: '#66594d', whiteSpace: 'nowrap' }}>
-              {row.loginTime ? format(parseISO(row.loginTime), 'dd/MM/yyyy') : '-'}
+              {formatDateTime(row.loginTime, 'dd/MM/yyyy')}
             </Typography>
           </Box>
         ),
@@ -202,10 +208,10 @@ export const LoginHistoryPage: React.FC = () => {
                   variant="body2"
                   sx={{ fontWeight: 600, color: '#2e251e', fontSize: '0.8125rem', whiteSpace: 'nowrap' }}
                 >
-                  {format(parseISO(row.logoutTime), 'HH:mm:ss')}
+                  {formatDateTime(row.logoutTime, 'HH:mm:ss')}
                 </Typography>
                 <Typography variant="caption" sx={{ color: '#66594d', whiteSpace: 'nowrap' }}>
-                  {format(parseISO(row.logoutTime), 'dd/MM/yyyy')}
+                  {formatDateTime(row.logoutTime, 'dd/MM/yyyy')}
                 </Typography>
               </Box>
             );

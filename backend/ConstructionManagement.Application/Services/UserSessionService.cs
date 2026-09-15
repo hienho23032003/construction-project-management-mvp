@@ -18,15 +18,17 @@ public class UserSessionService : IUserSessionService
 
     public async Task<Guid> CreateSessionAsync(Guid userId, string? ipAddress, string? userAgent)
     {
+        var now = DateTime.UtcNow;
         var session = new UserLoginSession
         {
             Id = Guid.NewGuid(),
             UserId = userId,
-            LoginTime = DateTime.UtcNow,
+            LoginTime = now,
+            LastActiveTime = now,
             IpAddress = ipAddress,
             UserAgent = userAgent,
             Status = SessionStatus.Active,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = now
         };
 
         _context.UserLoginSessions.Add(session);
@@ -42,8 +44,58 @@ public class UserSessionService : IUserSessionService
 
         var now = DateTime.UtcNow;
         session.LogoutTime = now;
+        session.LastActiveTime = now;
         session.DurationMinutes = Math.Round((now - session.LoginTime).TotalMinutes, 1);
         session.Status = SessionStatus.LoggedOut;
+
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<bool> LeaveSessionAsync(Guid sessionId)
+    {
+        var session = await _context.UserLoginSessions.FirstOrDefaultAsync(s => s.Id == sessionId);
+        if (session == null) return false;
+
+        var now = DateTime.UtcNow;
+        session.LogoutTime = now;
+        session.LastActiveTime = now;
+        session.DurationMinutes = Math.Max(0.1, Math.Round((now - session.LoginTime).TotalMinutes, 1));
+        session.Status = SessionStatus.LoggedOut;
+
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<bool> PingSessionAsync(Guid sessionId, Guid userId)
+    {
+        var now = DateTime.UtcNow;
+        var session = await _context.UserLoginSessions.FirstOrDefaultAsync(s => s.Id == sessionId);
+
+        if (session == null)
+        {
+            if (sessionId == Guid.Empty) sessionId = Guid.NewGuid();
+            session = new UserLoginSession
+            {
+                Id = sessionId,
+                UserId = userId,
+                LoginTime = now,
+                LastActiveTime = now,
+                Status = SessionStatus.Active,
+                CreatedAt = now
+            };
+            _context.UserLoginSessions.Add(session);
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        session.LastActiveTime = now;
+        if (session.Status != SessionStatus.Active)
+        {
+            session.Status = SessionStatus.Active;
+            session.LogoutTime = null;
+        }
+        session.DurationMinutes = Math.Round((now - session.LoginTime).TotalMinutes, 1);
 
         await _context.SaveChangesAsync();
         return true;
@@ -90,11 +142,38 @@ public class UserSessionService : IUserSessionService
         var pageSize = pagination.PageSize > 0 ? pagination.PageSize : 15;
         var pageIndex = pagination.PageIndex > 0 ? pagination.PageIndex : 1;
 
-        var items = await query
+        var rawItems = await query
             .OrderByDescending(s => s.LoginTime)
             .Skip((pageIndex - 1) * pageSize)
             .Take(pageSize)
-            .Select(s => new UserLoginSessionDto
+            .ToListAsync();
+
+        var now = DateTime.UtcNow;
+        var onlineThreshold = now.AddMinutes(-2);
+
+        var items = rawItems.Select(s =>
+        {
+            var lastActivity = s.LastActiveTime ?? s.LoginTime;
+            var isActuallyOnline = s.Status == SessionStatus.Active && lastActivity >= onlineThreshold;
+
+            SessionStatus resolvedStatus;
+            DateTime? resolvedLogoutTime;
+            double? resolvedDuration;
+
+            if (isActuallyOnline)
+            {
+                resolvedStatus = SessionStatus.Active;
+                resolvedLogoutTime = null;
+                resolvedDuration = Math.Round((now - s.LoginTime).TotalMinutes, 1);
+            }
+            else
+            {
+                resolvedStatus = SessionStatus.LoggedOut;
+                resolvedLogoutTime = s.LogoutTime ?? lastActivity;
+                resolvedDuration = s.DurationMinutes ?? Math.Round(((s.LogoutTime ?? lastActivity) - s.LoginTime).TotalMinutes, 1);
+            }
+
+            return new UserLoginSessionDto
             {
                 Id = s.Id,
                 UserId = s.UserId,
@@ -102,15 +181,16 @@ public class UserSessionService : IUserSessionService
                 UserEmail = s.User != null ? s.User.Email : string.Empty,
                 UserDepartment = s.User != null ? s.User.Department : null,
                 UserRole = s.User != null ? s.User.Role.ToString() : null,
-                LoginTime = s.LoginTime,
-                LogoutTime = s.LogoutTime,
-                DurationMinutes = s.DurationMinutes,
+                LoginTime = DateTime.SpecifyKind(s.LoginTime, DateTimeKind.Utc),
+                LogoutTime = resolvedLogoutTime.HasValue ? DateTime.SpecifyKind(resolvedLogoutTime.Value, DateTimeKind.Utc) : null,
+                LastActiveTime = s.LastActiveTime.HasValue ? DateTime.SpecifyKind(s.LastActiveTime.Value, DateTimeKind.Utc) : null,
+                DurationMinutes = Math.Max(0.1, resolvedDuration ?? 0),
                 IpAddress = s.IpAddress,
                 UserAgent = s.UserAgent,
-                Status = s.Status,
-                CreatedAt = s.CreatedAt
-            })
-            .ToListAsync();
+                Status = resolvedStatus,
+                CreatedAt = DateTime.SpecifyKind(s.CreatedAt, DateTimeKind.Utc)
+            };
+        }).ToList();
 
         var result = new PagedResult<UserLoginSessionDto>
         {
@@ -127,17 +207,21 @@ public class UserSessionService : IUserSessionService
     {
         var today = DateTime.UtcNow.Date;
         var tomorrow = today.AddDays(1);
+        var onlineThreshold = DateTime.UtcNow.AddMinutes(-2);
 
         var totalSessions = await _context.UserLoginSessions.CountAsync();
 
         var activeOnlineUsers = await _context.UserLoginSessions
-            .Where(s => s.Status == SessionStatus.Active && s.LoginTime >= DateTime.UtcNow.AddHours(-12))
+            .Where(s => s.Status == SessionStatus.Active &&
+                        ((s.LastActiveTime.HasValue && s.LastActiveTime.Value >= onlineThreshold) ||
+                         (!s.LastActiveTime.HasValue && s.LoginTime >= onlineThreshold)))
             .Select(s => s.UserId)
             .Distinct()
             .CountAsync();
 
         var loggedOutToday = await _context.UserLoginSessions
-            .Where(s => s.Status == SessionStatus.LoggedOut && s.LogoutTime >= today && s.LogoutTime < tomorrow)
+            .Where(s => (s.Status == SessionStatus.LoggedOut && s.LogoutTime >= today && s.LogoutTime < tomorrow) ||
+                        (s.Status == SessionStatus.Active && (s.LastActiveTime ?? s.LoginTime) < onlineThreshold && (s.LastActiveTime ?? s.LoginTime) >= today))
             .CountAsync();
 
         var allClosedSessions = await _context.UserLoginSessions

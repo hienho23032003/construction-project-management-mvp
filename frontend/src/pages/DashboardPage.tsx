@@ -12,17 +12,36 @@ import {
   endOfYear,
 } from 'date-fns';
 import { useDashboardQuery } from '../hooks/useDashboard';
+import {
+  useTaskDetailQuery,
+  useTaskCommentsQuery,
+  useTaskDependenciesQuery,
+  useAddCommentMutation,
+} from '../hooks/useTasks';
 import { DashboardDateFilter, DatePreset } from '../components/dashboard/DashboardDateFilter';
 import { DashboardKpiGrid } from '../components/dashboard/DashboardKpiGrid';
 import { DashboardCharts } from '../components/dashboard/DashboardCharts';
 import { DashboardAlerts } from '../components/dashboard/DashboardAlerts';
 import { DashboardActivities } from '../components/dashboard/DashboardActivities';
 import { DashboardSkeleton } from '../components/common/DashboardSkeleton';
+import { TaskDetailDrawer } from '../components/tasks/TaskDetailDrawer';
 
 export const DashboardPage: React.FC = () => {
   const [selectedPreset, setSelectedPreset] = useState<DatePreset>('all');
   const [customFromDate, setCustomFromDate] = useState<Date | null>(null);
   const [customToDate, setCustomToDate] = useState<Date | null>(null);
+
+  // Selected task for drawer
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const { data: selectedTask } = useTaskDetailQuery(selectedTaskId || undefined);
+  const { data: comments = [], isLoading: loadingComments } = useTaskCommentsQuery(selectedTaskId || undefined);
+  const { data: dependencies = [] } = useTaskDependenciesQuery(selectedTaskId || undefined);
+  const addCommentMutation = useAddCommentMutation(selectedTaskId || undefined);
+
+  const handleAddComment = async (content: string) => {
+    if (!selectedTaskId) return;
+    await addCommentMutation.mutateAsync(content);
+  };
 
   // Active query parameters applied
   const [queryParams, setQueryParams] = useState<{ fromDate?: string; toDate?: string; label: string }>({
@@ -156,10 +175,20 @@ export const DashboardPage: React.FC = () => {
       <DashboardCharts data={data} />
 
       {/* Row 3: Critical Overdue Tasks & Upcoming Deadlines */}
-      <DashboardAlerts data={data} />
+      <DashboardAlerts data={data} onSelectTask={(taskId) => setSelectedTaskId(taskId)} />
 
       {/* Row 4: Recent Activities Timeline */}
-      <DashboardActivities data={data} />
+      <DashboardActivities data={data} onSelectTask={(taskId) => setSelectedTaskId(taskId)} />
+
+      {/* Task Detail Drawer */}
+      <TaskDetailDrawer
+        task={selectedTask || null}
+        onClose={() => setSelectedTaskId(null)}
+        comments={comments}
+        dependencies={dependencies}
+        loadingComments={loadingComments}
+        onAddComment={handleAddComment}
+      />
     </Box>
   );
 };

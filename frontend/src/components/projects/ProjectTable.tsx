@@ -5,11 +5,11 @@ import {
   Typography,
 } from '@mui/material';
 import { Edit, Trash2 } from 'lucide-react';
-import { format } from 'date-fns';
 import { Project } from '../../types';
 import { StatusChip } from '../common/StatusChip';
 import { ProgressBar } from '../common/ProgressBar';
 import { CommonTable, ColumnDef } from '../common/CommonTable';
+import { formatDate } from '../../utils/dateUtils';
 
 interface ProjectTableProps {
   projects: Project[];
@@ -101,7 +101,7 @@ export const ProjectTable: React.FC<ProjectTableProps> = memo(({
               whiteSpace: 'nowrap',
             }}
           >
-            {format(new Date(row.plannedEndDate), 'dd/MM/yyyy')}
+            {formatDate(row.plannedEndDate)}
           </Typography>
         ),
       },

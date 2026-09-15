@@ -18,8 +18,9 @@ import {
   Tooltip,
 } from '@mui/material';
 import { FolderKanban, ChevronDown, ChevronRight } from 'lucide-react';
-import { format } from 'date-fns';
 import { TaskItem, TaskStatus } from '../../types';
+import { StatusSelect } from '../common';
+import { formatDate } from '../../utils/dateUtils';
 
 interface TaskTableRowProps {
   task: TaskItem;
@@ -43,11 +44,7 @@ const TaskTableRow: React.FC<TaskTableRowProps> = memo(({
   }, [task.progress]);
 
   const formattedDate = useMemo(() => {
-    try {
-      return format(new Date(task.plannedEndDate), 'dd/MM/yyyy');
-    } catch {
-      return task.plannedEndDate || '-';
-    }
+    return formatDate(task.plannedEndDate);
   }, [task.plannedEndDate]);
 
   return (
@@ -143,17 +140,10 @@ const TaskTableRow: React.FC<TaskTableRowProps> = memo(({
         </Typography>
       </TableCell>
       <TableCell onClick={(e) => e.stopPropagation()} sx={{ whiteSpace: 'nowrap' }}>
-        <Select
-          size="small"
+        <StatusSelect
           value={task.status}
-          onChange={(e) => onStatusChange(task.id, e.target.value as TaskStatus)}
-          sx={{ height: 28, fontSize: '0.75rem', fontWeight: 600, minWidth: 120 }}
-        >
-          <MenuItem value="NotStarted">Chưa bắt đầu</MenuItem>
-          <MenuItem value="InProgress">Đang thực hiện</MenuItem>
-          <MenuItem value="Completed">Hoàn thành</MenuItem>
-          <MenuItem value="OnHold">Tạm dừng</MenuItem>
-        </Select>
+          onChange={(status) => onStatusChange(task.id, status)}
+        />
       </TableCell>
       <TableCell onClick={(e) => e.stopPropagation()} sx={{ whiteSpace: 'nowrap', minWidth: 120 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -170,7 +160,7 @@ const TaskTableRow: React.FC<TaskTableRowProps> = memo(({
                 onProgressChange(task.id, nextVal);
               }
             }}
-            sx={{ color: localProgress >= 100 ? '#10b981' : '#0284c7', width: 70 }}
+            sx={{ color: localProgress >= 100 ? '#10b981' : '#0284c7' }}
           />
           <Typography variant="caption" sx={{ fontWeight: 700, minWidth: 30, whiteSpace: 'nowrap' }}>
             {localProgress}%
@@ -280,7 +270,7 @@ export const TaskTable: React.FC<TaskTableProps> = memo(({
                 Mã Dự Án
               </TableSortLabel>
             </TableCell>
-            <TableCell sx={{ width: '30%', whiteSpace: 'nowrap', py: 1.5, fontWeight: 700, fontSize: '0.8rem' }}>
+            <TableCell sx={{ width: '25%', whiteSpace: 'nowrap', py: 1.5, fontWeight: 700, fontSize: '0.8rem' }}>
               <TableSortLabel
                 active={sortBy === 'name'}
                 direction={isDescending ? 'desc' : 'asc'}
@@ -290,10 +280,10 @@ export const TaskTable: React.FC<TaskTableProps> = memo(({
                 Tên Công Việc
               </TableSortLabel>
             </TableCell>
-            <TableCell sx={{ width: '18%', whiteSpace: 'nowrap', py: 1.5, fontWeight: 700, fontSize: '0.8rem' }}>
+            <TableCell sx={{ width: '15%', whiteSpace: 'nowrap', py: 1.5, fontWeight: 700, fontSize: '0.8rem' }}>
               Người Thực Hiện
             </TableCell>
-            <TableCell sx={{ width: '14%', whiteSpace: 'nowrap', py: 1.5, fontWeight: 700, fontSize: '0.8rem' }}>
+            <TableCell sx={{ width: '15%', whiteSpace: 'nowrap', py: 1.5, fontWeight: 700, fontSize: '0.8rem' }}>
               <TableSortLabel
                 active={sortBy === 'plannedEndDate'}
                 direction={isDescending ? 'desc' : 'asc'}
@@ -303,7 +293,7 @@ export const TaskTable: React.FC<TaskTableProps> = memo(({
                 Hạn Dự Kiến
               </TableSortLabel>
             </TableCell>
-            <TableCell sx={{ width: '12%', whiteSpace: 'nowrap', py: 1.5, fontWeight: 700, fontSize: '0.8rem' }}>
+            <TableCell sx={{ width: '15%', whiteSpace: 'nowrap', py: 1.5, fontWeight: 700, fontSize: '0.8rem' }}>
               <TableSortLabel
                 active={sortBy === 'status'}
                 direction={isDescending ? 'desc' : 'asc'}
@@ -313,7 +303,7 @@ export const TaskTable: React.FC<TaskTableProps> = memo(({
                 Trạng Thái
               </TableSortLabel>
             </TableCell>
-            <TableCell sx={{ width: '14%', whiteSpace: 'nowrap', py: 1.5, fontWeight: 700, fontSize: '0.8rem' }}>
+            <TableCell sx={{ width: '20%', whiteSpace: 'nowrap', py: 1.5, fontWeight: 700, fontSize: '0.8rem' }}>
               <TableSortLabel
                 active={sortBy === 'progress'}
                 direction={isDescending ? 'desc' : 'asc'}

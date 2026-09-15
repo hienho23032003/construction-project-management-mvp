@@ -48,7 +48,7 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = memo(({
         header: 'Họ Và Tên',
         accessorKey: 'fullName',
         sortable: true,
-        width: '22%',
+        width: '15%',
         minWidth: 160,
         ellipsis: true,
         cell: ({ row }) => (
@@ -82,16 +82,16 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = memo(({
       },
       {
         id: 'phone',
+        width: '10%',
         header: 'Số Điện Thoại',
         accessorFn: (row) => row.phone || '-',
-        width: 120,
       },
       {
         id: 'department',
         header: 'Phòng Ban',
         accessorKey: 'department',
         sortable: true,
-        width: '16%',
+        width: '18%',
         minWidth: 130,
         ellipsis: true,
         cell: ({ value }) => value || 'Chưa phân ban',
@@ -101,7 +101,7 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = memo(({
         header: 'Vai Trò',
         accessorKey: 'role',
         sortable: true,
-        width: 150,
+        width: '18%',
         cell: ({ row }) => (
           <Chip
             label={roleLabels[row.role] || row.roleName || row.role}
@@ -131,7 +131,7 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = memo(({
         id: 'status',
         header: 'Trạng Thái',
         align: 'center',
-        width: 110,
+        width: '12%',
         cell: ({ row }) => {
           const isUserActive = row.isActive ?? true;
           return (
@@ -151,9 +151,9 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = memo(({
       },
       {
         id: 'workload',
-        header: 'Tải Công Việc (Đang làm / Xong / Trễ)',
+        header: 'Đang làm / Xong / Trễ',
         align: 'center',
-        width: 180,
+        width: '15%',
         cell: ({ row }) => {
           const workload = workloads.find((w) => w.userId === row.id) || {
             activeTasks: 0,
@@ -175,7 +175,7 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = memo(({
               id: 'actions',
               header: 'Thao Tác',
               align: 'center' as const,
-              width: 120,
+              width: '12%',
               cell: ({ row }: { row: User }) => {
                 const isUserActive = row.isActive ?? true;
                 return (

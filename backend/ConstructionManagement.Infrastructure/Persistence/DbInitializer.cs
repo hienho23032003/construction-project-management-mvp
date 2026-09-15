@@ -12,6 +12,16 @@ public static class DbInitializer
     {
         await context.Database.EnsureCreatedAsync();
 
+        // Ensure new schema columns exist in SQLite without losing data
+        try
+        {
+            await context.Database.ExecuteSqlRawAsync("ALTER TABLE \"UserLoginSessions\" ADD COLUMN \"LastActiveTime\" TEXT NULL;");
+        }
+        catch
+        {
+            // Column already exists, safely ignore
+        }
+
         if (await context.Users.AnyAsync())
         {
             // Auto update any legacy role names or departments if present

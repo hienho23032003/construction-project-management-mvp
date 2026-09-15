@@ -9,8 +9,8 @@ import {
   MenuItem,
   Slider,
 } from '@mui/material';
-import { format } from 'date-fns';
 import { TaskItem, TaskStatus } from '../../types';
+import { formatDate } from '../../utils/dateUtils';
 
 interface TaskCardProps {
   task: TaskItem;
@@ -32,11 +32,7 @@ export const TaskCard: React.FC<TaskCardProps> = memo(({
   }, [task.progress]);
 
   const formattedDate = useMemo(() => {
-    try {
-      return format(new Date(task.plannedEndDate), 'dd/MM/yyyy');
-    } catch {
-      return task.plannedEndDate || '-';
-    }
+    return formatDate(task.plannedEndDate);
   }, [task.plannedEndDate]);
 
   return (

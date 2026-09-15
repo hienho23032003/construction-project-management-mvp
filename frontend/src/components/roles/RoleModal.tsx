@@ -18,7 +18,7 @@ import {
   IconButton,
   Tooltip,
 } from '@mui/material';
-import { X, ShieldCheck, CheckSquare, Square } from 'lucide-react';
+import { X, Settings, CheckSquare, Square } from 'lucide-react';
 import { RoleItem, PermissionModuleGroup } from '../../types';
 import { usePermissionsMatrixQuery } from '../../hooks/useRoles';
 
@@ -148,7 +148,7 @@ export const RoleModal: React.FC<RoleModalProps> = ({
                 alignItems: 'center',
               }}
             >
-              <ShieldCheck size={22} />
+              <Settings size={22} />
             </Box>
             <Box>
               <Typography variant="h6" sx={{ fontWeight: 700, fontSize: '1.1rem', color: '#0f172a' }}>

@@ -63,7 +63,7 @@ export const theme = createTheme({
     },
   },
   typography: {
-    fontFamily: '"Inter", "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+    fontFamily: '"Google Sans Flex", "Google Sans", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
     h1: { fontWeight: 700, fontSize: '2rem', letterSpacing: '-0.02em', color: '#0f172a' },
     h2: { fontWeight: 700, fontSize: '1.5rem', letterSpacing: '-0.02em', color: '#0f172a' },
     h3: { fontWeight: 600, fontSize: '1.25rem', letterSpacing: '-0.01em', color: '#0f172a' },

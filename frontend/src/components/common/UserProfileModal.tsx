@@ -16,6 +16,7 @@ import {
   Divider,
   IconButton,
   InputAdornment,
+  Tooltip,
 } from '@mui/material';
 import {
   User as UserIcon,
@@ -29,11 +30,13 @@ import {
   EyeOff,
   CheckCircle2,
   Lock,
+  X,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { authApi } from '../../services/api/endpoints';
 import { useToast } from '../../contexts/ToastContext';
-import { format } from 'date-fns';
+import { formatDate } from '../../utils/dateUtils';
+import { getVietnamesePermission, getVietnameseRole } from '../../utils/permissionUtils';
 
 interface UserProfileModalProps {
   open: boolean;
@@ -172,7 +175,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ open, onClos
           {user.fullName?.charAt(0) || 'U'}
         </Avatar>
 
-        <Box sx={{ minWidth: 0, flexGrow: 1 }}>
+        <Box sx={{ minWidth: 0, flexGrow: 1, pr: 4 }}>
           <Typography variant="h5" sx={{ fontWeight: 800, color: '#ffffff', fontSize: '1.2rem' }}>
             {user.fullName}
           </Typography>
@@ -205,6 +208,21 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ open, onClos
             )}
           </Box>
         </Box>
+
+        <IconButton
+          aria-label="close"
+          onClick={onClose}
+          size="small"
+          sx={{
+            position: 'absolute',
+            top: 12,
+            right: 12,
+            color: 'rgba(255, 255, 255, 0.8)',
+            '&:hover': { color: '#ffffff', bgcolor: 'rgba(255, 255, 255, 0.15)' },
+          }}
+        >
+          <X size={20} />
+        </IconButton>
       </Box>
 
       {/* Tabs */}
@@ -307,7 +325,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ open, onClos
                 <Grid item xs={12}>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: '#64748b', fontSize: '0.8rem' }}>
                     <Calendar size={15} />
-                    <span>Ngày tham gia hệ thống: <strong>{format(new Date(user.createdAt), 'dd/MM/yyyy')}</strong></span>
+                    <span>Ngày tham gia hệ thống: <strong>{formatDate(user.createdAt)}</strong></span>
                   </Box>
                 </Grid>
               )}
@@ -418,14 +436,19 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ open, onClos
                   user.roles.map((r, i) => (
                     <Chip
                       key={i}
-                      label={r}
+                      label={getVietnameseRole(r)}
                       color="primary"
                       variant="outlined"
                       sx={{ fontWeight: 600, bgcolor: '#f0f9ff' }}
                     />
                   ))
                 ) : (
-                  <Chip label={user.roleName || user.role} color="primary" variant="outlined" sx={{ fontWeight: 600 }} />
+                  <Chip
+                    label={getVietnameseRole(user.roleName || user.role)}
+                    color="primary"
+                    variant="outlined"
+                    sx={{ fontWeight: 600, bgcolor: '#f0f9ff' }}
+                  />
                 )}
               </Box>
             </Box>
@@ -441,27 +464,31 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ open, onClos
                   display: 'flex',
                   gap: 0.75,
                   flexWrap: 'wrap',
-                  maxHeight: 180,
+                  maxHeight: 220,
                   overflowY: 'auto',
                   p: 1.5,
                   bgcolor: '#f8fafc',
                   borderRadius: '8px',
                   border: '1px solid #e2e8f0',
+                  '&::-webkit-scrollbar': { width: '5px' },
+                  '&::-webkit-scrollbar-thumb': { background: '#cbd5e1', borderRadius: '4px' },
                 }}
               >
                 {permissions.length > 0 ? (
                   permissions.map((p, idx) => (
-                    <Chip
-                      key={idx}
-                      label={p}
-                      size="small"
-                      sx={{
-                        fontSize: '0.72rem',
-                        fontWeight: 600,
-                        bgcolor: '#e2e8f0',
-                        color: '#334155',
-                      }}
-                    />
+                    <Tooltip key={idx} title={`Mã quyền: ${p}`} arrow placement="top">
+                      <Chip
+                        label={getVietnamesePermission(p)}
+                        size="small"
+                        sx={{
+                          fontSize: '0.75rem',
+                          fontWeight: 600,
+                          bgcolor: '#e0f2fe',
+                          color: '#0369a1',
+                          border: '1px solid #bae6fd',
+                        }}
+                      />
+                    </Tooltip>
                   ))
                 ) : (
                   <Typography variant="caption" sx={{ color: '#64748b' }}>

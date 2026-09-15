@@ -135,7 +135,7 @@ public class DashboardService : IDashboardService
         var overdueTasks = tasks
             .Where(t => t.Status != TaskItemStatus.Completed && t.PlannedEndDate.Date < now)
             .OrderBy(t => t.PlannedEndDate)
-            .Take(5)
+            .Take(20)
             .Select(t => new OverdueTaskDto
             {
                 TaskId = t.Id,
@@ -153,7 +153,7 @@ public class DashboardService : IDashboardService
         var upcomingDeadlines = tasks
             .Where(t => t.Status != TaskItemStatus.Completed && t.PlannedEndDate.Date >= now && t.PlannedEndDate.Date <= now.AddDays(7))
             .OrderBy(t => t.PlannedEndDate)
-            .Take(5)
+            .Take(20)
             .Select(t => new UpcomingDeadlineDto
             {
                 TaskId = t.Id,

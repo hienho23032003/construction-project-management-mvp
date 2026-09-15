@@ -205,6 +205,7 @@ public class ProjectService : IProjectService
                 ProjectCode = p.Code,
                 ProjectName = p.Name,
                 TaskId = al.TaskId,
+                TaskName = al.TaskId.HasValue ? p.Tasks.FirstOrDefault(t => t.Id == al.TaskId.Value)?.Name : null,
                 Action = al.Action,
                 Details = al.Details,
                 OldValue = al.OldValue,

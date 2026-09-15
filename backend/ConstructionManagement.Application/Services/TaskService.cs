@@ -386,6 +386,31 @@ public class TaskService : ITaskService
             task.Progress = 100.0;
             if (!task.ActualEndDate.HasValue) task.ActualEndDate = DateTime.UtcNow;
         }
+        else if (request.Status == TaskItemStatus.NotStarted)
+        {
+            task.Progress = 0.0;
+            task.ActualEndDate = null;
+        }
+        else if (request.Status == TaskItemStatus.InProgress)
+        {
+            task.ActualEndDate = null;
+            if (task.Progress >= 100.0)
+            {
+                task.Progress = 50.0;
+            }
+            else if (task.Progress == 0.0)
+            {
+                task.Progress = 10.0;
+            }
+        }
+        else if (request.Status == TaskItemStatus.OnHold)
+        {
+            task.ActualEndDate = null;
+            if (task.Progress >= 100.0)
+            {
+                task.Progress = 50.0;
+            }
+        }
 
         // Update Assignees
         var assigneesToUpdate = request.AssigneeUserIds ?? request.AssigneeIds;
@@ -516,13 +541,38 @@ public class TaskService : ITaskService
             task.Progress = 100.0;
             if (!task.ActualEndDate.HasValue) task.ActualEndDate = DateTime.UtcNow;
         }
+        else if (request.Status == TaskItemStatus.NotStarted)
+        {
+            task.Progress = 0.0;
+            task.ActualEndDate = null;
+        }
+        else if (request.Status == TaskItemStatus.InProgress)
+        {
+            task.ActualEndDate = null;
+            if (task.Progress >= 100.0)
+            {
+                task.Progress = 50.0;
+            }
+            else if (task.Progress == 0.0)
+            {
+                task.Progress = 10.0;
+            }
+        }
+        else if (request.Status == TaskItemStatus.OnHold)
+        {
+            task.ActualEndDate = null;
+            if (task.Progress >= 100.0)
+            {
+                task.Progress = 50.0;
+            }
+        }
 
         await _context.SaveChangesAsync();
 
         await _activityLogService.LogAsync(
             currentUserId,
             ActivityAction.StatusChanged,
-            $"Đổi trạng thái '{task.Name}': {oldStatus} -> {task.Status}",
+            $"Đổi trạng thái '{task.Name}'",
             projectId: task.ProjectId,
             taskId: task.Id,
             oldValue: oldStatus.ToString(),
@@ -553,9 +603,18 @@ public class TaskService : ITaskService
             task.Status = TaskItemStatus.Completed;
             if (!task.ActualEndDate.HasValue) task.ActualEndDate = DateTime.UtcNow;
         }
-        else if (task.Progress > 0 && task.Status == TaskItemStatus.NotStarted)
+        else if (task.Progress == 0.0)
         {
-            task.Status = TaskItemStatus.InProgress;
+            task.Status = TaskItemStatus.NotStarted;
+            task.ActualEndDate = null;
+        }
+        else
+        {
+            if (task.Status == TaskItemStatus.NotStarted || task.Status == TaskItemStatus.Completed)
+            {
+                task.Status = TaskItemStatus.InProgress;
+            }
+            task.ActualEndDate = null;
         }
 
         await _context.SaveChangesAsync();

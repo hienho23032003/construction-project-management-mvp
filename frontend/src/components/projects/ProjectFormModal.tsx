@@ -13,7 +13,10 @@ import {
   MenuItem,
   Grid,
   Autocomplete,
+  IconButton,
+  Typography,
 } from '@mui/material';
+import { X } from 'lucide-react';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { format } from 'date-fns';
 import { Project, PriorityLevel, ProjectStatus, User } from '../../types';
@@ -51,6 +54,8 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
     control,
     handleSubmit,
     reset,
+    watch,
+    trigger,
     formState: { errors },
   } = useForm<ProjectFormData>({
     defaultValues: {
@@ -97,8 +102,31 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <form onSubmit={handleSubmit(onSubmit)}>
-        <DialogTitle sx={{ fontWeight: 700, px: 3, pt: 2.5, pb: 1 }}>
-          {editingProject ? `Chỉnh Sửa Công Trình ${editingProject.code}` : 'Tạo Mới Công Trình / Dự Án'}
+        <DialogTitle
+          sx={{
+            fontWeight: 700,
+            px: 3,
+            pt: 2.5,
+            pb: 1.5,
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}
+        >
+          <Typography variant="h3" sx={{ fontWeight: 700, fontSize: '1.15rem', color: '#0f172a' }}>
+            {editingProject ? `Chỉnh Sửa Công Trình ${editingProject.code}` : 'Tạo Mới Công Trình / Dự Án'}
+          </Typography>
+          <IconButton
+            aria-label="close"
+            onClick={onClose}
+            size="small"
+            sx={{
+              color: '#94a3b8',
+              '&:hover': { color: '#0f172a', bgcolor: '#f1f5f9' },
+            }}
+          >
+            <X size={20} />
+          </IconButton>
         </DialogTitle>
         <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, pt: '24px !important', px: 3 }}>
           {!editingProject && (
@@ -180,15 +208,26 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
               <Controller
                 name="startDate"
                 control={control}
-                rules={{ required: 'Trường này là bắt buộc' }}
+                rules={{
+                  required: 'Trường này là bắt buộc',
+                  validate: (val) => {
+                    const end = watch('plannedEndDate');
+                    if (val && end && new Date(val) > new Date(end)) {
+                      return 'Ngày bắt đầu không được lớn hơn hạn kết thúc';
+                    }
+                    return true;
+                  },
+                }}
                 render={({ field }) => (
                   <DatePicker
-                    label="Ngày Bắt Đầu *"
+                    label="Ngày Bắt Đầu"
                     value={field.value ? new Date(field.value) : null}
+                    maxDate={watch('plannedEndDate') ? new Date(watch('plannedEndDate')) : undefined}
                     onChange={(newValue) => {
                       field.onChange(
                         newValue && !isNaN(newValue.getTime()) ? format(newValue, 'yyyy-MM-dd') : ''
                       );
+                      trigger('plannedEndDate');
                     }}
                     slotProps={{
                       textField: {
@@ -206,15 +245,26 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
               <Controller
                 name="plannedEndDate"
                 control={control}
-                rules={{ required: 'Trường này là bắt buộc' }}
+                rules={{
+                  required: 'Trường này là bắt buộc',
+                  validate: (val) => {
+                    const start = watch('startDate');
+                    if (val && start && new Date(val) < new Date(start)) {
+                      return 'Hạn kết thúc không được nhỏ hơn ngày bắt đầu';
+                    }
+                    return true;
+                  },
+                }}
                 render={({ field }) => (
                   <DatePicker
-                    label="Hạn Kết Thúc Dự Kiến *"
+                    label="Hạn Kết Thúc Dự Kiến"
                     value={field.value ? new Date(field.value) : null}
+                    minDate={watch('startDate') ? new Date(watch('startDate')) : undefined}
                     onChange={(newValue) => {
                       field.onChange(
                         newValue && !isNaN(newValue.getTime()) ? format(newValue, 'yyyy-MM-dd') : ''
                       );
+                      trigger('startDate');
                     }}
                     slotProps={{
                       textField: {

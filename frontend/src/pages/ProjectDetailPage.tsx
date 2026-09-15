@@ -17,7 +17,7 @@ import {
   Layers,
   BarChart3,
   Activity,
-  CheckCircle2,
+  FolderTree,
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { projectApi } from '../services/api/endpoints';
@@ -33,6 +33,7 @@ import { ProjectMembersTab } from '../components/projects/ProjectMembersTab';
 import { ProjectActivitiesTab } from '../components/projects/ProjectActivitiesTab';
 import { ProjectMemberModal, ProjectMemberFormData } from '../components/projects/ProjectMemberModal';
 import { TaskFormModal, TaskFormData } from '../components/tasks/TaskFormModal';
+import { TaskDetailDrawer } from '../components/tasks/TaskDetailDrawer';
 import {
   useProjectDetailQuery,
   useAddProjectMemberMutation,
@@ -45,6 +46,10 @@ import {
   useUpdateTaskProgressMutation,
   useDeleteTaskMutation,
   useGanttDataQuery,
+  useTaskDetailQuery,
+  useTaskCommentsQuery,
+  useTaskDependenciesQuery,
+  useAddCommentMutation,
 } from '../hooks/useTasks';
 import { useUsersListQuery } from '../hooks/useEmployees';
 
@@ -61,11 +66,16 @@ export const ProjectDetailPage: React.FC = () => {
   const [parentTaskId, setParentTaskId] = useState<string | null>(null);
   const [deleteTaskId, setDeleteTaskId] = useState<string | null>(null);
   const [removeMemberUserId, setRemoveMemberUserId] = useState<string | null>(null);
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
 
   // Queries
   const { data: project, isLoading: isProjectLoading } = useProjectDetailQuery(id);
   const { data: users = [] } = useUsersListQuery();
   const { data: ganttData, isLoading: isGanttLoading } = useGanttDataQuery(id);
+  const { data: selectedTask } = useTaskDetailQuery(selectedTaskId || undefined);
+  const { data: comments = [], isLoading: loadingComments } = useTaskCommentsQuery(selectedTaskId || undefined);
+  const { data: dependencies = [] } = useTaskDependenciesQuery(selectedTaskId || undefined);
+  const addCommentMutation = useAddCommentMutation(selectedTaskId || undefined);
 
   const { data: taskTree = [], refetch: refetchTasks } = useQuery<TaskTreeItem[]>({
     queryKey: ['project-task-tree', id],
@@ -193,7 +203,7 @@ export const ProjectDetailPage: React.FC = () => {
           }}
         >
           <Tab label="1. Tổng Quan" icon={<Layers size={17} />} iconPosition="start" />
-          <Tab label={`2. Cây Công Việc (${project.tasks.length})`} icon={<CheckCircle2 size={17} />} iconPosition="start" />
+          <Tab label={`2. Cây Công Việc (${project.tasks.length})`} icon={<FolderTree size={17} />} iconPosition="start" />
           <Tab label="3. Tiến Độ Gantt" icon={<BarChart3 size={17} />} iconPosition="start" />
           <Tab label={`4. Thành Viên (${project.members.length})`} icon={<Users size={17} />} iconPosition="start" />
           <Tab label="5. Nhật Ký Hoạt Động" icon={<Activity size={17} />} iconPosition="start" />
@@ -234,7 +244,12 @@ export const ProjectDetailPage: React.FC = () => {
             onRemoveMember={(userId) => setRemoveMemberUserId(userId)}
           />
         )}
-        {activeTab === 4 && <ProjectActivitiesTab activities={project.recentActivities} />}
+        {activeTab === 4 && (
+          <ProjectActivitiesTab
+            activities={project.recentActivities}
+            onSelectTask={(taskId) => setSelectedTaskId(taskId)}
+          />
+        )}
       </Paper>
 
       {/* Modals */}
@@ -276,6 +291,18 @@ export const ProjectDetailPage: React.FC = () => {
         confirmText="Xác Nhận Xóa"
         onConfirm={handleConfirmRemoveMember}
         onCancel={() => setRemoveMemberUserId(null)}
+      />
+
+      {/* Task Detail Drawer */}
+      <TaskDetailDrawer
+        task={selectedTask || null}
+        onClose={() => setSelectedTaskId(null)}
+        comments={comments}
+        dependencies={dependencies}
+        loadingComments={loadingComments}
+        onAddComment={async (content: string) => {
+          await addCommentMutation.mutateAsync(content);
+        }}
       />
     </Box>
   );

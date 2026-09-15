@@ -19,8 +19,9 @@ import {
   Paper,
 } from '@mui/material';
 import { Plus, Edit, Trash2, CornerDownRight } from 'lucide-react';
-import { format } from 'date-fns';
 import { TaskTreeItem, TaskStatus } from '../../types';
+import { StatusSelect } from '../common';
+import { formatDate } from '../../utils/dateUtils';
 
 interface ProjectTaskTreeTabProps {
   tasks: TaskTreeItem[];
@@ -131,23 +132,17 @@ export const ProjectTaskTreeTab: React.FC<ProjectTaskTreeTabProps> = memo(({
           {/* Timeline */}
           <TableCell sx={{ whiteSpace: 'nowrap', py: 1.5 }}>
             <Typography variant="caption" sx={{ fontWeight: 600, color: '#334155', whiteSpace: 'nowrap', display: 'block' }}>
-              {format(new Date(task.startDate), 'dd/MM')} - {format(new Date(task.plannedEndDate), 'dd/MM/yyyy')}
+              {formatDate(task.startDate, 'dd/MM')} - {formatDate(task.plannedEndDate, 'dd/MM/yyyy')}
             </Typography>
           </TableCell>
 
           {/* Status */}
           <TableCell sx={{ whiteSpace: 'nowrap', py: 1.5 }}>
-            <Select
-              size="small"
+            <StatusSelect
               value={task.status}
-              onChange={(e) => onStatusChange(task.id, e.target.value as TaskStatus)}
-              sx={{ height: 28, fontSize: '0.75rem', fontWeight: 600, minWidth: 120 }}
-            >
-              <MenuItem value="NotStarted">Chưa bắt đầu</MenuItem>
-              <MenuItem value="InProgress">Đang thực hiện</MenuItem>
-              <MenuItem value="Completed">Hoàn thành</MenuItem>
-              <MenuItem value="OnHold">Tạm dừng</MenuItem>
-            </Select>
+              onChange={(status) => onStatusChange(task.id, status)}
+              disabled={!canEditTask}
+            />
           </TableCell>
 
           {/* Progress Slider */}

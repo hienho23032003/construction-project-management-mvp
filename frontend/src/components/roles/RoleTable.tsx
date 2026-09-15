@@ -32,7 +32,7 @@ export const RoleTable: React.FC<RoleTableProps> = memo(({
       {
         id: 'name',
         header: 'Tên & Mã Vai Trò',
-        width: '22%',
+        width: '20%',
         maxWidth: 220,
         cell: ({ row }) => (
           <Box>
@@ -86,7 +86,7 @@ export const RoleTable: React.FC<RoleTableProps> = memo(({
       {
         id: 'classification',
         header: 'Phân Loại',
-        width: '13%',
+        width: '10%',
         cell: ({ row }) =>
           row.isSystem ? (
             <Chip
@@ -118,7 +118,7 @@ export const RoleTable: React.FC<RoleTableProps> = memo(({
         id: 'userCount',
         header: 'Nhân Sự',
         align: 'center',
-        width: '12%',
+        width: '8%',
         accessorKey: 'userCount',
         cell: ({ value }) => (
           <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5, color: '#475569' }}>
@@ -132,7 +132,7 @@ export const RoleTable: React.FC<RoleTableProps> = memo(({
       {
         id: 'permissions',
         header: 'Quyền Hạn Cấp',
-        width: '18%',
+        width: '20%',
         maxWidth: 200,
         cell: ({ row }) => {
           const moduleTags = getRoleModuleTags(row.permissions);
@@ -182,7 +182,7 @@ export const RoleTable: React.FC<RoleTableProps> = memo(({
         id: 'actions',
         header: 'Thao Tác',
         align: 'right',
-        width: '10%',
+        width: '12%',
         cell: ({ row }) => (
           <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 0.5 }}>
             <Tooltip title="Chỉnh sửa quyền">

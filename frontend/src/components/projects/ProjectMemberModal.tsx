@@ -8,7 +8,10 @@ import {
   Button,
   TextField,
   Autocomplete,
+  IconButton,
+  Typography,
 } from '@mui/material';
+import { X } from 'lucide-react';
 import { User } from '../../types';
 
 export interface ProjectMemberFormData {
@@ -52,7 +55,32 @@ export const ProjectMemberModal: React.FC<ProjectMemberModalProps> = ({
   return (
     <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
       <form onSubmit={handleSubmit(onSubmit)}>
-        <DialogTitle sx={{ fontWeight: 700, px: 3, pt: 2.5, pb: 1 }}>Thêm Nhân Sự Vào Dự Án</DialogTitle>
+        <DialogTitle
+          sx={{
+            fontWeight: 700,
+            px: 3,
+            pt: 2.5,
+            pb: 1.5,
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}
+        >
+          <Typography variant="h3" sx={{ fontWeight: 700, fontSize: '1.15rem', color: '#0f172a' }}>
+            Thêm Nhân Sự Vào Dự Án
+          </Typography>
+          <IconButton
+            aria-label="close"
+            onClick={onClose}
+            size="small"
+            sx={{
+              color: '#94a3b8',
+              '&:hover': { color: '#0f172a', bgcolor: '#f1f5f9' },
+            }}
+          >
+            <X size={20} />
+          </IconButton>
+        </DialogTitle>
         <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, pt: '24px !important', px: 3 }}>
           <Controller
             name="userId"

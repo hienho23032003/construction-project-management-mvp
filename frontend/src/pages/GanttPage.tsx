@@ -26,6 +26,7 @@ import {
 import { useUsersListQuery } from '../hooks/useEmployees';
 import { InteractiveGantt } from '../components/gantt/InteractiveGantt';
 import { GanttSkeleton } from '../components/common/GanttSkeleton';
+import { EmptyStateIllustration } from '../components/common/EmptyStateIllustration';
 import { TaskFormModal, TaskFormData } from '../components/tasks/TaskFormModal';
 import { GanttTask } from '../types';
 
@@ -424,22 +425,8 @@ export const GanttPage: React.FC = () => {
               gap: 1.5,
             }}
           >
-            <Box
-              sx={{
-                width: 54,
-                height: 54,
-                borderRadius: '50%',
-                bgcolor: '#e0f2fe',
-                color: '#0284c7',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '1.5rem',
-              }}
-            >
-              📅
-            </Box>
-            <Typography variant="h6" sx={{ fontWeight: 700, color: '#334155' }}>
+            <EmptyStateIllustration width={154} height={121} />
+            <Typography variant="h6" sx={{ fontWeight: 700, color: '#334155', mt: 1 }}>
               Không có công việc nào trong khoảng thời gian này
             </Typography>
             <Typography variant="body2" sx={{ color: '#64748b', maxWidth: 460 }}>

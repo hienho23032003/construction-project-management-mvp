@@ -8,6 +8,7 @@ public class UserLoginSession
     public Guid UserId { get; set; }
     public DateTime LoginTime { get; set; } = DateTime.UtcNow;
     public DateTime? LogoutTime { get; set; }
+    public DateTime? LastActiveTime { get; set; }
     public double? DurationMinutes { get; set; }
     public string? IpAddress { get; set; }
     public string? UserAgent { get; set; }

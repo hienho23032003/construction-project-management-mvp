@@ -1,8 +1,8 @@
 import React, { memo, useMemo } from 'react';
 import { Chip } from '@mui/material';
-import { format } from 'date-fns';
 import { CommonTable, ColumnDef } from '../common/CommonTable';
 import { ProgressBar } from '../common/ProgressBar';
+import { formatDate } from '../../utils/dateUtils';
 
 interface OverdueReportItem {
   taskId: string;
@@ -46,7 +46,7 @@ export const OverdueReport: React.FC<OverdueReportProps> = memo(
           id: 'taskName',
           header: 'Tên Công Việc',
           accessorKey: 'taskName',
-          width: '32%',
+          width: '25%',
           minWidth: 180,
           ellipsis: true,
           headerSx: { fontWeight: 700 },
@@ -56,7 +56,7 @@ export const OverdueReport: React.FC<OverdueReportProps> = memo(
           id: 'assigneeNames',
           header: 'Người Phụ Trách',
           accessorFn: (row) => row.assigneeNames || 'Chưa gán',
-          width: '20%',
+          width: '15%',
           minWidth: 140,
           ellipsis: true,
         },
@@ -64,24 +64,18 @@ export const OverdueReport: React.FC<OverdueReportProps> = memo(
           id: 'plannedEndDate',
           header: 'Hạn Ban Đầu',
           accessorKey: 'plannedEndDate',
-          width: 130,
-          cell: ({ value }) => {
-            try {
-              return (
-                <span style={{ color: '#b91c1c', fontWeight: 600 }}>
-                  {format(new Date(value), 'dd/MM/yyyy')}
-                </span>
-              );
-            } catch {
-              return value || '-';
-            }
-          },
+          width: '15%',
+          cell: ({ value }) => (
+            <span style={{ color: '#b91c1c', fontWeight: 600 }}>
+              {formatDate(value)}
+            </span>
+          ),
         },
         {
           id: 'overdueDays',
           header: 'Số Ngày Quá Hạn',
           accessorKey: 'overdueDays',
-          width: 140,
+          width: '15%',
           cell: ({ value }) => (
             <Chip
               label={`Trễ ${value} ngày`}
@@ -94,7 +88,7 @@ export const OverdueReport: React.FC<OverdueReportProps> = memo(
           id: 'progress',
           header: 'Tiến Độ Hiện Tại',
           accessorKey: 'progress',
-          width: 140,
+          width: '15%',
           cell: ({ value }) => <ProgressBar value={value} height={7} />,
         },
       ],

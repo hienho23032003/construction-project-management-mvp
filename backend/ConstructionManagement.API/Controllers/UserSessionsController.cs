@@ -37,4 +37,27 @@ public class UserSessionsController : BaseApiController
         var result = await _sessionService.GetSessionStatsAsync();
         return Ok(result);
     }
+
+    [HttpPost("ping")]
+    public async Task<IActionResult> Ping([FromBody] PingSessionRequest request)
+    {
+        if (!request.SessionId.HasValue || request.SessionId.Value == Guid.Empty)
+        {
+            return BadRequest(ApiResponse<bool>.Fail("SessionId is required."));
+        }
+
+        var success = await _sessionService.PingSessionAsync(request.SessionId.Value, CurrentUserId);
+        return Ok(ApiResponse<bool>.Ok(success));
+    }
+
+    [AllowAnonymous]
+    [HttpPost("leave")]
+    public async Task<IActionResult> Leave([FromBody] LeaveSessionRequest request)
+    {
+        if (request?.SessionId.HasValue == true && request.SessionId.Value != Guid.Empty)
+        {
+            await _sessionService.LeaveSessionAsync(request.SessionId.Value);
+        }
+        return Ok(ApiResponse<bool>.Ok(true));
+    }
 }

@@ -48,6 +48,10 @@ export const sessionApi = {
     apiClient.get<ApiResponse<PagedResult<UserLoginSession>>>('/user-sessions/history', { params }),
   getStats: (params?: { fromDate?: string; toDate?: string }) =>
     apiClient.get<ApiResponse<LoginSessionStats>>('/user-sessions/stats', { params }),
+  ping: (sessionId: string) =>
+    apiClient.post<ApiResponse<boolean>>('/user-sessions/ping', { sessionId }),
+  leave: (sessionId: string) =>
+    apiClient.post<ApiResponse<boolean>>('/user-sessions/leave', { sessionId }),
 };
 
 export const userApi = {

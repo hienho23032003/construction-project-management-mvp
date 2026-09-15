@@ -14,7 +14,11 @@ import {
   Grid,
   Chip,
   Autocomplete,
+  IconButton,
+  Typography,
+  Box,
 } from '@mui/material';
+import { X } from 'lucide-react';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { format } from 'date-fns';
 import { PriorityLevel, TaskItem, TaskStatus, User } from '../../types';
@@ -122,6 +126,8 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
     control,
     handleSubmit,
     reset,
+    watch,
+    trigger,
     formState: { errors },
   } = useForm<TaskFormData>({
     defaultValues: {
@@ -134,6 +140,9 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
       assigneeIds: [],
     },
   });
+
+  const watchedStartDate = watch('startDate');
+  const watchedEndDate = watch('plannedEndDate');
 
   useEffect(() => {
     if (open) {
@@ -161,58 +170,87 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
     }
   }, [open, editingTask, reset]);
 
-  const handleFormSubmit = async (formData: TaskFormData) => {
-    const payload: TaskFormData = {
-      ...formData,
-      projectId: targetProjectId,
-      assigneeIds: formData.assigneeIds || [],
-      assigneeUserIds: formData.assigneeIds || [],
+  const handleFormSubmit = async (data: TaskFormData) => {
+    const payload = {
+      ...data,
+      projectId: targetProjectId || undefined,
     };
     await onSubmit(payload);
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+    <Dialog
+      open={open}
+      onClose={onClose}
+      maxWidth="sm"
+      fullWidth
+      PaperProps={{
+        sx: {
+          borderRadius: '16px',
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+        },
+      }}
+    >
+      <DialogTitle
+        sx={{
+          fontWeight: 700,
+          fontSize: '1.25rem',
+          px: 3,
+          pt: 2.5,
+          pb: 1.5,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+        }}
+      >
+        <Typography variant="h3" sx={{ fontWeight: 700, fontSize: '1.15rem', color: '#0f172a' }}>
+          {editingTask ? `Chỉnh Sửa Công Việc: ${editingTask.name}` : parentTaskId ? 'Thêm Công Việc Con' : 'Tạo Công Việc Mới'}
+        </Typography>
+        <IconButton
+          aria-label="close"
+          onClick={onClose}
+          size="small"
+          sx={{
+            color: '#94a3b8',
+            '&:hover': { color: '#0f172a', bgcolor: '#f1f5f9' },
+          }}
+        >
+          <X size={20} />
+        </IconButton>
+      </DialogTitle>
       <form onSubmit={handleSubmit(handleFormSubmit)}>
-        <DialogTitle sx={{ fontWeight: 700, px: 3, pt: 2.5, pb: 1 }}>
-          {editingTask
-            ? `Chỉnh Sửa Công Việc: ${editingTask.name}`
-            : parentTaskId
-            ? 'Thêm Công Việc Con (Sub-task)'
-            : 'Thêm Hạng Mục / Công Việc Mới'}
-        </DialogTitle>
-        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, pt: '24px !important', px: 3 }}>
-          {!editingTask && !projectId && allProjects.length > 0 && (
-            <Autocomplete
-              options={allProjects}
-              getOptionLabel={(p) => `${p.code} - ${p.name}`}
-              value={allProjects.find((p) => p.id === targetProjectId) || null}
-              onChange={(_, val) => setSelectedProjId(val ? val.id : '')}
-              isOptionEqualToValue={(opt, val) => opt.id === val.id}
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  label="Dự Án / Công Trình"
-                  required
-                  placeholder="Gõ tìm kiếm dự án..."
-                />
-              )}
-            />
+        <DialogContent dividers sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, pt: 2.5 }}>
+          {!projectId && (
+            <FormControl fullWidth size="small">
+              <InputLabel>Thuộc Dự Án *</InputLabel>
+              <Select
+                value={selectedProjId}
+                label="Thuộc Dự Án *"
+                onChange={(e) => setSelectedProjId(e.target.value)}
+                disabled={Boolean(editingTask)}
+              >
+                {allProjects.map((p) => (
+                  <MenuItem key={p.id} value={p.id}>
+                    {p.name} ({p.code})
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
           )}
 
           <Controller
             name="name"
             control={control}
-            rules={{ required: 'Trường này là bắt buộc' }}
+            rules={{ required: 'Tên công việc không được để trống' }}
             render={({ field }) => (
               <TextField
                 {...field}
                 label="Tên Công Việc"
-                fullWidth
                 required
-                placeholder="VD: Gia công lắp dựng cốt thép đài móng..."
+                fullWidth
                 error={Boolean(errors.name)}
                 helperText={errors.name?.message}
+                placeholder="Ví dụ: Đổ bê tông móng trục A-B..."
               />
             )}
           />
@@ -224,9 +262,9 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
               <TextField
                 {...field}
                 label="Mô Tả Yêu Cầu Kỹ Thuật"
-                multiline
-                rows={2}
                 fullWidth
+                multiline
+                rows={2.5}
                 placeholder="Nhập yêu cầu kỹ thuật, nghiệm thu..."
               />
             )}
@@ -237,15 +275,26 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
               <Controller
                 name="startDate"
                 control={control}
-                rules={{ required: 'Trường này là bắt buộc' }}
+                rules={{
+                  required: 'Trường này là bắt buộc',
+                  validate: (val) => {
+                    const end = watch('plannedEndDate');
+                    if (val && end && new Date(val) > new Date(end)) {
+                      return 'Ngày bắt đầu không được lớn hơn hạn kết thúc';
+                    }
+                    return true;
+                  },
+                }}
                 render={({ field }) => (
                   <DatePicker
-                    label="Ngày Bắt Đầu *"
+                    label="Ngày Bắt Đầu"
                     value={field.value ? new Date(field.value) : null}
+                    maxDate={watchedEndDate ? new Date(watchedEndDate) : undefined}
                     onChange={(newValue) => {
                       field.onChange(
                         newValue && !isNaN(newValue.getTime()) ? format(newValue, 'yyyy-MM-dd') : ''
                       );
+                      trigger('plannedEndDate');
                     }}
                     slotProps={{
                       textField: {
@@ -263,15 +312,26 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
               <Controller
                 name="plannedEndDate"
                 control={control}
-                rules={{ required: 'Trường này là bắt buộc' }}
+                rules={{
+                  required: 'Trường này là bắt buộc',
+                  validate: (val) => {
+                    const start = watch('startDate');
+                    if (val && start && new Date(val) < new Date(start)) {
+                      return 'Hạn kết thúc không được nhỏ hơn ngày bắt đầu';
+                    }
+                    return true;
+                  },
+                }}
                 render={({ field }) => (
                   <DatePicker
-                    label="Hạn Kết Thúc Dự Kiến *"
+                    label="Hạn Kết Thúc Dự Kiến"
                     value={field.value ? new Date(field.value) : null}
+                    minDate={watchedStartDate ? new Date(watchedStartDate) : undefined}
                     onChange={(newValue) => {
                       field.onChange(
                         newValue && !isNaN(newValue.getTime()) ? format(newValue, 'yyyy-MM-dd') : ''
                       );
+                      trigger('startDate');
                     }}
                     slotProps={{
                       textField: {

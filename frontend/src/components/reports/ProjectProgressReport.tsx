@@ -1,9 +1,9 @@
 import React, { memo, useMemo } from 'react';
 import { Chip } from '@mui/material';
-import { format } from 'date-fns';
 import { CommonTable, ColumnDef } from '../common/CommonTable';
 import { ProgressBar } from '../common/ProgressBar';
 import { StatusChip } from '../common/StatusChip';
+import { formatDate } from '../../utils/dateUtils';
 
 interface ProjectProgressReportItem {
   projectId: string;
@@ -37,32 +37,33 @@ export const ProjectProgressReport: React.FC<ProjectProgressReportProps> = memo(
       () => [
         {
           id: 'code',
-          header: 'Mã',
+          header: 'Mã Dự Án',
           accessorKey: 'code',
-          width: 90,
-          minWidth: 80,
+          width: '10%',
+          minWidth: 100,
+          sortable: true,
           cell: ({ value }) => (
             <Chip
               label={value}
               size="small"
-              sx={{ bgcolor: '#0284c7', color: '#ffffff', fontWeight: 800 }}
+              sx={{ fontWeight: 700, bgcolor: '#e0f2fe', color: '#0369a1', fontSize: '0.75rem' }}
             />
           ),
         },
         {
           id: 'name',
           header: 'Tên Công Trình',
+          width: '20%',
           accessorKey: 'name',
-          width: '24%',
-          minWidth: 160,
+          minWidth: 200,
+          sortable: true,
           ellipsis: true,
-          cellSx: { fontWeight: 700 },
         },
         {
           id: 'managerName',
-          header: 'Người Quản Lý (PM)',
-          accessorFn: (row) => row.managerName || 'Chưa gán',
-          width: '16%',
+          header: 'Chỉ Huy Trưởng',
+          accessorKey: 'managerName',
+          width: '12%',
           minWidth: 130,
           ellipsis: true,
         },
@@ -70,42 +71,30 @@ export const ProjectProgressReport: React.FC<ProjectProgressReportProps> = memo(
           id: 'startDate',
           header: 'Ngày Khởi Công',
           accessorKey: 'startDate',
-          width: 120,
+          width: '10%',
           minWidth: 110,
-          cell: ({ value }) => {
-            try {
-              return format(new Date(value), 'dd/MM/yyyy');
-            } catch {
-              return value || '-';
-            }
-          },
+          cell: ({ value }) => formatDate(value),
         },
         {
           id: 'plannedEndDate',
           header: 'Hạn Dự Kiến',
           accessorKey: 'plannedEndDate',
-          width: 120,
+          width: '10%',
           minWidth: 110,
-          cell: ({ value }) => {
-            try {
-              return format(new Date(value), 'dd/MM/yyyy');
-            } catch {
-              return value || '-';
-            }
-          },
+          cell: ({ value }) => formatDate(value),
         },
         {
           id: 'progress',
           header: 'Tiến Độ',
           accessorKey: 'progress',
-          width: 130,
+          width: '15%',
           minWidth: 120,
           cell: ({ value }) => <ProgressBar value={value} height={7} />,
         },
         {
           id: 'status',
           header: 'Trạng Thái',
-          width: 130,
+          width: '10%',
           minWidth: 120,
           cell: ({ row }) => <StatusChip status={row.status} isOverdue={row.isOverdue} />,
         },
@@ -113,7 +102,7 @@ export const ProjectProgressReport: React.FC<ProjectProgressReportProps> = memo(
           id: 'taskStats',
           header: 'Tổng Task / Xong / Trễ',
           align: 'right',
-          width: 170,
+          width: '12%',
           minWidth: 150,
           cell: ({ row }) => (
             <span>

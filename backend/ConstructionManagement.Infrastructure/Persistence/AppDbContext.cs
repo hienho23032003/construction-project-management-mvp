@@ -251,4 +251,32 @@ public class AppDbContext : DbContext, IAppDbContext
                 .OnDelete(DeleteBehavior.Cascade);
         });
     }
+
+    protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
+    {
+        base.ConfigureConventions(configurationBuilder);
+        configurationBuilder.Properties<DateTime>()
+            .HaveConversion<DateTimeUtcConverter>();
+        configurationBuilder.Properties<DateTime?>()
+            .HaveConversion<NullableDateTimeUtcConverter>();
+    }
 }
+
+public class DateTimeUtcConverter : Microsoft.EntityFrameworkCore.Storage.ValueConversion.ValueConverter<DateTime, DateTime>
+{
+    public DateTimeUtcConverter() : base(
+        d => d.Kind == DateTimeKind.Unspecified ? DateTime.SpecifyKind(d, DateTimeKind.Utc) : d.ToUniversalTime(),
+        d => DateTime.SpecifyKind(d, DateTimeKind.Utc))
+    {
+    }
+}
+
+public class NullableDateTimeUtcConverter : Microsoft.EntityFrameworkCore.Storage.ValueConversion.ValueConverter<DateTime?, DateTime?>
+{
+    public NullableDateTimeUtcConverter() : base(
+        d => !d.HasValue ? d : (d.Value.Kind == DateTimeKind.Unspecified ? DateTime.SpecifyKind(d.Value, DateTimeKind.Utc) : d.Value.ToUniversalTime()),
+        d => !d.HasValue ? d : DateTime.SpecifyKind(d.Value, DateTimeKind.Utc))
+    {
+    }
+}
+

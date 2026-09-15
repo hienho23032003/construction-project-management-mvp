@@ -37,7 +37,7 @@ import {
   HardHat,
   PanelLeftClose,
   PanelLeftOpen,
-  ShieldCheck,
+  Settings,
   History,
   User as UserIcon,
 } from 'lucide-react';
@@ -46,9 +46,9 @@ import { useNotifications } from '../contexts/NotificationContext';
 import { usePermission } from '../hooks/usePermission';
 import { NotificationItem } from '../types';
 import { UserProfileModal } from '../components/common/UserProfileModal';
-import { format } from 'date-fns';
+import { formatShortDateTime } from '../utils/dateUtils';
 
-const EXPANDED_DRAWER_WIDTH = 260;
+const EXPANDED_DRAWER_WIDTH = 270;
 const COLLAPSED_DRAWER_WIDTH = 76;
 
 interface MenuItemDef {
@@ -66,7 +66,7 @@ const allMenuItems: MenuItemDef[] = [
   { text: 'Tiến Độ Gantt', icon: BarChart3, path: '/gantt', permission: 'gantt.view' },
   { text: 'Nhân Sự & Workload', icon: Users, path: '/employees', permission: 'employees.view' },
   { text: 'Báo Cáo & Xuất Dữ Liệu', icon: FileText, path: '/reports', permission: 'reports.view' },
-  { text: 'Phân Quyền & Vai Trò', icon: ShieldCheck, path: '/roles', permission: 'roles.view' },
+  { text: 'Phân Quyền & Vai Trò', icon: Settings, path: '/roles', permission: 'roles.view' },
   { text: 'Lịch Sử Đăng Nhập', icon: History, path: '/login-history', permission: 'audit.view_sessions' },
 ];
 
@@ -131,8 +131,8 @@ export const MainLayout: React.FC = () => {
         height: '100%',
         display: 'flex',
         flexDirection: 'column',
-        bgcolor: '#0f172a',
-        color: '#f8fafc',
+        bgcolor: '#ffffff',
+        color: '#0f172a',
         borderRadius: 0,
         transition: 'all 0.25s ease',
       }}
@@ -144,7 +144,7 @@ export const MainLayout: React.FC = () => {
           display: 'flex',
           alignItems: 'center',
           justifyContent: collapsed && !isMobile ? 'center' : 'space-between',
-          borderBottom: '1px solid #1e293b',
+          borderBottom: '1px solid #e2e8f0',
           minHeight: 64,
         }}
       >
@@ -156,7 +156,8 @@ export const MainLayout: React.FC = () => {
               justifyContent: 'center',
               p: 0.5,
               borderRadius: '8px',
-              bgcolor: 'rgba(255, 255, 255, 0.06)',
+              bgcolor: '#f0f9ff',
+              border: '1px solid #e0f2fe',
             }}
           >
             <Box
@@ -167,7 +168,6 @@ export const MainLayout: React.FC = () => {
                 height: 32,
                 maxWidth: collapsed && !isMobile ? 32 : 120,
                 objectFit: 'contain',
-                filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))',
               }}
             />
           </Box>
@@ -178,14 +178,14 @@ export const MainLayout: React.FC = () => {
                 sx={{
                   fontWeight: 800,
                   fontSize: '0.95rem',
-                  color: '#ffffff',
+                  color: '#0f172a',
                   lineHeight: 1.2,
                   letterSpacing: '0.02em',
                 }}
               >
-                FCB<span style={{ color: '#38bdf8' }}>VN</span>
+                FCB<span style={{ color: '#0284c7' }}>VN</span>
               </Typography>
-              <Typography variant="caption" sx={{ color: '#94a3b8', fontSize: '0.68rem', fontWeight: 500 }} noWrap>
+              <Typography variant="caption" sx={{ color: '#64748b', fontSize: '0.68rem', fontWeight: 500 }} noWrap>
                 Quản Lý Công Trình
               </Typography>
             </Box>
@@ -212,17 +212,17 @@ export const MainLayout: React.FC = () => {
                 px: collapsed && !isMobile ? 1 : 1.5,
                 justifyContent: collapsed && !isMobile ? 'center' : 'initial',
                 bgcolor: isActive
-                  ? 'linear-gradient(90deg, rgba(2, 132, 199, 0.28) 0%, rgba(2, 132, 199, 0.12) 100%)'
+                  ? '#e0f2fe'
                   : 'transparent',
-                backgroundColor: isActive ? 'rgba(2, 132, 199, 0.22)' : 'transparent',
-                color: isActive ? '#ffffff' : '#e2e8f0', // High-contrast, bright, clear readable text
-                border: isActive ? '1px solid rgba(56, 189, 248, 0.45)' : '1px solid transparent',
+                backgroundColor: isActive ? '#e0f2fe' : 'transparent',
+                color: isActive ? '#0284c7' : '#475569',
+                border: isActive ? '1px solid #bae6fd' : '1px solid transparent',
                 transition: 'all 0.15s ease',
                 '&:hover': {
-                  bgcolor: 'rgba(255, 255, 255, 0.08)',
-                  color: '#ffffff',
+                  bgcolor: isActive ? '#dbeafe' : '#f1f5f9',
+                  color: isActive ? '#0284c7' : '#0f172a',
                   '& .menu-icon': {
-                    color: '#38bdf8',
+                    color: '#0284c7',
                   },
                 },
               }}
@@ -233,7 +233,7 @@ export const MainLayout: React.FC = () => {
                   minWidth: collapsed && !isMobile ? 0 : 36,
                   mr: collapsed && !isMobile ? 0 : 1,
                   justifyContent: 'center',
-                  color: isActive ? '#38bdf8' : '#94a3b8',
+                  color: isActive ? '#0284c7' : '#64748b',
                   transition: 'color 0.15s ease',
                 }}
               >
@@ -245,7 +245,7 @@ export const MainLayout: React.FC = () => {
                   primaryTypographyProps={{
                     fontSize: '0.875rem',
                     fontWeight: isActive ? 700 : 500,
-                    color: isActive ? '#ffffff' : '#e2e8f0',
+                    color: isActive ? '#0284c7' : '#334155',
                   }}
                 />
               )}
@@ -271,28 +271,28 @@ export const MainLayout: React.FC = () => {
         onClick={() => setProfileOpen(true)}
         sx={{
           p: collapsed && !isMobile ? 1.5 : 2,
-          borderTop: '1px solid #1e293b',
-          bgcolor: '#090d16',
+          borderTop: '1px solid #e2e8f0',
+          bgcolor: '#f8fafc',
           display: 'flex',
           alignItems: 'center',
           justifyContent: collapsed && !isMobile ? 'center' : 'flex-start',
           cursor: 'pointer',
           borderRadius: 0,
           transition: 'background-color 0.2s',
-          '&:hover': { bgcolor: '#131b2e' },
+          '&:hover': { bgcolor: '#f1f5f9' },
         }}
       >
         {collapsed && !isMobile ? (
           <Tooltip
             title={
               <Box>
-                <Typography variant="caption" sx={{ fontWeight: 700, display: 'block' }}>
+                <Typography variant="caption" sx={{ fontWeight: 700, display: 'block', color: '#0f172a' }}>
                   {user?.fullName}
                 </Typography>
-                <Typography variant="caption" sx={{ color: '#38bdf8' }}>
+                <Typography variant="caption" sx={{ color: '#0284c7' }}>
                   {user?.roleName || user?.role}
                 </Typography>
-                <Typography variant="caption" sx={{ color: '#94a3b8', display: 'block', mt: 0.25 }}>
+                <Typography variant="caption" sx={{ color: '#64748b', display: 'block', mt: 0.25 }}>
                   (Nhấp để xem hồ sơ)
                 </Typography>
               </Box>
@@ -300,20 +300,20 @@ export const MainLayout: React.FC = () => {
             placement="right"
             arrow
           >
-            <Avatar sx={{ bgcolor: '#0284c7', width: 36, height: 36, fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer' }}>
+            <Avatar sx={{ bgcolor: '#0284c7', width: 36, height: 36, fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer', color: '#ffffff' }}>
               {user?.fullName?.charAt(0) || 'U'}
             </Avatar>
           </Tooltip>
         ) : (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, width: '100%', overflow: 'hidden' }}>
-            <Avatar sx={{ bgcolor: '#0284c7', width: 36, height: 36, fontWeight: 700, fontSize: '0.9rem', flexShrink: 0 }}>
+            <Avatar sx={{ bgcolor: '#0284c7', width: 36, height: 36, fontWeight: 700, fontSize: '0.9rem', flexShrink: 0, color: '#ffffff' }}>
               {user?.fullName?.charAt(0) || 'U'}
             </Avatar>
             <Box sx={{ minWidth: 0, flexGrow: 1 }}>
-              <Typography variant="subtitle2" noWrap sx={{ color: '#ffffff', fontWeight: 600, fontSize: '0.8125rem' }}>
+              <Typography variant="subtitle2" noWrap sx={{ color: '#0f172a', fontWeight: 600, fontSize: '0.8125rem' }}>
                 {user?.fullName}
               </Typography>
-              <Typography variant="caption" noWrap sx={{ color: '#38bdf8', display: 'block', fontSize: '0.7rem' }}>
+              <Typography variant="caption" noWrap sx={{ color: '#0284c7', display: 'block', fontSize: '0.7rem', fontWeight: 600 }}>
                 {user?.role === 'SuperAdmin'
                   ? 'Super Admin'
                   : user?.role === 'ProjectManager'
@@ -326,6 +326,15 @@ export const MainLayout: React.FC = () => {
           </Box>
         )}
       </Box>
+
+      {/* Credit Footer */}
+      {(!collapsed || isMobile) && (
+        <Box sx={{ py: 1, px: 2, bgcolor: '#f8fafc', borderTop: '1px solid #f1f5f9', textAlign: 'center' }}>
+          <Typography variant="caption" sx={{ fontSize: '0.68rem', color: '#94a3b8', display: 'block', fontWeight: 500 }}>
+            Design by <span style={{ color: '#0284c7', fontWeight: 700 }}>Phạm Thế Hiển</span>
+          </Typography>
+        </Box>
+      )}
     </Box>
   );
 
@@ -348,7 +357,7 @@ export const MainLayout: React.FC = () => {
           ModalProps={{ keepMounted: true }}
           sx={{
             display: { xs: 'block', md: 'none' },
-            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: EXPANDED_DRAWER_WIDTH, borderRadius: 0, border: 'none' },
+            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: EXPANDED_DRAWER_WIDTH, borderRadius: 0, borderRight: '1px solid #e2e8f0', bgcolor: '#ffffff' },
           }}
         >
           {drawerContent}
@@ -362,8 +371,9 @@ export const MainLayout: React.FC = () => {
             '& .MuiDrawer-paper': {
               boxSizing: 'border-box',
               width: currentDrawerWidth,
-              border: 'none',
+              borderRight: '1px solid #e2e8f0',
               borderRadius: 0,
+              bgcolor: '#ffffff',
               transition: 'width 0.25s ease',
               overflowX: 'hidden',
             },
@@ -503,7 +513,7 @@ export const MainLayout: React.FC = () => {
                           {n.title}
                         </Typography>
                         <Typography variant="caption" sx={{ color: '#94a3b8', fontSize: '0.65rem' }}>
-                          {format(new Date(n.createdAt), 'HH:mm dd/MM')}
+                          {formatShortDateTime(n.createdAt)}
                         </Typography>
                       </Box>
                       <Typography variant="body2" sx={{ color: '#475569', fontSize: '0.75rem' }}>
