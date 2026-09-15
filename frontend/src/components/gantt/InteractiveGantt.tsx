@@ -487,29 +487,32 @@ export const InteractiveGantt: React.FC<InteractiveGanttProps> = ({
           flexShrink: 0,
         }}
       >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', flexGrow: 1 }}>
-          <IconButton
-            size="small"
-            onClick={toggleLeftPanel}
-            title={isLeftCollapsed ? 'Hiện danh sách công việc' : 'Ẩn bớt danh sách công việc'}
-            sx={{
-              width: 32,
-              height: 32,
-              borderRadius: '6px',
-              bgcolor: '#ffffff',
-              border: '1px solid #e2e8f0',
-              color: '#0284c7',
-              boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
-              '&:hover': { bgcolor: '#f0f9ff', borderColor: '#bae6fd' },
-              mr: 0.5,
-            }}
-          >
-            {isLeftCollapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
-          </IconButton>
+        {/* Left: Filter Controls */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', flexGrow: 1, minWidth: 0 }}>
           {filterBar}
         </Box>
 
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: { xs: '100%', sm: 'auto' }, justifyContent: { xs: 'space-between', sm: 'flex-end' }, flexWrap: 'wrap' }}>
+        {/* Right: View & Export Controls */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: { xs: '100%', lg: 'auto' }, justifyContent: { xs: 'flex-start', sm: 'flex-end' }, flexWrap: 'wrap' }}>
+          <Tooltip title={isLeftCollapsed ? 'Hiện cột danh sách công việc' : 'Ẩn bớt cột danh sách công việc'}>
+            <IconButton
+              size="small"
+              onClick={toggleLeftPanel}
+              sx={{
+                width: 32,
+                height: 32,
+                borderRadius: '6px',
+                bgcolor: '#ffffff',
+                border: '1px solid #e2e8f0',
+                color: '#0284c7',
+                boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
+                '&:hover': { bgcolor: '#f0f9ff', borderColor: '#bae6fd' },
+              }}
+            >
+              {isLeftCollapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
+            </IconButton>
+          </Tooltip>
+
           <ButtonGroup size="small" variant="outlined">
             <Button
               onClick={expandAll}

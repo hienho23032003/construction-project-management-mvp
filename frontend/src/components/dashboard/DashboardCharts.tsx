@@ -23,12 +23,12 @@ export const DashboardCharts: React.FC<DashboardChartsProps> = memo(({ data }) =
   const navigate = useNavigate();
 
   return (
-    <Grid container spacing={2.5}>
+    <Grid container spacing={{ xs: 2, md: 2.5 }}>
       {/* Project Progress Chart */}
       <Grid item xs={12} md={7}>
-        <Paper sx={{ p: 2.5, border: '1px solid #e2e8f0', borderRadius: '8px', height: '100%' }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-            <Typography variant="h4" sx={{ fontWeight: 700, fontSize: '1rem', color: '#0f172a' }}>
+        <Paper sx={{ p: { xs: 1.75, sm: 2.5 }, border: '1px solid #e2e8f0', borderRadius: '8px', height: '100%', overflow: 'hidden' }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1 }}>
+            <Typography variant="h4" sx={{ fontWeight: 700, fontSize: { xs: '0.9rem', sm: '1rem' }, color: '#0f172a' }}>
               Tiến Độ Công Trình Trọng Điểm (%)
             </Typography>
             <Button
@@ -41,11 +41,11 @@ export const DashboardCharts: React.FC<DashboardChartsProps> = memo(({ data }) =
             </Button>
           </Box>
 
-          <Box sx={{ height: 260 }}>
+          <Box sx={{ height: 260, minWidth: 0, width: '100%' }}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={data.projectProgressList} margin={{ top: 10, right: 10, left: -20, bottom: 20 }}>
-                <XAxis dataKey="projectCode" tick={{ fill: '#64748b', fontSize: 12, fontWeight: 600 }} />
-                <YAxis domain={[0, 100]} tick={{ fill: '#64748b', fontSize: 12 }} />
+                <XAxis dataKey="projectCode" tick={{ fill: '#64748b', fontSize: 11, fontWeight: 600 }} />
+                <YAxis domain={[0, 100]} tick={{ fill: '#64748b', fontSize: 11 }} />
                 <RechartsTooltip
                   formatter={(value: any) => [`${value}%`, 'Tiến độ']}
                   labelFormatter={(label) => {
@@ -62,8 +62,8 @@ export const DashboardCharts: React.FC<DashboardChartsProps> = memo(({ data }) =
 
       {/* Task Status Distribution Chart */}
       <Grid item xs={12} md={5}>
-        <Paper sx={{ p: 2.5, border: '1px solid #e2e8f0', borderRadius: '8px', height: '100%' }}>
-          <Typography variant="h4" sx={{ fontWeight: 700, fontSize: '1rem', color: '#0f172a', mb: 2 }}>
+        <Paper sx={{ p: { xs: 1.75, sm: 2.5 }, border: '1px solid #e2e8f0', borderRadius: '8px', height: '100%', overflow: 'hidden' }}>
+          <Typography variant="h4" sx={{ fontWeight: 700, fontSize: { xs: '0.9rem', sm: '1rem' }, color: '#0f172a', mb: 2 }}>
             Phân Bổ Trạng Thái Công Việc
           </Typography>
 

@@ -67,17 +67,13 @@ const TaskTableRow: React.FC<TaskTableRowProps> = memo(({
           sx={{ bgcolor: '#e0f2fe', color: '#0369a1', fontWeight: 800, fontSize: '0.75rem' }}
         />
       </TableCell>
-      <TableCell sx={{ whiteSpace: 'nowrap', maxWidth: { xs: 200, sm: 300, md: 400 } }}>
+      <TableCell sx={{ whiteSpace: 'nowrap', minWidth: 200 }}>
         <Typography
           variant="body2"
-          noWrap
           sx={{
             fontWeight: 600,
             color: '#0f172a',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
             whiteSpace: 'nowrap',
-            display: 'block',
           }}
           title={task.name}
         >
@@ -86,11 +82,8 @@ const TaskTableRow: React.FC<TaskTableRowProps> = memo(({
         {task.parentName && (
           <Typography
             variant="caption"
-            noWrap
             sx={{
               color: '#64748b',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
               whiteSpace: 'nowrap',
               display: 'block',
             }}
@@ -100,8 +93,8 @@ const TaskTableRow: React.FC<TaskTableRowProps> = memo(({
           </Typography>
         )}
       </TableCell>
-      <TableCell sx={{ whiteSpace: 'nowrap', maxWidth: 180 }}>
-        <Box sx={{ display: 'flex', flexWrap: 'nowrap', gap: 0.5, overflow: 'hidden' }}>
+      <TableCell sx={{ whiteSpace: 'nowrap', minWidth: 140 }}>
+        <Box sx={{ display: 'flex', flexWrap: 'nowrap', gap: 0.5 }}>
           {task.assignees.length === 0 ? (
             <Typography variant="caption" sx={{ color: '#94a3b8', whiteSpace: 'nowrap' }}>
               Chưa gán
@@ -254,13 +247,20 @@ export const TaskTable: React.FC<TaskTableProps> = memo(({
         maxHeight: 'calc(100vh - 270px)',
       }}
     >
-      <Table stickyHeader sx={{ minWidth: { xs: 720, md: '100%' } }}>
+      <Table
+        stickyHeader
+        sx={{
+          width: '100%',
+          minWidth: { xs: 'max-content', md: '100%' },
+          tableLayout: { xs: 'auto !important', sm: 'auto !important', md: 'auto' },
+        }}
+      >
         <TableHead>
           <TableRow>
-            <TableCell sx={{ width: '50px', textAlign: 'center', whiteSpace: 'nowrap', py: 1.5 }}>
+            <TableCell sx={{ minWidth: 50, textAlign: 'center', whiteSpace: 'nowrap', py: 1.5 }}>
               STT
             </TableCell>
-            <TableCell sx={{ width: '12%', whiteSpace: 'nowrap', py: 1.5 }}>
+            <TableCell sx={{ minWidth: 100, whiteSpace: 'nowrap', py: 1.5 }}>
               <TableSortLabel
                 active={sortBy === 'projectCode'}
                 direction={isDescending ? 'desc' : 'asc'}
@@ -270,7 +270,7 @@ export const TaskTable: React.FC<TaskTableProps> = memo(({
                 Mã Dự Án
               </TableSortLabel>
             </TableCell>
-            <TableCell sx={{ width: '25%', whiteSpace: 'nowrap', py: 1.5, fontWeight: 700, fontSize: '0.8rem' }}>
+            <TableCell sx={{ minWidth: 220, whiteSpace: 'nowrap', py: 1.5, fontWeight: 700, fontSize: '0.8rem' }}>
               <TableSortLabel
                 active={sortBy === 'name'}
                 direction={isDescending ? 'desc' : 'asc'}
@@ -280,10 +280,10 @@ export const TaskTable: React.FC<TaskTableProps> = memo(({
                 Tên Công Việc
               </TableSortLabel>
             </TableCell>
-            <TableCell sx={{ width: '15%', whiteSpace: 'nowrap', py: 1.5, fontWeight: 700, fontSize: '0.8rem' }}>
+            <TableCell sx={{ minWidth: 150, whiteSpace: 'nowrap', py: 1.5, fontWeight: 700, fontSize: '0.8rem' }}>
               Người Thực Hiện
             </TableCell>
-            <TableCell sx={{ width: '15%', whiteSpace: 'nowrap', py: 1.5, fontWeight: 700, fontSize: '0.8rem' }}>
+            <TableCell sx={{ minWidth: 140, whiteSpace: 'nowrap', py: 1.5, fontWeight: 700, fontSize: '0.8rem' }}>
               <TableSortLabel
                 active={sortBy === 'plannedEndDate'}
                 direction={isDescending ? 'desc' : 'asc'}
@@ -293,7 +293,7 @@ export const TaskTable: React.FC<TaskTableProps> = memo(({
                 Hạn Dự Kiến
               </TableSortLabel>
             </TableCell>
-            <TableCell sx={{ width: '15%', whiteSpace: 'nowrap', py: 1.5, fontWeight: 700, fontSize: '0.8rem' }}>
+            <TableCell sx={{ minWidth: 130, whiteSpace: 'nowrap', py: 1.5, fontWeight: 700, fontSize: '0.8rem' }}>
               <TableSortLabel
                 active={sortBy === 'status'}
                 direction={isDescending ? 'desc' : 'asc'}
@@ -303,7 +303,7 @@ export const TaskTable: React.FC<TaskTableProps> = memo(({
                 Trạng Thái
               </TableSortLabel>
             </TableCell>
-            <TableCell sx={{ width: '20%', whiteSpace: 'nowrap', py: 1.5, fontWeight: 700, fontSize: '0.8rem' }}>
+            <TableCell sx={{ minWidth: 140, whiteSpace: 'nowrap', py: 1.5, fontWeight: 700, fontSize: '0.8rem' }}>
               <TableSortLabel
                 active={sortBy === 'progress'}
                 direction={isDescending ? 'desc' : 'asc'}

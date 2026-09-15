@@ -30,11 +30,11 @@ export const DashboardActivities: React.FC<DashboardActivitiesProps> = memo(({ d
       {
         id: 'createdAt',
         header: 'Thời Gian',
-        width: 155,
+        minWidth: 150,
         cell: ({ row }) => {
           const formattedTime = formatDateTime(row.createdAt);
           return (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, color: '#475569', fontSize: '0.8125rem' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, color: '#475569', fontSize: '0.8125rem', whiteSpace: 'nowrap' }}>
               <Clock size={13} color="#94a3b8" />
               <span>{formattedTime}</span>
             </Box>
@@ -44,9 +44,9 @@ export const DashboardActivities: React.FC<DashboardActivitiesProps> = memo(({ d
       {
         id: 'userName',
         header: 'Người Thực Hiện',
-        width: '15%',
+        minWidth: 160,
         cell: ({ row }) => (
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, whiteSpace: 'nowrap' }}>
             <Avatar
               sx={{
                 width: 26,
@@ -60,7 +60,7 @@ export const DashboardActivities: React.FC<DashboardActivitiesProps> = memo(({ d
             </Avatar>
             <Typography
               variant="body2"
-              sx={{ fontWeight: 600, fontSize: '0.8125rem', color: '#0f172a' }}
+              sx={{ fontWeight: 600, fontSize: '0.8125rem', color: '#0f172a', whiteSpace: 'nowrap' }}
             >
               {row.userName || '-'}
             </Typography>
@@ -70,10 +70,10 @@ export const DashboardActivities: React.FC<DashboardActivitiesProps> = memo(({ d
       {
         id: 'project',
         header: 'Dự Án / Công Trình',
-        width: '20%',
+        minWidth: 180,
         cell: ({ row }) =>
           row.projectCode ? (
-            <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', whiteSpace: 'nowrap' }}>
               <Chip
                 label={row.projectCode}
                 size="small"
@@ -93,9 +93,6 @@ export const DashboardActivities: React.FC<DashboardActivitiesProps> = memo(({ d
                   sx={{
                     color: '#64748b',
                     fontSize: '0.75rem',
-                    maxWidth: 400,
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
                     whiteSpace: 'nowrap',
                   }}
                   title={row.projectName}
@@ -105,7 +102,7 @@ export const DashboardActivities: React.FC<DashboardActivitiesProps> = memo(({ d
               )}
             </Box>
           ) : (
-            <Typography variant="body2" sx={{ color: '#94a3b8' }}>
+            <Typography variant="body2" sx={{ color: '#94a3b8', whiteSpace: 'nowrap' }}>
               -
             </Typography>
           ),
@@ -113,7 +110,7 @@ export const DashboardActivities: React.FC<DashboardActivitiesProps> = memo(({ d
       {
         id: 'task',
         header: 'Hạng Mục / Công Việc',
-        width: '20%',
+        minWidth: 200,
         cell: ({ row }) =>
           row.taskName ? (
             <Typography
@@ -125,9 +122,6 @@ export const DashboardActivities: React.FC<DashboardActivitiesProps> = memo(({ d
                 color: row.taskId && onSelectTask ? '#0284c7' : '#334155',
                 cursor: row.taskId && onSelectTask ? 'pointer' : 'default',
                 '&:hover': row.taskId && onSelectTask ? { textDecoration: 'underline' } : {},
-                maxWidth: 400,
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
                 whiteSpace: 'nowrap',
               }}
               title={row.taskName}
@@ -135,7 +129,7 @@ export const DashboardActivities: React.FC<DashboardActivitiesProps> = memo(({ d
               {row.taskName}
             </Typography>
           ) : (
-            <Typography variant="body2" sx={{ color: '#94a3b8' }}>
+            <Typography variant="body2" sx={{ color: '#94a3b8', whiteSpace: 'nowrap' }}>
               -
             </Typography>
           ),
@@ -143,6 +137,7 @@ export const DashboardActivities: React.FC<DashboardActivitiesProps> = memo(({ d
       {
         id: 'details',
         header: 'Nội Dung & Biến Động',
+        minWidth: 260,
         cell: ({ row }) => {
           const raw = row.details || row.actionName || row.action || '-';
           const clean = typeof raw === 'string'
@@ -154,7 +149,7 @@ export const DashboardActivities: React.FC<DashboardActivitiesProps> = memo(({ d
               sx={{
                 fontSize: '0.8125rem',
                 color: '#1e293b',
-                wordBreak: 'break-word',
+                whiteSpace: 'nowrap',
               }}
             >
               {clean}
@@ -163,7 +158,7 @@ export const DashboardActivities: React.FC<DashboardActivitiesProps> = memo(({ d
         },
       },
     ],
-    []
+    [onSelectTask]
   );
 
   return (

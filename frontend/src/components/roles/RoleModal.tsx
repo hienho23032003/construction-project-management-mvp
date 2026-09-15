@@ -125,15 +125,28 @@ export const RoleModal: React.FC<RoleModalProps> = ({
   const totalAvailablePerms = matrix.reduce((acc, g) => acc + g.permissions.length, 0);
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth PaperProps={{ sx: { borderRadius: '8px' } }}>
+    <Dialog
+      open={open}
+      onClose={onClose}
+      maxWidth="md"
+      fullWidth
+      PaperProps={{
+        sx: {
+          borderRadius: '8px',
+          m: { xs: 1, sm: 2 },
+          width: { xs: 'calc(100% - 16px)', sm: '100%' },
+          maxWidth: '800px',
+        },
+      }}
+    >
       <form onSubmit={handleSubmit(onSubmit)}>
         <DialogTitle
           sx={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            px: 3,
-            py: 2,
+            px: { xs: 2, sm: 3 },
+            py: { xs: 1.5, sm: 2 },
             borderBottom: '1px solid #e2e8f0',
           }}
         >
@@ -151,7 +164,7 @@ export const RoleModal: React.FC<RoleModalProps> = ({
               <Settings size={22} />
             </Box>
             <Box>
-              <Typography variant="h6" sx={{ fontWeight: 700, fontSize: '1.1rem', color: '#0f172a' }}>
+              <Typography variant="h6" sx={{ fontWeight: 700, fontSize: { xs: '0.95rem', sm: '1.1rem' }, color: '#0f172a' }}>
                 {isEditing ? `Chỉnh Sửa Vai Trò: ${initialData?.name}` : 'Tạo Vai Trò & Phân Quyền Mới'}
               </Typography>
               <Typography variant="caption" sx={{ color: '#64748b' }}>
@@ -164,10 +177,10 @@ export const RoleModal: React.FC<RoleModalProps> = ({
           </IconButton>
         </DialogTitle>
 
-        <DialogContent sx={{ px: 3, py: 2.5, maxHeight: '72vh', overflowY: 'auto' }}>
+        <DialogContent sx={{ px: { xs: 1.5, sm: 3 }, py: { xs: 1.5, sm: 2.5 }, maxHeight: '72vh', overflowY: 'auto' }}>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
             {/* General Info */}
-            <Paper variant="outlined" sx={{ p: 2.5, borderRadius: '8px', bgcolor: '#f8fafc' }}>
+            <Paper variant="outlined" sx={{ p: { xs: 1.5, sm: 2.5 }, borderRadius: '8px', bgcolor: '#f8fafc' }}>
               <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 2, color: '#1e293b' }}>
                 Thông Tin Cơ Bản
               </Typography>
@@ -239,15 +252,24 @@ export const RoleModal: React.FC<RoleModalProps> = ({
 
             {/* Permission Matrix */}
             <Box>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#0f172a' }}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexDirection: { xs: 'column', sm: 'row' },
+                  alignItems: { xs: 'flex-start', sm: 'center' },
+                  justifyContent: 'space-between',
+                  gap: 1.25,
+                  mb: 1.5,
+                }}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#0f172a', whiteSpace: 'nowrap' }}>
                     Ma Trận Phân Quyền Chi Tiết
                   </Typography>
                   <Chip
                     label={`${selectedPermissions.length}/${totalAvailablePerms} quyền đã chọn`}
                     size="small"
-                    sx={{ bgcolor: '#e0f2fe', color: '#0284c7', fontWeight: 600, fontSize: '0.75rem' }}
+                    sx={{ bgcolor: '#e0f2fe', color: '#0284c7', fontWeight: 600, fontSize: '0.75rem', whiteSpace: 'nowrap' }}
                   />
                 </Box>
                 <Button
@@ -255,7 +277,15 @@ export const RoleModal: React.FC<RoleModalProps> = ({
                   variant="outlined"
                   onClick={handleSelectAll}
                   startIcon={selectedPermissions.length === totalAvailablePerms ? <Square size={14} /> : <CheckSquare size={14} />}
-                  sx={{ textTransform: 'none', fontSize: '0.8rem', py: 0.4, px: 1.5, borderRadius: '8px' }}
+                  sx={{
+                    textTransform: 'none',
+                    fontSize: '0.8rem',
+                    py: 0.4,
+                    px: 1.5,
+                    borderRadius: '8px',
+                    whiteSpace: 'nowrap',
+                    width: { xs: '100%', sm: 'auto' },
+                  }}
                 >
                   {selectedPermissions.length === totalAvailablePerms ? 'Bỏ chọn tất cả' : 'Chọn tất cả quyền'}
                 </Button>
@@ -278,7 +308,7 @@ export const RoleModal: React.FC<RoleModalProps> = ({
                         key={moduleGroup.module}
                         variant="outlined"
                         sx={{
-                          p: 2,
+                          p: { xs: 1.5, sm: 2 },
                           borderRadius: '8px',
                           border: selectedInModule.length > 0 ? '1px solid #bae6fd' : '1px solid #e2e8f0',
                           bgcolor: selectedInModule.length > 0 ? 'rgba(240, 249, 255, 0.4)' : '#ffffff',
@@ -286,8 +316,8 @@ export const RoleModal: React.FC<RoleModalProps> = ({
                         }}
                       >
                         {/* Module Header */}
-                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1, flexWrap: 'wrap', gap: 0.5 }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexWrap: 'wrap', minWidth: 0, flex: 1 }}>
                             <FormControlLabel
                               control={
                                 <Checkbox
@@ -303,11 +333,13 @@ export const RoleModal: React.FC<RoleModalProps> = ({
                                   {moduleGroup.moduleName}
                                 </Typography>
                               }
-                              sx={{ mr: 0 }}
+                              sx={{ mr: 0.5 }}
                             />
-                            <Typography variant="caption" sx={{ color: '#64748b', ml: 1 }}>
-                              ({moduleGroup.description})
-                            </Typography>
+                            {moduleGroup.description && (
+                              <Typography variant="caption" sx={{ color: '#64748b' }}>
+                                ({moduleGroup.description})
+                              </Typography>
+                            )}
                           </Box>
                           <Chip
                             label={`${selectedInModule.length}/${moduleCodes.length}`}
@@ -319,6 +351,7 @@ export const RoleModal: React.FC<RoleModalProps> = ({
                               bgcolor: selectedInModule.length > 0 ? '#0284c7' : 'transparent',
                               color: selectedInModule.length > 0 ? '#ffffff' : '#94a3b8',
                               fontWeight: 600,
+                              flexShrink: 0,
                             }}
                           />
                         </Box>
@@ -380,8 +413,8 @@ export const RoleModal: React.FC<RoleModalProps> = ({
           </Box>
         </DialogContent>
 
-        <DialogActions sx={{ px: 3, py: 2, borderTop: '1px solid #e2e8f0', justifyContent: 'space-between' }}>
-          <Button onClick={onClose} variant="outlined" color="inherit" disabled={isSubmitting} sx={{ borderRadius: '8px' }}>
+        <DialogActions sx={{ px: { xs: 2, sm: 3 }, py: { xs: 1.5, sm: 2 }, borderTop: '1px solid #e2e8f0', justifyContent: 'space-between', gap: 1 }}>
+          <Button onClick={onClose} variant="outlined" color="inherit" disabled={isSubmitting} sx={{ borderRadius: '8px', px: { xs: 2, sm: 2.5 } }}>
             Hủy Bỏ
           </Button>
           <Button
@@ -392,7 +425,7 @@ export const RoleModal: React.FC<RoleModalProps> = ({
               bgcolor: '#0284c7',
               '&:hover': { bgcolor: '#0369a1' },
               borderRadius: '8px',
-              px: 3,
+              px: { xs: 2, sm: 3 },
               fontWeight: 600,
             }}
           >

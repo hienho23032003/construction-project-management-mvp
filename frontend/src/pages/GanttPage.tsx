@@ -201,7 +201,7 @@ export const GanttPage: React.FC = () => {
   };
 
   const filterBar = (
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', width: { xs: '100%', lg: 'auto' } }}>
       <Autocomplete
         size="small"
         options={[{ id: 'ALL', code: 'ALL', name: 'Tất cả công trình (Tổng quan)' }, ...projects]}
@@ -223,51 +223,53 @@ export const GanttPage: React.FC = () => {
             }}
           />
         )}
-        sx={{ minWidth: { xs: '100%', sm: 220 }, width: { xs: '100%', sm: 220 } }}
+        sx={{ width: { xs: '100%', sm: 220 }, minWidth: { xs: '100%', sm: 220 } }}
       />
 
-      <FormControl size="small" sx={{ minWidth: 145 }}>
-        <Select
-          value={selectedStatus}
-          onChange={(e) => setSelectedStatus(e.target.value)}
-          displayEmpty
-          sx={{
-            height: 32,
-            bgcolor: '#ffffff',
-            fontSize: '0.8rem',
-          }}
-        >
-          <MenuItem value="ALL">Tất cả trạng thái</MenuItem>
-          <MenuItem value="ACTIVE_ONLY">Chưa xong (Đang & Chưa làm)</MenuItem>
-          <MenuItem value="InProgress">Đang thực hiện</MenuItem>
-          <MenuItem value="NotStarted">Chưa bắt đầu</MenuItem>
-          <MenuItem value="Completed">Hoàn thành</MenuItem>
-          <MenuItem value="OnHold">Tạm dừng</MenuItem>
-          <MenuItem value="Overdue">Trễ tiến độ</MenuItem>
-        </Select>
-      </FormControl>
+      <Box sx={{ display: 'flex', gap: 1, width: { xs: '100%', sm: 'auto' }, flexWrap: 'nowrap' }}>
+        <FormControl size="small" sx={{ width: { xs: '50%', sm: 145 }, minWidth: { xs: '50%', sm: 145 } }}>
+          <Select
+            value={selectedStatus}
+            onChange={(e) => setSelectedStatus(e.target.value)}
+            displayEmpty
+            sx={{
+              height: 32,
+              bgcolor: '#ffffff',
+              fontSize: '0.8rem',
+            }}
+          >
+            <MenuItem value="ALL">Tất cả trạng thái</MenuItem>
+            <MenuItem value="ACTIVE_ONLY">Chưa xong (Đang & Chưa làm)</MenuItem>
+            <MenuItem value="InProgress">Đang thực hiện</MenuItem>
+            <MenuItem value="NotStarted">Chưa bắt đầu</MenuItem>
+            <MenuItem value="Completed">Hoàn thành</MenuItem>
+            <MenuItem value="OnHold">Tạm dừng</MenuItem>
+            <MenuItem value="Overdue">Trễ tiến độ</MenuItem>
+          </Select>
+        </FormControl>
 
-      <FormControl size="small" sx={{ minWidth: 135 }}>
-        <Select
-          value={selectedDatePreset}
-          onChange={(e) => handlePresetChange(e.target.value)}
-          sx={{
-            height: 32,
-            bgcolor: '#ffffff',
-            fontSize: '0.8rem',
-          }}
-        >
-          <MenuItem value="ALL">Tất cả thời gian</MenuItem>
-          <MenuItem value="THIS_MONTH">Tháng này</MenuItem>
-          <MenuItem value="THIS_QUARTER">Quý này</MenuItem>
-          <MenuItem value="NEXT_6_MONTHS">6 tháng tới</MenuItem>
-          <MenuItem value="THIS_YEAR">Năm nay</MenuItem>
-          <MenuItem value="CUSTOM">Tùy chỉnh...</MenuItem>
-        </Select>
-      </FormControl>
+        <FormControl size="small" sx={{ width: { xs: '50%', sm: 135 }, minWidth: { xs: '50%', sm: 135 } }}>
+          <Select
+            value={selectedDatePreset}
+            onChange={(e) => handlePresetChange(e.target.value)}
+            sx={{
+              height: 32,
+              bgcolor: '#ffffff',
+              fontSize: '0.8rem',
+            }}
+          >
+            <MenuItem value="ALL">Tất cả thời gian</MenuItem>
+            <MenuItem value="THIS_MONTH">Tháng này</MenuItem>
+            <MenuItem value="THIS_QUARTER">Quý này</MenuItem>
+            <MenuItem value="NEXT_6_MONTHS">6 tháng tới</MenuItem>
+            <MenuItem value="THIS_YEAR">Năm nay</MenuItem>
+            <MenuItem value="CUSTOM">Tùy chỉnh...</MenuItem>
+          </Select>
+        </FormControl>
+      </Box>
 
       {selectedDatePreset === 'CUSTOM' && (
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, width: { xs: '100%', sm: 'auto' } }}>
           <DatePicker
             label="Từ ngày"
             value={customStartDate ? new Date(customStartDate) : null}
@@ -278,7 +280,7 @@ export const GanttPage: React.FC = () => {
               textField: {
                 size: 'small',
                 sx: {
-                  width: 140,
+                  width: { xs: 'calc(50% - 10px)', sm: 135 },
                   bgcolor: '#ffffff',
                   '& .MuiOutlinedInput-root': { height: 32, fontSize: '0.78rem' },
                 },
@@ -296,7 +298,7 @@ export const GanttPage: React.FC = () => {
               textField: {
                 size: 'small',
                 sx: {
-                  width: 140,
+                  width: { xs: 'calc(50% - 10px)', sm: 135 },
                   bgcolor: '#ffffff',
                   '& .MuiOutlinedInput-root': { height: 32, fontSize: '0.78rem' },
                 },
@@ -328,6 +330,9 @@ export const GanttPage: React.FC = () => {
           md: 'calc(100vh - 132px)',
         },
         minHeight: 520,
+        width: '100%',
+        maxWidth: '100%',
+        minWidth: 0,
         overflow: 'hidden',
       }}
     >
@@ -340,6 +345,7 @@ export const GanttPage: React.FC = () => {
           flexWrap: 'wrap',
           gap: 1.5,
           flexShrink: 0,
+          width: '100%',
         }}
       >
         <Box>

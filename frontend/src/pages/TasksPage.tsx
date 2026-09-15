@@ -159,23 +159,23 @@ export const TasksPage: React.FC = () => {
   }, []);
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 2, sm: 3 }, width: '100%', maxWidth: '100%', minWidth: 0, overflowX: 'hidden' }}>
       {/* Header */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
         <Box>
-          <Typography variant="h2" sx={{ fontWeight: 800, fontSize: '1.35rem', color: '#0f172a' }}>
+          <Typography variant="h2" sx={{ fontWeight: 800, fontSize: { xs: '1.15rem', sm: '1.35rem' }, color: '#0f172a' }}>
             Quản Lý Công Việc & Tiến Độ Thi Công
           </Typography>
-          <Typography variant="body2" sx={{ color: '#64748b', mt: 0.25 }}>
+          <Typography variant="body2" sx={{ color: '#64748b', mt: 0.25, fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
             Tra cứu, cập nhật tiến độ, bình luận và theo dõi deadline toàn hệ thống
           </Typography>
         </Box>
       </Box>
 
       {/* Filters Toolbar */}
-      <Paper sx={{ p: 2, border: '1px solid #e2e8f0', borderRadius: '8px', display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
+      <Paper sx={{ p: { xs: 1.5, sm: 2 }, border: '1px solid #e2e8f0', borderRadius: '8px', display: 'flex', gap: 1.5, flexWrap: 'wrap', alignItems: 'center', width: '100%', maxWidth: '100%' }}>
         {/* Compact Search Input */}
-        <Box sx={{ width: { xs: '100%', sm: 260 } }}>
+        <Box sx={{ width: { xs: '100%', sm: 240 }, flexGrow: 1, minWidth: 0 }}>
           <TextField
             size="small"
             fullWidth
@@ -216,46 +216,48 @@ export const TasksPage: React.FC = () => {
               placeholder="Gõ tìm kiếm dự án..."
             />
           )}
-          sx={{ minWidth: { xs: '100%', sm: 260 }, width: { xs: '100%', sm: 260 } }}
+          sx={{ width: { xs: '100%', sm: 240 }, minWidth: { xs: '100%', sm: 240 } }}
         />
 
-        <FormControl size="small" sx={{ minWidth: 160 }}>
-          <InputLabel>Trạng Thái</InputLabel>
-          <Select
-            value={selectedStatus}
-            label="Trạng Thái"
-            onChange={(e) => {
-              setSelectedStatus(e.target.value);
-              setPage(0);
-            }}
-          >
-            <MenuItem value="ALL">Tất cả</MenuItem>
-            <MenuItem value="InProgress">Đang thực hiện</MenuItem>
-            <MenuItem value="Completed">Hoàn thành</MenuItem>
-            <MenuItem value="NotStarted">Chưa bắt đầu</MenuItem>
-            <MenuItem value="OnHold">Tạm dừng</MenuItem>
-          </Select>
-        </FormControl>
+        <Box sx={{ display: 'flex', gap: 1, width: { xs: '100%', sm: 'auto' }, flexWrap: 'nowrap' }}>
+          <FormControl size="small" sx={{ width: { xs: '50%', sm: 145 }, minWidth: { xs: '50%', sm: 145 } }}>
+            <InputLabel>Trạng Thái</InputLabel>
+            <Select
+              value={selectedStatus}
+              label="Trạng Thái"
+              onChange={(e) => {
+                setSelectedStatus(e.target.value);
+                setPage(0);
+              }}
+            >
+              <MenuItem value="ALL">Tất cả</MenuItem>
+              <MenuItem value="InProgress">Đang thực hiện</MenuItem>
+              <MenuItem value="Completed">Hoàn thành</MenuItem>
+              <MenuItem value="NotStarted">Chưa bắt đầu</MenuItem>
+              <MenuItem value="OnHold">Tạm dừng</MenuItem>
+            </Select>
+          </FormControl>
 
-        <FormControl size="small" sx={{ minWidth: 140 }}>
-          <InputLabel>Độ Ưu Tiên</InputLabel>
-          <Select
-            value={selectedPriority}
-            label="Độ Ưu Tiên"
-            onChange={(e) => {
-              setSelectedPriority(e.target.value);
-              setPage(0);
-            }}
-          >
-            <MenuItem value="ALL">Tất cả</MenuItem>
-            <MenuItem value="Urgent">Khẩn cấp</MenuItem>
-            <MenuItem value="High">Cao</MenuItem>
-            <MenuItem value="Medium">Trung bình</MenuItem>
-            <MenuItem value="Low">Thấp</MenuItem>
-          </Select>
-        </FormControl>
+          <FormControl size="small" sx={{ width: { xs: '50%', sm: 135 }, minWidth: { xs: '50%', sm: 135 } }}>
+            <InputLabel>Độ Ưu Tiên</InputLabel>
+            <Select
+              value={selectedPriority}
+              label="Độ Ưu Tiên"
+              onChange={(e) => {
+                setSelectedPriority(e.target.value);
+                setPage(0);
+              }}
+            >
+              <MenuItem value="ALL">Tất cả</MenuItem>
+              <MenuItem value="Urgent">Khẩn cấp</MenuItem>
+              <MenuItem value="High">Cao</MenuItem>
+              <MenuItem value="Medium">Trung bình</MenuItem>
+              <MenuItem value="Low">Thấp</MenuItem>
+            </Select>
+          </FormControl>
+        </Box>
 
-        <Box sx={{ ml: 'auto' }}>
+        <Box sx={{ ml: { xs: 0, sm: 'auto' } }}>
           <ToggleButtonGroup
             size="small"
             value={viewMode}
@@ -278,15 +280,15 @@ export const TasksPage: React.FC = () => {
       ) : viewMode === 'grid' ? (
         <>
           {tasks.length === 0 ? (
-            <Paper sx={{ p: 6, textAlign: 'center', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+            <Paper sx={{ p: { xs: 3, sm: 6 }, textAlign: 'center', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
               <Typography variant="body2" sx={{ color: '#94a3b8' }}>
                 Không tìm thấy công việc nào phù hợp với điều kiện lọc.
               </Typography>
             </Paper>
           ) : (
-            <Grid container spacing={2}>
+            <Grid container spacing={{ xs: 2, sm: 2.5 }} sx={{ width: '100%', m: 0 }}>
               {tasks.map((t) => (
-                <Grid item xs={12} sm={6} md={4} key={t.id}>
+                <Grid item xs={12} sm={6} md={4} key={t.id} sx={{ minWidth: 0, width: '100%', pl: { xs: '0 !important', sm: '16px !important' }, pt: { xs: '16px !important', sm: '16px !important' } }}>
                   <TaskCard
                     task={t}
                     onCardClick={handleRowClick}

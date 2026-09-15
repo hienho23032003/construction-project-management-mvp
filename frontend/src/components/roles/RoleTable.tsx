@@ -32,11 +32,10 @@ export const RoleTable: React.FC<RoleTableProps> = memo(({
       {
         id: 'name',
         header: 'Tên & Mã Vai Trò',
-        width: '20%',
-        maxWidth: 220,
+        minWidth: 170,
         cell: ({ row }) => (
-          <Box>
-            <Typography variant="body2" sx={{ fontWeight: 700, color: '#0f172a' }} noWrap>
+          <Box sx={{ whiteSpace: 'nowrap' }}>
+            <Typography variant="body2" sx={{ fontWeight: 700, color: '#0f172a', whiteSpace: 'nowrap' }}>
               {row.name}
             </Typography>
             <Typography
@@ -51,6 +50,7 @@ export const RoleTable: React.FC<RoleTableProps> = memo(({
                 borderRadius: 1,
                 display: 'inline-block',
                 mt: 0.2,
+                whiteSpace: 'nowrap',
               }}
             >
               {row.code}
@@ -61,21 +61,15 @@ export const RoleTable: React.FC<RoleTableProps> = memo(({
       {
         id: 'description',
         header: 'Mô Tả Nhiệm Vụ',
-        width: '25%',
-        maxWidth: { xs: 180, sm: 260 },
+        minWidth: 220,
         accessorKey: 'description',
-        ellipsis: true,
         cell: ({ value }) => (
           <Typography
             variant="body2"
-            noWrap
             sx={{
               color: '#64748b',
               fontSize: '0.8rem',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
               whiteSpace: 'nowrap',
-              display: 'block',
             }}
             title={value || ''}
           >
@@ -86,7 +80,7 @@ export const RoleTable: React.FC<RoleTableProps> = memo(({
       {
         id: 'classification',
         header: 'Phân Loại',
-        width: '10%',
+        minWidth: 110,
         cell: ({ row }) =>
           row.isSystem ? (
             <Chip
@@ -98,6 +92,7 @@ export const RoleTable: React.FC<RoleTableProps> = memo(({
                 color: '#475569',
                 fontWeight: 600,
                 fontSize: '0.7rem',
+                whiteSpace: 'nowrap',
               }}
             />
           ) : (
@@ -110,6 +105,7 @@ export const RoleTable: React.FC<RoleTableProps> = memo(({
                 color: '#a855f7',
                 fontWeight: 600,
                 fontSize: '0.7rem',
+                whiteSpace: 'nowrap',
               }}
             />
           ),
@@ -118,10 +114,10 @@ export const RoleTable: React.FC<RoleTableProps> = memo(({
         id: 'userCount',
         header: 'Nhân Sự',
         align: 'center',
-        width: '8%',
+        minWidth: 90,
         accessorKey: 'userCount',
         cell: ({ value }) => (
-          <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5, color: '#475569' }}>
+          <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5, color: '#475569', whiteSpace: 'nowrap' }}>
             <Users size={15} color="#0284c7" />
             <Typography variant="body2" sx={{ fontWeight: 700, fontSize: '0.825rem' }}>
               {value}
@@ -132,20 +128,19 @@ export const RoleTable: React.FC<RoleTableProps> = memo(({
       {
         id: 'permissions',
         header: 'Quyền Hạn Cấp',
-        width: '20%',
-        maxWidth: 200,
+        minWidth: 200,
         cell: ({ row }) => {
           const moduleTags = getRoleModuleTags(row.permissions);
           const isSuperAdminRole = row.code === 'SuperAdmin';
 
           return (
-            <Box sx={{ display: 'flex', flexWrap: 'nowrap', gap: 0.5, overflow: 'hidden' }}>
+            <Box sx={{ display: 'flex', flexWrap: 'nowrap', gap: 0.5, whiteSpace: 'nowrap' }}>
               {isSuperAdminRole ? (
                 <Chip
                   icon={<CheckCircle2 size={12} />}
                   label="Toàn Quyền"
                   size="small"
-                  sx={{ bgcolor: '#f0fdf4', color: '#16a34a', fontSize: '0.7rem', fontWeight: 700 }}
+                  sx={{ bgcolor: '#f0fdf4', color: '#16a34a', fontSize: '0.7rem', fontWeight: 700, whiteSpace: 'nowrap' }}
                 />
               ) : (
                 <Chip
@@ -156,6 +151,7 @@ export const RoleTable: React.FC<RoleTableProps> = memo(({
                     color: '#0369a1',
                     fontWeight: 700,
                     fontSize: '0.7rem',
+                    whiteSpace: 'nowrap',
                   }}
                 />
               )}
@@ -164,14 +160,14 @@ export const RoleTable: React.FC<RoleTableProps> = memo(({
                   key={t.name}
                   label={`${t.name} (${t.count})`}
                   size="small"
-                  sx={{ bgcolor: '#f8fafc', color: '#334155', fontSize: '0.7rem', height: 22 }}
+                  sx={{ bgcolor: '#f8fafc', color: '#334155', fontSize: '0.7rem', height: 22, whiteSpace: 'nowrap' }}
                 />
               ))}
               {moduleTags.length > 1 && (
                 <Chip
                   label={`+${moduleTags.length - 1}`}
                   size="small"
-                  sx={{ bgcolor: '#f1f5f9', color: '#475569', fontSize: '0.7rem', height: 22 }}
+                  sx={{ bgcolor: '#f1f5f9', color: '#475569', fontSize: '0.7rem', height: 22, whiteSpace: 'nowrap' }}
                 />
               )}
             </Box>
@@ -182,7 +178,7 @@ export const RoleTable: React.FC<RoleTableProps> = memo(({
         id: 'actions',
         header: 'Thao Tác',
         align: 'right',
-        width: '12%',
+        minWidth: 90,
         cell: ({ row }) => (
           <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 0.5 }}>
             <Tooltip title="Chỉnh sửa quyền">

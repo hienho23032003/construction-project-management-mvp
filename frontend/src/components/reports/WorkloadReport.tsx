@@ -33,33 +33,26 @@ export const WorkloadReport: React.FC<WorkloadReportProps> = memo(
           id: 'fullName',
           header: 'Họ Và Tên',
           accessorKey: 'fullName',
-          width: '15%',
-          minWidth: 160,
-          ellipsis: true,
-          cellSx: { fontWeight: 700 },
+          minWidth: 170,
+          cellSx: { fontWeight: 700, color: '#0f172a' },
         },
         {
           id: 'department',
           header: 'Phòng Ban',
           accessorFn: (row) => row.department || '-',
-          width: '15%',
-          minWidth: 130,
-          ellipsis: true,
+          minWidth: 140,
         },
         {
           id: 'email',
           header: 'Email',
           accessorKey: 'email',
-          width: '20%',
-          minWidth: 150,
-          ellipsis: true,
+          minWidth: 170,
         },
         {
           id: 'totalTasks',
           header: 'Tổng Task',
           accessorKey: 'totalTasks',
           align: 'center',
-          width: '8%',
           minWidth: 80,
           cellSx: { fontWeight: 700 },
         },
@@ -68,7 +61,6 @@ export const WorkloadReport: React.FC<WorkloadReportProps> = memo(
           header: 'Đang Làm',
           accessorKey: 'activeTasks',
           align: 'center',
-          width: '8%',
           minWidth: 80,
           cell: ({ value }) => (
             <span style={{ color: '#0284c7', fontWeight: 700 }}>{value}</span>
@@ -79,7 +71,6 @@ export const WorkloadReport: React.FC<WorkloadReportProps> = memo(
           header: 'Hoàn Thành',
           accessorKey: 'completedTasks',
           align: 'center',
-          width: '8%',
           minWidth: 90,
           cell: ({ value }) => (
             <span style={{ color: '#10b981', fontWeight: 700 }}>{value}</span>
@@ -90,7 +81,6 @@ export const WorkloadReport: React.FC<WorkloadReportProps> = memo(
           header: 'Quá Hạn',
           accessorKey: 'overdueTasks',
           align: 'center',
-          width: '8%',
           minWidth: 80,
           cell: ({ value }) => (
             <span style={{ color: '#ef4444', fontWeight: 700 }}>{value}</span>
@@ -100,7 +90,6 @@ export const WorkloadReport: React.FC<WorkloadReportProps> = memo(
           id: 'averageProgress',
           header: 'Tiến Độ TB',
           accessorKey: 'averageProgress',
-          width: '15%',
           minWidth: 120,
           cell: ({ value }) => <ProgressBar value={value} height={7} />,
         },

@@ -231,10 +231,29 @@ export function CommonTable<T = any>({
   // Cell padding based on density
   const cellPadding = densityPaddingMap[density];
 
+  // Responsive minWidth ensuring full-content horizontal scrolling on mobile and 100% stretch on desktop
+  const computedMinWidth = useMemo(() => {
+    if (typeof minWidth === 'object' && minWidth !== null) {
+      return {
+        ...minWidth,
+        xs: 'max-content',
+        sm: 'max-content',
+        md: (minWidth as any).md || '100%',
+      };
+    }
+    return {
+      xs: 'max-content',
+      sm: 'max-content',
+      md: minWidth || '100%',
+    };
+  }, [minWidth]);
+
   return (
     <Box
       sx={{
         width: '100%',
+        maxWidth: '100%',
+        minWidth: 0,
         bgcolor: '#ffffff',
         borderRadius: '8px',
         border: bordered ? '1px solid #e2e8f0' : 'none',
@@ -246,16 +265,20 @@ export function CommonTable<T = any>({
     >
       <TableContainer
         sx={{
-          overflow: 'auto',
+          overflowX: 'auto',
+          overflowY: 'auto',
           maxHeight,
           width: '100%',
+          maxWidth: '100%',
+          WebkitOverflowScrolling: 'touch',
         }}
       >
         <Table
           stickyHeader={stickyHeader}
           sx={{
-            minWidth: minWidth as any,
-            tableLayout,
+            width: '100%',
+            minWidth: computedMinWidth as any,
+            tableLayout: { xs: 'auto !important', sm: 'auto !important', md: tableLayout || 'auto' },
             borderCollapse: 'separate',
             ...tableSx,
           }}
@@ -329,9 +352,10 @@ export function CommonTable<T = any>({
                     key={colKey}
                     align={col.align || 'left'}
                     sx={{
-                      width: col.width as any,
-                      minWidth: col.minWidth as any,
+                      width: { xs: 'auto', md: col.width as any },
+                      minWidth: (col.minWidth as any) || (typeof col.width === 'number' ? col.width : undefined),
                       maxWidth: col.maxWidth as any,
+                      whiteSpace: 'nowrap',
                       ...col.headerSx,
                     }}
                   >
@@ -410,8 +434,8 @@ export function CommonTable<T = any>({
                         px: cellPadding.px,
                         fontSize: '0.8125rem',
                         whiteSpace: 'nowrap',
-                        width: col.width as any,
-                        minWidth: col.minWidth as any,
+                        width: { xs: 'auto', md: col.width as any },
+                        minWidth: (col.minWidth as any) || (typeof col.width === 'number' ? col.width : undefined),
                         maxWidth: col.maxWidth as any,
                         borderBottom: '1px solid #f1f5f9',
                         ...(typeof col.cellSx === 'object' ? col.cellSx : {}),
@@ -592,30 +616,12 @@ export function CommonTable<T = any>({
 
                         // Text auto truncation & tooltip title
                         let finalCellContent: React.ReactNode = content;
-                        if (typeof content === 'string' || typeof content === 'number') {
-                          const strVal = String(content);
-                          finalCellContent = (
-                            <Box
-                              component="span"
-                              title={strVal}
-                              sx={{
-                                display: 'block',
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                whiteSpace: 'nowrap',
-                                maxWidth: '100%',
-                                fontSize: 'inherit',
-                                fontWeight: 'inherit',
-                                color: 'inherit',
-                              }}
-                            >
-                              {strVal}
-                            </Box>
-                          );
-                        } else if (col.ellipsis) {
+                        if (col.ellipsis) {
                           const titleVal =
                             typeof cellValue === 'string' || typeof cellValue === 'number'
                               ? String(cellValue)
+                              : typeof content === 'string'
+                              ? content
                               : undefined;
                           finalCellContent = (
                             <Box
@@ -626,11 +632,26 @@ export function CommonTable<T = any>({
                                 overflow: 'hidden',
                                 textOverflow: 'ellipsis',
                                 whiteSpace: 'nowrap',
-                                maxWidth: '100%',
+                                maxWidth: col.maxWidth || 280,
                               }}
                             >
                               {content}
                             </Box>
+                          );
+                        } else if (typeof content === 'string' || typeof content === 'number') {
+                          finalCellContent = (
+                            <Typography
+                              component="span"
+                              variant="body2"
+                              sx={{
+                                fontSize: 'inherit',
+                                fontWeight: 'inherit',
+                                color: 'inherit',
+                                whiteSpace: 'nowrap',
+                              }}
+                            >
+                              {content}
+                            </Typography>
                           );
                         }
 
@@ -643,11 +664,9 @@ export function CommonTable<T = any>({
                               px: cellPadding.px,
                               fontSize: '0.8125rem',
                               color: '#1e293b',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
                               whiteSpace: 'nowrap',
-                              width: col.width as any,
-                              minWidth: col.minWidth as any,
+                              width: { xs: 'auto', md: col.width as any },
+                              minWidth: (col.minWidth as any) || (typeof col.width === 'number' ? col.width : undefined),
                               maxWidth: col.maxWidth as any,
                               borderBottom: '1px solid #f1f5f9',
                               ...customCellSx,

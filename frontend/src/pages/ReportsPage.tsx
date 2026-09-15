@@ -118,14 +118,14 @@ export const ReportsPage: React.FC = () => {
   };
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 2, sm: 3 }, width: '100%', maxWidth: '100%', minWidth: 0, overflowX: 'hidden' }}>
       {/* Header */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1.5, width: '100%' }}>
         <Box>
-          <Typography variant="h2" sx={{ fontWeight: 800, fontSize: '1.35rem', color: '#0f172a' }}>
+          <Typography variant="h2" sx={{ fontWeight: 800, fontSize: { xs: '1.15rem', sm: '1.35rem' }, color: '#0f172a' }}>
             Trung Tâm Báo Cáo & Xuất Dữ Liệu
           </Typography>
-          <Typography variant="body2" sx={{ color: '#64748b', mt: 0.25 }}>
+          <Typography variant="body2" sx={{ color: '#64748b', mt: 0.25, fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
             Báo cáo tổng hợp tiến độ, phân tích trễ hạn và khối lượng thực hiện
           </Typography>
         </Box>
@@ -142,10 +142,10 @@ export const ReportsPage: React.FC = () => {
       </Box>
 
       {/* Filter Toolbar */}
-      <Paper sx={{ p: 2, border: '1px solid #e2e8f0', borderRadius: '8px', display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+      <Paper sx={{ p: { xs: 1.5, sm: 2 }, border: '1px solid #e2e8f0', borderRadius: '8px', display: 'flex', gap: 1.5, flexWrap: 'wrap', width: '100%', maxWidth: '100%' }}>
         <Autocomplete
           size="small"
-          sx={{ minWidth: 260 }}
+          sx={{ width: { xs: '100%', sm: 260 } }}
           options={[{ id: '', code: 'ALL', name: 'Tất cả dự án' }, ...projects]}
           getOptionLabel={(p) => (p.id ? `${p.code} - ${p.name}` : p.name)}
           value={projects.find((p) => p.id === selectedProjectId) || { id: '', code: 'ALL', name: 'Tất cả dự án' }}
@@ -158,7 +158,7 @@ export const ReportsPage: React.FC = () => {
 
         <Autocomplete
           size="small"
-          sx={{ minWidth: 260 }}
+          sx={{ width: { xs: '100%', sm: 260 } }}
           options={[{ id: '', fullName: 'Tất cả nhân sự', department: '' }, ...users]}
           getOptionLabel={(u) => (u.id ? `${u.fullName} (${u.department || 'Chưa phân ban'})` : u.fullName)}
           value={users.find((u) => u.id === selectedUserId) || { id: '', fullName: 'Tất cả nhân sự', department: '' }}
@@ -171,18 +171,21 @@ export const ReportsPage: React.FC = () => {
       </Paper>
 
       {/* Tab Navigation & Report Table */}
-      <Paper sx={{ border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden' }}>
+      <Paper sx={{ border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden', width: '100%', maxWidth: '100%' }}>
         <Tabs
           value={activeTab}
           onChange={(_, val) => {
             setActiveTab(val);
             setPage(0);
           }}
+          variant="scrollable"
+          scrollButtons="auto"
+          allowScrollButtonsMobile
           sx={{
             borderBottom: '1px solid #e2e8f0',
             bgcolor: '#f8fafc',
-            px: 2,
-            '& .MuiTab-root': { fontWeight: 700, textTransform: 'none', fontSize: '0.9rem', py: 1.5 },
+            px: { xs: 1, sm: 2 },
+            '& .MuiTab-root': { fontWeight: 700, textTransform: 'none', fontSize: { xs: '0.8125rem', sm: '0.9rem' }, py: 1.5, minWidth: 'auto', px: { xs: 1.5, sm: 2 } },
           }}
         >
           <Tab label="1. Báo Cáo Tiến Độ Công Trình" icon={<BarChart3 size={17} />} iconPosition="start" />

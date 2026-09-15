@@ -27,9 +27,18 @@ export const ProjectMembersTab: React.FC<ProjectMembersTabProps> = memo(({
   onRemoveMember,
 }) => {
   return (
-    <Box sx={{ p: 3 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2.5 }}>
-        <Typography variant="h4" sx={{ fontWeight: 700, fontSize: '1rem' }}>
+    <Box sx={{ p: { xs: 1.5, sm: 3 } }}>
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: { xs: 'column', sm: 'row' },
+          justifyContent: 'space-between',
+          alignItems: { xs: 'stretch', sm: 'center' },
+          gap: 1.5,
+          mb: 2.5,
+        }}
+      >
+        <Typography variant="h4" sx={{ fontWeight: 700, fontSize: { xs: '0.95rem', sm: '1.05rem' }, color: '#0f172a' }}>
           Đội Ngũ Ban Quản Lý & Kỹ Sư Công Trình ({members.length} nhân sự)
         </Typography>
         {canEditTask && (
@@ -38,7 +47,7 @@ export const ProjectMembersTab: React.FC<ProjectMembersTabProps> = memo(({
             size="small"
             startIcon={<Plus size={15} />}
             onClick={onOpenAddMember}
-            sx={{ fontWeight: 600 }}
+            sx={{ fontWeight: 600, whiteSpace: 'nowrap', minWidth: 'fit-content' }}
           >
             Thêm Thành Viên
           </Button>

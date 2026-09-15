@@ -146,7 +146,7 @@ export const DashboardPage: React.FC = () => {
   }
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, width: '100%', maxWidth: '100%', minWidth: 0, overflowX: 'hidden' }}>
       {/* Date Filter Toolbar */}
       <DashboardDateFilter
         selectedPreset={selectedPreset}

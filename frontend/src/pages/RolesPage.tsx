@@ -143,7 +143,7 @@ export const RolesPage: React.FC = () => {
   };
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 2, sm: 3 }, width: '100%', maxWidth: '100%', minWidth: 0, overflowX: 'hidden' }}>
       {/* Header */}
       <Box
         sx={{
@@ -151,7 +151,8 @@ export const RolesPage: React.FC = () => {
           flexDirection: { xs: 'column', sm: 'row' },
           justifyContent: 'space-between',
           alignItems: { xs: 'flex-start', sm: 'center' },
-          gap: 2,
+          gap: 1.5,
+          width: '100%',
         }}
       >
         <Box>
@@ -164,15 +165,16 @@ export const RolesPage: React.FC = () => {
                 color: '#0284c7',
                 display: 'flex',
                 alignItems: 'center',
+                flexShrink: 0,
               }}
             >
               <Settings size={26} />
             </Box>
             <Box>
-              <Typography variant="h5" sx={{ fontWeight: 800, color: '#0f172a' }}>
+              <Typography variant="h5" sx={{ fontWeight: 800, color: '#0f172a', fontSize: { xs: '1.15rem', sm: '1.35rem' } }}>
                 Phân Quyền & Quản Lý Vai Trò
               </Typography>
-              <Typography variant="body2" sx={{ color: '#64748b' }}>
+              <Typography variant="body2" sx={{ color: '#64748b', fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
                 Tự định nghĩa các vai trò, thiết lập ma trận quyền hạn cho từng chức năng và gắn vai trò cho nhân sự
               </Typography>
             </Box>
@@ -192,6 +194,7 @@ export const RolesPage: React.FC = () => {
               py: 1,
               fontWeight: 600,
               boxShadow: '0 4px 12px rgba(2, 132, 199, 0.25)',
+              whiteSpace: 'nowrap',
             }}
           >
             Thêm Vai Trò Mới
@@ -206,12 +209,14 @@ export const RolesPage: React.FC = () => {
           alignItems: 'center',
           justifyContent: 'space-between',
           bgcolor: '#ffffff',
-          p: 2,
+          p: { xs: 1.5, sm: 2 },
           borderRadius: '8px',
           border: '1px solid #e2e8f0',
           boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)',
           flexWrap: 'wrap',
-          gap: 2,
+          gap: 1.5,
+          width: '100%',
+          maxWidth: '100%',
         }}
       >
         <TextField
@@ -229,7 +234,7 @@ export const RolesPage: React.FC = () => {
           }}
         />
 
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, ml: 'auto' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, ml: { xs: 0, sm: 'auto' } }}>
           <Typography variant="caption" sx={{ color: '#66594d', fontWeight: 600, display: { xs: 'none', sm: 'block' } }}>
             Tổng cộng: {filteredRoles.length} vai trò
           </Typography>
@@ -258,28 +263,22 @@ export const RolesPage: React.FC = () => {
       ) : filteredRoles.length === 0 ? (
         <Box
           sx={{
-            p: 6,
+            p: { xs: 4, sm: 8 },
             textAlign: 'center',
             bgcolor: '#ffffff',
             borderRadius: '8px',
-            border: '1px dashed #cbd5e1',
+            border: '1px solid #e2e8f0',
           }}
         >
-          <Settings size={48} color="#94a3b8" style={{ marginBottom: 12 }} />
-          <Typography variant="h6" sx={{ fontWeight: 700, color: '#334155', mb: 0.5 }}>
+          <Typography variant="h6" sx={{ color: '#475569', fontWeight: 700 }}>
             Không tìm thấy vai trò nào
           </Typography>
-          <Typography variant="body2" sx={{ color: '#64748b', mb: 2 }}>
-            {search ? 'Thử thay đổi từ khóa tìm kiếm' : 'Hãy tạo vai trò đầu tiên để bắt đầu phân quyền'}
+          <Typography variant="body2" sx={{ color: '#94a3b8', mt: 0.5 }}>
+            Thử tìm kiếm với từ khóa khác hoặc tạo mới vai trò.
           </Typography>
-          {canManageRoles && !search && (
-            <Button variant="contained" startIcon={<Plus size={16} />} onClick={handleOpenCreate}>
-              Tạo Vai Trò Ngay
-            </Button>
-          )}
         </Box>
       ) : viewMode === 'table' ? (
-        <Paper sx={{ border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden', bgcolor: '#ffffff' }}>
+        <Paper sx={{ border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden', bgcolor: '#ffffff', width: '100%', maxWidth: '100%' }}>
           <RoleTable
             roles={filteredRoles}
             getRoleModuleTags={getRoleModuleTags}
@@ -289,13 +288,13 @@ export const RolesPage: React.FC = () => {
           />
         </Paper>
       ) : (
-        <Grid container spacing={2.5}>
+        <Grid container spacing={{ xs: 2, sm: 2.5 }} sx={{ width: '100%', m: 0 }}>
           {filteredRoles.map((role) => {
             const moduleTags = getRoleModuleTags(role.permissions);
             const isSuperAdminRole = role.code === 'SuperAdmin';
 
             return (
-              <Grid item xs={12} md={6} lg={4} key={role.id}>
+              <Grid item xs={12} md={6} lg={4} key={role.id} sx={{ minWidth: 0, width: '100%', pl: { xs: '0 !important', sm: '20px !important' }, pt: { xs: '16px !important', sm: '20px !important' } }}>
                 <Card
                   variant="outlined"
                   sx={{

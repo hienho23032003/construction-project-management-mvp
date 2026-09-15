@@ -116,7 +116,7 @@ export const ProjectsPage: React.FC = () => {
   };
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 2, sm: 3 }, width: '100%', maxWidth: '100%', minWidth: 0, overflowX: 'hidden' }}>
       {/* Header */}
       <Box
         sx={{
@@ -124,14 +124,15 @@ export const ProjectsPage: React.FC = () => {
           justifyContent: 'space-between',
           alignItems: 'center',
           flexWrap: 'wrap',
-          gap: 2,
+          gap: 1.5,
+          width: '100%',
         }}
       >
         <Box>
-          <Typography variant="h2" sx={{ fontWeight: 800, fontSize: '1.35rem', color: '#0f172a' }}>
+          <Typography variant="h2" sx={{ fontWeight: 800, fontSize: { xs: '1.15rem', sm: '1.35rem' }, color: '#0f172a' }}>
             Quản Lý Công Trình & Dự Án
           </Typography>
-          <Typography variant="body2" sx={{ color: '#64748b', mt: 0.25 }}>
+          <Typography variant="body2" sx={{ color: '#64748b', mt: 0.25, fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
             Theo dõi tiến độ, phân bổ nguồn lực và trạng thái các dự án xây dựng
           </Typography>
         </Box>
@@ -154,18 +155,20 @@ export const ProjectsPage: React.FC = () => {
       {/* Filter Toolbar */}
       <Paper
         sx={{
-          p: 2,
+          p: { xs: 1.5, sm: 2 },
           display: 'flex',
           alignItems: 'center',
-          gap: 2,
+          gap: 1.5,
           flexWrap: 'wrap',
           border: '1px solid #e2e8f0',
           borderRadius: '8px',
           bgcolor: '#ffffff',
           boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+          width: '100%',
+          maxWidth: '100%',
         }}
       >
-        <Box sx={{ minWidth: 260, flexGrow: 1, maxWidth: { xs: '100%', sm: 380 } }}>
+        <Box sx={{ width: { xs: '100%', sm: 320 }, flexGrow: 1, minWidth: 0 }}>
           <TextField
             size="small"
             fullWidth
@@ -185,25 +188,27 @@ export const ProjectsPage: React.FC = () => {
           />
         </Box>
 
-        <CommonSelect
-          label="Trạng Thái"
-          value={statusFilter}
-          onChange={(val) => {
-            setStatusFilter(val);
-            setPage(0);
-          }}
-          minWidth={180}
-          options={[
-            { value: 'ALL', label: 'Tất cả trạng thái' },
-            { value: 'InProgress', label: 'Đang thực hiện', color: '#0284c7' },
-            { value: 'Completed', label: 'Hoàn thành', color: '#10b981' },
-            { value: 'NotStarted', label: 'Chưa bắt đầu', color: '#64748b' },
-            { value: 'OnHold', label: 'Tạm dừng', color: '#f59e0b' },
-            { value: 'Overdue', label: 'Trễ tiến độ', color: '#ef4444' },
-          ]}
-        />
+        <Box sx={{ width: { xs: '100%', sm: 'auto' } }}>
+          <CommonSelect
+            label="Trạng Thái"
+            value={statusFilter}
+            onChange={(val) => {
+              setStatusFilter(val);
+              setPage(0);
+            }}
+            minWidth={180}
+            options={[
+              { value: 'ALL', label: 'Tất cả trạng thái' },
+              { value: 'InProgress', label: 'Đang thực hiện', color: '#0284c7' },
+              { value: 'Completed', label: 'Hoàn thành', color: '#10b981' },
+              { value: 'NotStarted', label: 'Chưa bắt đầu', color: '#64748b' },
+              { value: 'OnHold', label: 'Tạm dừng', color: '#f59e0b' },
+              { value: 'Overdue', label: 'Trễ tiến độ', color: '#ef4444' },
+            ]}
+          />
+        </Box>
 
-        <Box sx={{ ml: 'auto' }}>
+        <Box sx={{ ml: { xs: 0, sm: 'auto' } }}>
           <ToggleButtonGroup
             size="small"
             value={viewMode}
@@ -225,7 +230,7 @@ export const ProjectsPage: React.FC = () => {
         isLoading || (isFetching && projects.length === 0) ? (
           <CardGridSkeleton count={rowsPerPage > 6 ? 6 : rowsPerPage} />
         ) : projects.length === 0 ? (
-          <Paper sx={{ p: 6, textAlign: 'center', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+          <Paper sx={{ p: { xs: 3, sm: 6 }, textAlign: 'center', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
             <FolderKanban size={48} color="#94a3b8" style={{ marginBottom: 12 }} />
             <Typography variant="h4" sx={{ color: '#475569', fontWeight: 600 }}>
               Không tìm thấy công trình nào
@@ -236,9 +241,9 @@ export const ProjectsPage: React.FC = () => {
           </Paper>
         ) : (
           <>
-            <Grid container spacing={2.5}>
+            <Grid container spacing={{ xs: 2, sm: 2.5 }} sx={{ width: '100%', m: 0 }}>
               {projects.map((p) => (
-                <Grid item xs={12} md={6} lg={4} key={p.id}>
+                <Grid item xs={12} md={6} lg={4} key={p.id} sx={{ minWidth: 0, width: '100%', pl: { xs: '0 !important', sm: '20px !important' }, pt: { xs: '16px !important', sm: '20px !important' } }}>
                   <ProjectCard
                     project={p}
                     onCardClick={(id) => navigate(`/projects/${id}`)}

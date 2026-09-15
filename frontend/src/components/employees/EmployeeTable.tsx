@@ -48,21 +48,16 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = memo(({
         header: 'Họ Và Tên',
         accessorKey: 'fullName',
         sortable: true,
-        width: '15%',
-        minWidth: 160,
-        ellipsis: true,
+        minWidth: 180,
         cell: ({ row }) => (
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, whiteSpace: 'nowrap' }}>
             <Avatar sx={{ width: 32, height: 32, fontSize: '0.85rem' }}>
               {row.fullName.charAt(0)}
             </Avatar>
             <Typography
               variant="body2"
-              noWrap
               sx={{
                 fontWeight: 700,
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
                 whiteSpace: 'nowrap',
               }}
             >
@@ -76,14 +71,12 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = memo(({
         header: 'Email',
         accessorKey: 'email',
         sortable: true,
-        width: '20%',
-        minWidth: 150,
-        ellipsis: true,
+        minWidth: 180,
       },
       {
         id: 'phone',
-        width: '10%',
         header: 'Số Điện Thoại',
+        minWidth: 120,
         accessorFn: (row) => row.phone || '-',
       },
       {
@@ -91,9 +84,7 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = memo(({
         header: 'Phòng Ban',
         accessorKey: 'department',
         sortable: true,
-        width: '18%',
-        minWidth: 130,
-        ellipsis: true,
+        minWidth: 140,
         cell: ({ value }) => value || 'Chưa phân ban',
       },
       {
@@ -101,7 +92,7 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = memo(({
         header: 'Vai Trò',
         accessorKey: 'role',
         sortable: true,
-        width: '18%',
+        minWidth: 150,
         cell: ({ row }) => (
           <Chip
             label={roleLabels[row.role] || row.roleName || row.role}
@@ -131,7 +122,7 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = memo(({
         id: 'status',
         header: 'Trạng Thái',
         align: 'center',
-        width: '12%',
+        minWidth: 110,
         cell: ({ row }) => {
           const isUserActive = row.isActive ?? true;
           return (
@@ -153,7 +144,7 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = memo(({
         id: 'workload',
         header: 'Đang làm / Xong / Trễ',
         align: 'center',
-        width: '15%',
+        minWidth: 160,
         cell: ({ row }) => {
           const workload = workloads.find((w) => w.userId === row.id) || {
             activeTasks: 0,
@@ -161,7 +152,7 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = memo(({
             overdueTasks: 0,
           };
           return (
-            <span>
+            <span style={{ whiteSpace: 'nowrap' }}>
               <span style={{ color: '#0284c7', fontWeight: 700 }}>{workload.activeTasks}</span> /{' '}
               <span style={{ color: '#10b981', fontWeight: 700 }}>{workload.completedTasks}</span> /{' '}
               <span style={{ color: '#ef4444', fontWeight: 700 }}>{workload.overdueTasks}</span>
@@ -175,7 +166,7 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = memo(({
               id: 'actions',
               header: 'Thao Tác',
               align: 'center' as const,
-              width: '12%',
+              minWidth: 110,
               cell: ({ row }: { row: User }) => {
                 const isUserActive = row.isActive ?? true;
                 return (

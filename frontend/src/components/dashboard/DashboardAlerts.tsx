@@ -23,10 +23,21 @@ export const DashboardAlerts: React.FC<DashboardAlertsProps> = memo(({ data, onS
   };
 
   return (
-    <Grid container spacing={2.5}>
+    <Grid container spacing={{ xs: 2, md: 2.5 }}>
       {/* Critical Overdue Tasks */}
       <Grid item xs={12} md={6}>
-        <Paper sx={{ p: 2.5, border: '1px solid #fee2e2', bgcolor: '#fff5f5', borderRadius: '8px' }}>
+        <Paper
+          sx={{
+            p: { xs: 1.75, sm: 2.5 },
+            border: '1px solid #fee2e2',
+            bgcolor: '#fff5f5',
+            borderRadius: '8px',
+            overflow: 'hidden',
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+          }}
+        >
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <AlertTriangle size={18} color="#ef4444" />
@@ -51,7 +62,7 @@ export const DashboardAlerts: React.FC<DashboardAlertsProps> = memo(({ data, onS
                 gap: 1.5,
                 maxHeight: 340,
                 overflowY: 'auto',
-                pr: 0.5,
+                pr: 1,
                 '&::-webkit-scrollbar': {
                   width: '5px',
                 },
@@ -81,28 +92,28 @@ export const DashboardAlerts: React.FC<DashboardAlertsProps> = memo(({ data, onS
                     transition: 'all 0.15s ease',
                   }}
                 >
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 0.5 }}>
-                    <Box>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 0.75, gap: 1 }}>
+                    <Box sx={{ minWidth: 0, flex: 1 }}>
                       <Chip
                         label={task.projectCode}
                         size="small"
-                        sx={{ height: 20, fontSize: '0.65rem', fontWeight: 700, mr: 1, bgcolor: '#fee2e2', color: '#b91c1c' }}
+                        sx={{ height: 20, fontSize: '0.65rem', fontWeight: 700, mr: 1, bgcolor: '#fee2e2', color: '#b91c1c', verticalAlign: 'middle' }}
                       />
-                      <Typography variant="subtitle2" sx={{ display: 'inline', fontWeight: 700, color: '#0f172a' }}>
+                      <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#0f172a', wordBreak: 'break-word', display: 'inline' }}>
                         {task.taskName}
                       </Typography>
                     </Box>
                     <Chip
                       label={`Trễ ${task.overdueDays} ngày`}
                       size="small"
-                      sx={{ bgcolor: '#ef4444', color: '#ffffff', fontWeight: 700, height: 20, fontSize: '0.65rem' }}
+                      sx={{ bgcolor: '#ef4444', color: '#ffffff', fontWeight: 700, height: 20, fontSize: '0.65rem', flexShrink: 0, whiteSpace: 'nowrap' }}
                     />
                   </Box>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1 }}>
-                    <Typography variant="caption" sx={{ color: '#64748b' }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1, gap: 1 }}>
+                    <Typography variant="caption" sx={{ color: '#64748b', wordBreak: 'break-word' }}>
                       Phụ trách: {task.assigneeNames.join(', ') || 'Chưa gán'}
                     </Typography>
-                    <Typography variant="caption" sx={{ fontWeight: 700, color: '#0284c7' }}>
+                    <Typography variant="caption" sx={{ fontWeight: 700, color: '#0284c7', flexShrink: 0 }}>
                       {task.progress}%
                     </Typography>
                   </Box>
@@ -115,7 +126,17 @@ export const DashboardAlerts: React.FC<DashboardAlertsProps> = memo(({ data, onS
 
       {/* Upcoming Deadlines */}
       <Grid item xs={12} md={6}>
-        <Paper sx={{ p: 2.5, border: '1px solid #e2e8f0', borderRadius: '8px', height: '100%', display: 'flex', flexDirection: 'column' }}>
+        <Paper
+          sx={{
+            p: { xs: 1.75, sm: 2.5 },
+            border: '1px solid #e2e8f0',
+            borderRadius: '8px',
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
+          }}
+        >
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <Calendar size={18} color="#0284c7" />
@@ -140,7 +161,7 @@ export const DashboardAlerts: React.FC<DashboardAlertsProps> = memo(({ data, onS
                 gap: 1.5,
                 maxHeight: 340,
                 overflowY: 'auto',
-                pr: 0.5,
+                pr: 1,
                 '&::-webkit-scrollbar': {
                   width: '5px',
                 },
@@ -170,24 +191,24 @@ export const DashboardAlerts: React.FC<DashboardAlertsProps> = memo(({ data, onS
                     transition: 'all 0.15s ease',
                   }}
                 >
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
-                    <Box>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 0.75, gap: 1 }}>
+                    <Box sx={{ minWidth: 0, flex: 1 }}>
                       <Chip
                         label={task.projectCode}
                         size="small"
-                        sx={{ height: 20, fontSize: '0.65rem', fontWeight: 700, mr: 1, bgcolor: '#e0f2fe', color: '#0369a1' }}
+                        sx={{ height: 20, fontSize: '0.65rem', fontWeight: 700, mr: 1, bgcolor: '#e0f2fe', color: '#0369a1', verticalAlign: 'middle' }}
                       />
-                      <Typography variant="subtitle2" sx={{ display: 'inline', fontWeight: 600 }}>
+                      <Typography variant="subtitle2" sx={{ fontWeight: 600, wordBreak: 'break-word', display: 'inline' }}>
                         {task.taskName}
                       </Typography>
                     </Box>
                     <Chip
                       label={task.daysRemaining === 0 ? 'Hôm nay' : `Còn ${task.daysRemaining} ngày`}
                       size="small"
-                      sx={{ bgcolor: '#fef3c7', color: '#b45309', fontWeight: 700, height: 20, fontSize: '0.65rem' }}
+                      sx={{ bgcolor: '#fef3c7', color: '#b45309', fontWeight: 700, height: 20, fontSize: '0.65rem', flexShrink: 0, whiteSpace: 'nowrap' }}
                     />
                   </Box>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1, gap: 1 }}>
                     <Typography variant="caption" sx={{ color: '#64748b' }}>
                       Hạn: {formatDate(task.plannedEndDate)}
                     </Typography>

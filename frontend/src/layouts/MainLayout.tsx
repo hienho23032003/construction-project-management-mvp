@@ -339,7 +339,7 @@ export const MainLayout: React.FC = () => {
   );
 
   return (
-    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#f8fafc' }}>
+    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#f8fafc', maxWidth: '100vw', overflowX: 'hidden' }}>
       {/* Sidebar Navigation */}
       <Box
         component="nav"
@@ -390,8 +390,11 @@ export const MainLayout: React.FC = () => {
           flexGrow: 1,
           display: 'flex',
           flexDirection: 'column',
-          width: { md: `calc(100% - ${currentDrawerWidth}px)` },
+          minWidth: 0,
+          width: { xs: '100%', md: `calc(100% - ${currentDrawerWidth}px)` },
+          maxWidth: { xs: '100%', md: `calc(100% - ${currentDrawerWidth}px)` },
           transition: 'width 0.25s ease',
+          overflowX: 'hidden',
         }}
       >
         {/* Header Bar */}
@@ -582,7 +585,20 @@ export const MainLayout: React.FC = () => {
         <UserProfileModal open={profileOpen} onClose={() => setProfileOpen(false)} />
 
         {/* Page Outlet */}
-        <Box component="main" sx={{ flexGrow: 1, p: { xs: 1.5, sm: 2.5, md: 3 }, pb: { xs: 9, md: 3 }, overflowY: 'auto' }}>
+        <Box
+          component="main"
+          sx={{
+            flexGrow: 1,
+            p: { xs: 1.5, sm: 2.5, md: 3 },
+            pb: { xs: 9, md: 3 },
+            minWidth: 0,
+            width: '100%',
+            maxWidth: '100%',
+            overflowY: 'auto',
+            overflowX: 'hidden',
+            boxSizing: 'border-box',
+          }}
+        >
           <Outlet />
         </Box>
 

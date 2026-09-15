@@ -53,48 +53,40 @@ export const ProjectProgressReport: React.FC<ProjectProgressReportProps> = memo(
         {
           id: 'name',
           header: 'Tên Công Trình',
-          width: '20%',
           accessorKey: 'name',
           minWidth: 200,
           sortable: true,
-          ellipsis: true,
         },
         {
           id: 'managerName',
           header: 'Chỉ Huy Trưởng',
           accessorKey: 'managerName',
-          width: '12%',
-          minWidth: 130,
-          ellipsis: true,
+          minWidth: 140,
         },
         {
           id: 'startDate',
           header: 'Ngày Khởi Công',
           accessorKey: 'startDate',
-          width: '10%',
-          minWidth: 110,
+          minWidth: 120,
           cell: ({ value }) => formatDate(value),
         },
         {
           id: 'plannedEndDate',
           header: 'Hạn Dự Kiến',
           accessorKey: 'plannedEndDate',
-          width: '10%',
-          minWidth: 110,
+          minWidth: 120,
           cell: ({ value }) => formatDate(value),
         },
         {
           id: 'progress',
           header: 'Tiến Độ',
           accessorKey: 'progress',
-          width: '15%',
           minWidth: 120,
           cell: ({ value }) => <ProgressBar value={value} height={7} />,
         },
         {
           id: 'status',
           header: 'Trạng Thái',
-          width: '10%',
           minWidth: 120,
           cell: ({ row }) => <StatusChip status={row.status} isOverdue={row.isOverdue} />,
         },
@@ -102,10 +94,9 @@ export const ProjectProgressReport: React.FC<ProjectProgressReportProps> = memo(
           id: 'taskStats',
           header: 'Tổng Task / Xong / Trễ',
           align: 'right',
-          width: '12%',
           minWidth: 150,
           cell: ({ row }) => (
-            <span>
+            <span style={{ whiteSpace: 'nowrap' }}>
               {row.totalTasks} /{' '}
               <span style={{ color: '#10b981', fontWeight: 700 }}>{row.completedTasks}</span> /{' '}
               <span style={{ color: '#ef4444', fontWeight: 700 }}>{row.overdueTasks}</span>

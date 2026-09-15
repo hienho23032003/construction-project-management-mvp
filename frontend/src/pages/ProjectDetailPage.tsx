@@ -158,10 +158,10 @@ export const ProjectDetailPage: React.FC = () => {
   }
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 2, sm: 3 }, width: '100%', maxWidth: '100%', minWidth: 0, overflowX: 'hidden' }}>
       {/* Header */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1.5, width: '100%' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
           <Button
             variant="outlined"
             size="small"
@@ -172,7 +172,7 @@ export const ProjectDetailPage: React.FC = () => {
             Quay Lại
           </Button>
           <Chip label={project.code} sx={{ bgcolor: '#0284c7', color: '#ffffff', fontWeight: 800 }} />
-          <Typography variant="h2" sx={{ fontWeight: 800, fontSize: '1.3rem', color: '#0f172a' }}>
+          <Typography variant="h2" sx={{ fontWeight: 800, fontSize: { xs: '1.1rem', sm: '1.3rem' }, color: '#0f172a' }}>
             {project.name}
           </Typography>
           <StatusChip status={project.status} isOverdue={project.isOverdue} />
@@ -191,15 +191,18 @@ export const ProjectDetailPage: React.FC = () => {
       </Box>
 
       {/* Tabs */}
-      <Paper sx={{ border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden' }}>
+      <Paper sx={{ border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden', width: '100%', maxWidth: '100%' }}>
         <Tabs
           value={activeTab}
           onChange={(_, val) => setActiveTab(val)}
+          variant="scrollable"
+          scrollButtons="auto"
+          allowScrollButtonsMobile
           sx={{
             borderBottom: '1px solid #e2e8f0',
             bgcolor: '#f8fafc',
-            px: 2,
-            '& .MuiTab-root': { fontWeight: 700, textTransform: 'none', fontSize: '0.9rem', py: 1.5 },
+            px: { xs: 1, sm: 2 },
+            '& .MuiTab-root': { fontWeight: 700, textTransform: 'none', fontSize: { xs: '0.8125rem', sm: '0.9rem' }, py: 1.5, minWidth: 'auto', px: { xs: 1.5, sm: 2 } },
           }}
         >
           <Tab label="1. Tổng Quan" icon={<Layers size={17} />} iconPosition="start" />

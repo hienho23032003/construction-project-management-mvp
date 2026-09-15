@@ -43,7 +43,7 @@ export const DashboardDateFilter: React.FC<DashboardDateFilterProps> = ({
   return (
     <Paper
       sx={{
-        p: 2,
+        p: { xs: 1.5, sm: 2 },
         borderRadius: '8px',
         border: '1px solid #e2e8f0',
         display: 'flex',
@@ -51,6 +51,8 @@ export const DashboardDateFilter: React.FC<DashboardDateFilterProps> = ({
         gap: 1.5,
         position: 'relative',
         overflow: 'hidden',
+        width: '100%',
+        maxWidth: '100%',
       }}
     >
       {filterLoading && (
@@ -65,8 +67,8 @@ export const DashboardDateFilter: React.FC<DashboardDateFilterProps> = ({
         />
       )}
 
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1.5 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1.5, width: '100%' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
           <Box
             sx={{
               width: 32,
@@ -77,31 +79,33 @@ export const DashboardDateFilter: React.FC<DashboardDateFilterProps> = ({
               alignItems: 'center',
               justifyContent: 'center',
               color: '#0284c7',
+              flexShrink: 0,
             }}
           >
             <Filter size={18} />
           </Box>
-          <Typography variant="subtitle1" sx={{ fontWeight: 700, color: '#0f172a' }}>
+          <Typography variant="subtitle1" sx={{ fontWeight: 700, color: '#0f172a', fontSize: { xs: '0.9rem', sm: '1rem' } }}>
             Bộ Lọc Thời Gian Dashboard
           </Typography>
           <Chip
             label={appliedLabel}
             size="small"
             color={isFiltered ? 'primary' : 'default'}
-            sx={{ fontWeight: 600, height: 24, fontSize: '0.75rem' }}
+            sx={{ fontWeight: 600, height: 24, fontSize: '0.72rem' }}
           />
         </Box>
 
         {/* Quick Presets */}
         <Box
           sx={{
-            display: 'inline-flex',
+            display: 'flex',
             bgcolor: '#f1f5f9',
             p: '3px',
             borderRadius: '8px',
             border: '1px solid #e2e8f0',
             gap: '3px',
             flexWrap: 'wrap',
+            maxWidth: '100%',
           }}
         >
           {[
@@ -120,11 +124,11 @@ export const DashboardDateFilter: React.FC<DashboardDateFilterProps> = ({
                 onClick={() => onSelectPreset(item.id as DatePreset)}
                 sx={{
                   textTransform: 'none',
-                  fontSize: '0.8125rem',
+                  fontSize: { xs: '0.75rem', sm: '0.8125rem' },
                   fontWeight: isActive ? 700 : 500,
                   py: '4px',
-                  px: 1.5,
-                  minWidth: { xs: 60, sm: 70 },
+                  px: { xs: 1, sm: 1.5 },
+                  minWidth: { xs: 52, sm: 65 },
                   borderRadius: '6px',
                   bgcolor: isActive ? '#0284c7 !important' : 'transparent',
                   color: isActive ? '#ffffff !important' : '#475569',
@@ -152,65 +156,70 @@ export const DashboardDateFilter: React.FC<DashboardDateFilterProps> = ({
           gap: 1.5,
           pt: 1,
           borderTop: '1px dashed #f1f5f9',
+          width: '100%',
         }}
       >
-        <Typography variant="body2" sx={{ color: '#64748b', fontWeight: 600 }}>
+        <Typography variant="body2" sx={{ color: '#64748b', fontWeight: 600, fontSize: '0.8125rem' }}>
           Khoảng ngày tùy chọn:
         </Typography>
-        <DatePicker
-          label="Từ ngày"
-          value={fromDate}
-          onChange={onFromDateChange}
-          slotProps={{
-            textField: {
-              size: 'small',
-              sx: { width: 175 },
-            },
-          }}
-        />
-        <DatePicker
-          label="Đến ngày"
-          value={toDate}
-          onChange={onToDateChange}
-          slotProps={{
-            textField: {
-              size: 'small',
-              sx: { width: 175 },
-            },
-          }}
-        />
-        <Button
-          variant="contained"
-          size="small"
-          onClick={onApplyCustom}
-          disabled={filterLoading || (!fromDate && !toDate)}
-          sx={{
-            textTransform: 'none',
-            fontWeight: 600,
-            bgcolor: '#0284c7',
-            '&:hover': { bgcolor: '#0369a1' },
-            '&.Mui-disabled': {
-              bgcolor: '#e2e8f0 !important',
-              color: '#94a3b8 !important',
-              cursor: 'not-allowed',
-            },
-          }}
-        >
-          Áp Dụng Lọc
-        </Button>
-        {(isFiltered || selectedPreset !== 'all') && (
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', width: { xs: '100%', sm: 'auto' } }}>
+          <DatePicker
+            label="Từ ngày"
+            value={fromDate}
+            onChange={onFromDateChange}
+            slotProps={{
+              textField: {
+                size: 'small',
+                sx: { width: { xs: 'calc(50% - 4px)', sm: 155 } },
+              },
+            }}
+          />
+          <DatePicker
+            label="Đến ngày"
+            value={toDate}
+            onChange={onToDateChange}
+            slotProps={{
+              textField: {
+                size: 'small',
+                sx: { width: { xs: 'calc(50% - 4px)', sm: 155 } },
+              },
+            }}
+          />
+        </Box>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
           <Button
-            variant="outlined"
+            variant="contained"
             size="small"
-            color="inherit"
-            startIcon={<RotateCcw size={14} />}
-            onClick={onResetFilter}
-            disabled={filterLoading}
-            sx={{ textTransform: 'none', fontWeight: 600 }}
+            onClick={onApplyCustom}
+            disabled={filterLoading || (!fromDate && !toDate)}
+            sx={{
+              textTransform: 'none',
+              fontWeight: 600,
+              bgcolor: '#0284c7',
+              '&:hover': { bgcolor: '#0369a1' },
+              '&.Mui-disabled': {
+                bgcolor: '#e2e8f0 !important',
+                color: '#94a3b8 !important',
+                cursor: 'not-allowed',
+              },
+            }}
           >
-            Đặt Lại
+            Áp Dụng Lọc
           </Button>
-        )}
+          {(isFiltered || selectedPreset !== 'all') && (
+            <Button
+              variant="outlined"
+              size="small"
+              color="inherit"
+              startIcon={<RotateCcw size={14} />}
+              onClick={onResetFilter}
+              disabled={filterLoading}
+              sx={{ textTransform: 'none', fontWeight: 600 }}
+            >
+              Đặt Lại
+            </Button>
+          )}
+        </Box>
       </Box>
     </Paper>
   );

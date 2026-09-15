@@ -136,14 +136,14 @@ export const EmployeesPage: React.FC = () => {
   };
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 2, sm: 3 }, width: '100%', maxWidth: '100%', minWidth: 0, overflowX: 'hidden' }}>
       {/* Header */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1.5, width: '100%' }}>
         <Box>
-          <Typography variant="h2" sx={{ fontWeight: 800, fontSize: '1.35rem', color: '#0f172a' }}>
+          <Typography variant="h2" sx={{ fontWeight: 800, fontSize: { xs: '1.15rem', sm: '1.35rem' }, color: '#0f172a' }}>
             Quản Lý Nhân Sự & Tải Công Việc (Workload)
           </Typography>
-          <Typography variant="body2" sx={{ color: '#64748b', mt: 0.25 }}>
+          <Typography variant="body2" sx={{ color: '#64748b', mt: 0.25, fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
             Danh sách kỹ sư, phân quyền vai trò và phân bổ khối lượng công việc hiện trường
           </Typography>
         </Box>
@@ -161,9 +161,9 @@ export const EmployeesPage: React.FC = () => {
       </Box>
 
       {/* Filter & Toolbar */}
-      <Paper sx={{ p: 2, border: '1px solid #e2e8f0', borderRadius: '8px', display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
+      <Paper sx={{ p: { xs: 1.5, sm: 2 }, border: '1px solid #e2e8f0', borderRadius: '8px', display: 'flex', gap: 1.5, flexWrap: 'wrap', alignItems: 'center', width: '100%', maxWidth: '100%' }}>
         {/* Compact Search Input */}
-        <Box sx={{ width: { xs: '100%', sm: 280 } }}>
+        <Box sx={{ width: { xs: '100%', sm: 280 }, flexGrow: 1, minWidth: 0 }}>
           <TextField
             size="small"
             fullWidth
@@ -183,24 +183,26 @@ export const EmployeesPage: React.FC = () => {
           />
         </Box>
 
-        <CommonSelect
-          label="Phân Quyền Vai Trò"
-          value={roleFilter}
-          onChange={(val) => {
-            setRoleFilter(val);
-            setPage(0);
-          }}
-          minWidth={190}
-          options={[
-            { value: 'ALL', label: 'Tất cả vai trò' },
-            { value: 'Employee', label: 'Kỹ Sư / Nhân Viên', color: '#10b981' },
-            { value: 'Supervisor', label: 'Giám Sát Hiện Trường', color: '#f59e0b' },
-            { value: 'ProjectManager', label: 'Người Quản Lý (PM)', color: '#0284c7' },
-            { value: 'SuperAdmin', label: 'Super Admin', color: '#ef4444' },
-          ]}
-        />
+        <Box sx={{ width: { xs: '100%', sm: 'auto' } }}>
+          <CommonSelect
+            label="Phân Quyền Vai Trò"
+            value={roleFilter}
+            onChange={(val) => {
+              setRoleFilter(val);
+              setPage(0);
+            }}
+            minWidth={190}
+            options={[
+              { value: 'ALL', label: 'Tất cả vai trò' },
+              { value: 'Employee', label: 'Kỹ Sư / Nhân Viên', color: '#10b981' },
+              { value: 'Supervisor', label: 'Giám Sát Hiện Trường', color: '#f59e0b' },
+              { value: 'ProjectManager', label: 'Người Quản Lý (PM)', color: '#0284c7' },
+              { value: 'SuperAdmin', label: 'Super Admin', color: '#ef4444' },
+            ]}
+          />
+        </Box>
 
-        <Box sx={{ ml: 'auto' }}>
+        <Box sx={{ ml: { xs: 0, sm: 'auto' } }}>
           <ToggleButtonGroup
             size="small"
             value={viewMode}
@@ -222,7 +224,7 @@ export const EmployeesPage: React.FC = () => {
         isLoading || (isFetching && users.length === 0) ? (
           <CardGridSkeleton count={rowsPerPage > 6 ? 6 : rowsPerPage} />
         ) : users.length === 0 ? (
-          <Paper sx={{ p: 6, textAlign: 'center', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+          <Paper sx={{ p: { xs: 3, sm: 6 }, textAlign: 'center', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
             <Users size={48} color="#94a3b8" style={{ marginBottom: 12 }} />
             <Typography variant="h4" sx={{ color: '#475569', fontWeight: 600 }}>
               Không tìm thấy nhân viên nào
@@ -233,7 +235,7 @@ export const EmployeesPage: React.FC = () => {
           </Paper>
         ) : (
           <>
-            <Grid container spacing={2.5}>
+            <Grid container spacing={{ xs: 2, sm: 2.5 }} sx={{ width: '100%', m: 0 }}>
               {users.map((u) => {
                 const workload = workloads.find((w) => w.userId === u.id) || {
                   activeTasks: 0,
@@ -241,7 +243,7 @@ export const EmployeesPage: React.FC = () => {
                   overdueTasks: 0,
                 };
                 return (
-                  <Grid item xs={12} sm={6} md={4} key={u.id}>
+                  <Grid item xs={12} sm={6} md={4} key={u.id} sx={{ minWidth: 0, width: '100%', pl: { xs: '0 !important', sm: '20px !important' }, pt: { xs: '16px !important', sm: '20px !important' } }}>
                     <EmployeeCard
                       user={u}
                       workload={workload}

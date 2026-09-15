@@ -27,40 +27,47 @@ export const DashboardKpiGrid: React.FC<DashboardKpiGridProps> = memo(({ data })
   ];
 
   return (
-    <Grid container spacing={2}>
+    <Box
+      sx={{
+        display: 'grid',
+        gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(4, 1fr)' },
+        gap: { xs: 1.5, sm: 2 },
+        width: '100%',
+        maxWidth: '100%',
+      }}
+    >
       {kpis.map((kpi, idx) => {
         const Icon = kpi.icon;
         return (
-          <Grid item xs={6} sm={3} key={idx}>
-            <Card sx={{ border: '1px solid #e2e8f0', boxShadow: 'none' }}>
-              <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-                  <Typography variant="body2" sx={{ color: '#64748b', fontWeight: 600, fontSize: '0.8rem' }}>
-                    {kpi.title}
-                  </Typography>
-                  <Box
-                    sx={{
-                      width: 32,
-                      height: 32,
-                      borderRadius: '8px',
-                      bgcolor: kpi.bg,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: kpi.color,
-                    }}
-                  >
-                    <Icon size={18} />
-                  </Box>
-                </Box>
-                <Typography variant="h2" sx={{ fontWeight: 800, fontSize: '1.5rem', color: '#0f172a' }}>
-                  {kpi.value}
+          <Card key={idx} sx={{ border: '1px solid #e2e8f0', boxShadow: 'none', borderRadius: '8px' }}>
+            <CardContent sx={{ p: { xs: 1.5, sm: 2 }, '&:last-child': { pb: { xs: 1.5, sm: 2 } } }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+                <Typography variant="body2" sx={{ color: '#64748b', fontWeight: 600, fontSize: { xs: '0.72rem', sm: '0.8rem' } }} noWrap>
+                  {kpi.title}
                 </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
+                <Box
+                  sx={{
+                    width: 28,
+                    height: 28,
+                    borderRadius: '6px',
+                    bgcolor: kpi.bg,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: kpi.color,
+                    flexShrink: 0,
+                  }}
+                >
+                  <Icon size={16} />
+                </Box>
+              </Box>
+              <Typography variant="h2" sx={{ fontWeight: 800, fontSize: { xs: '1.25rem', sm: '1.5rem' }, color: '#0f172a' }}>
+                {kpi.value}
+              </Typography>
+            </CardContent>
+          </Card>
         );
       })}
-    </Grid>
+    </Box>
   );
 });
