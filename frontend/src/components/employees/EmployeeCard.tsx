@@ -5,6 +5,7 @@ import { Mail, Phone, Briefcase, Edit2, Lock, Unlock, Trash2, TrendingUp, Chevro
 import { User } from '../../types';
 import { roleLabels } from '../../pages/EmployeesPage';
 import { getMediaUrl } from '../../utils/fileUtils';
+import { getRoleChipStyle } from '../../utils/roleColors';
 
 interface EmployeeCardProps {
   user: User;
@@ -43,67 +44,84 @@ export const EmployeeCard: React.FC<EmployeeCardProps> = memo(({
 
   return (
     <Card
+      elevation={0}
       sx={{
-        border: '1px solid #e2e8f0',
         borderRadius: '8px',
-        boxShadow: 'none',
-        height: '100%',
+        border: '1px solid #e2e8f0',
+        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+        bgcolor: '#ffffff',
+        '&:hover': {
+          borderColor: '#bae6fd',
+          boxShadow: '0 10px 25px -5px rgba(2, 132, 199, 0.08), 0 8px 10px -6px rgba(2, 132, 199, 0.04)',
+          transform: 'translateY(-2px)',
+        },
         display: 'flex',
         flexDirection: 'column',
-        justifyContent: 'space-between',
-        opacity: isUserActive ? 1 : 0.7,
-        transition: 'all 0.2s ease',
-        '&:hover': {
-          transform: 'translateY(-2px)',
-          boxShadow: '0 8px 20px -4px rgba(2, 132, 199, 0.15)',
-          borderColor: '#0284c7',
-        },
+        height: '100%',
+        position: 'relative',
+        overflow: 'hidden',
       }}
     >
-      <CardContent sx={{ p: 2.5, pb: 1.5 }}>
-        {/* User Header */}
-        <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 1, mb: 2 }}>
-          <Box
+      {/* Top decorative stripe */}
+      <Box
+        sx={{
+          height: 4,
+          bgcolor: isUserActive ? '#0284c7' : '#94a3b8',
+          width: '100%',
+        }}
+      />
+
+      <CardContent sx={{ p: 2.5, flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+        {/* User Info Header */}
+        <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, mb: 2 }}>
+          <Avatar
+            src={getMediaUrl(u.avatarUrl)}
             onClick={() => navigate(`/employees/${u.id}`)}
-            sx={{ display: 'flex', alignItems: 'center', gap: 1.5, minWidth: 0, flexGrow: 1, cursor: 'pointer' }}
+            sx={{
+              width: 48,
+              height: 48,
+              bgcolor: isUserActive ? '#0284c7' : '#94a3b8',
+              fontSize: '1.1rem',
+              fontWeight: 700,
+              cursor: 'pointer',
+              border: '2px solid #e0f2fe',
+              '&:hover': { opacity: 0.9 },
+            }}
           >
-            <Avatar
-              src={getMediaUrl(u.avatarUrl)}
-              sx={{
-                bgcolor: u.role === 'SuperAdmin' ? '#ef4444' : u.role === 'ProjectManager' ? '#0284c7' : '#10b981',
-                width: 46,
-                height: 46,
-                fontWeight: 700,
-                fontSize: '1.05rem',
-              }}
-            >
-              {u.fullName.charAt(0)}
-            </Avatar>
-            <Box sx={{ minWidth: 0, flexGrow: 1 }}>
+            {u.fullName?.charAt(0) || 'U'}
+          </Avatar>
+          <Box sx={{ minWidth: 0, flexGrow: 1 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
               <Typography
                 variant="subtitle1"
+                onClick={() => navigate(`/employees/${u.id}`)}
                 sx={{
                   fontWeight: 700,
                   color: '#0f172a',
                   '&:hover': { color: '#0284c7' },
                   transition: 'color 0.15s ease',
+                  cursor: 'pointer',
                 }}
                 noWrap
               >
                 {u.fullName}
               </Typography>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mt: 0.25, flexWrap: 'wrap' }}>
-                <Chip
-                  label={roleLabels[u.role] || u.roleName || u.role}
-                  size="small"
-                  sx={{
-                    height: 20,
-                    fontSize: '0.65rem',
-                    fontWeight: 700,
-                    bgcolor: u.role === 'SuperAdmin' ? '#fee2e2' : u.role === 'ProjectManager' ? '#e0f2fe' : '#ecfdf5',
-                    color: u.role === 'SuperAdmin' ? '#b91c1c' : u.role === 'ProjectManager' ? '#0369a1' : '#047857',
-                  }}
-                />
+                {(() => {
+                  const displayRole = (u.roles && u.roles.length > 0 ? u.roles[0] : null) || u.roleName || roleLabels[u.role] || u.role;
+                  return (
+                    <Chip
+                      label={displayRole}
+                      size="small"
+                      sx={{
+                        height: 20,
+                        fontSize: '0.65rem',
+                        fontWeight: 700,
+                        ...getRoleChipStyle(u.roleColor, displayRole),
+                      }}
+                    />
+                  );
+                })()}
                 <Chip
                   label={isUserActive ? 'Hoạt động' : 'Đã khóa'}
                   size="small"

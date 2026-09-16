@@ -1,26 +1,10 @@
-import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import {
   Box,
   Paper,
-  Typography,
-  IconButton,
-  Button,
-  ButtonGroup,
-  Tooltip,
-  Chip,
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import {
-  Calendar,
-  Layers,
-  ChevronDown,
-  ChevronRight as ChevronRightIcon,
-  User,
-  PanelLeftClose,
-  PanelLeftOpen,
-  Download,
-} from 'lucide-react';
 import {
   format,
   addDays,
@@ -29,18 +13,17 @@ import {
   isToday,
   parseISO,
 } from 'date-fns';
-import { vi } from 'date-fns/locale/vi';
 import { GanttTask, GanttLink } from '../../types';
-import { taskApi, reportApi } from '../../services/api/endpoints';
+import { reportApi } from '../../services/api/endpoints';
 import { useToast } from '../../contexts/ToastContext';
 import { getVietnameseStatus } from '../common/StatusChip';
+import { GanttToolbar, ViewMode } from './GanttToolbar';
+import { GanttLeftTree, GanttTreeItem } from './GanttLeftTree';
+import { GanttTimelineHeader } from './GanttTimelineHeader';
+import { GanttTaskBarItem } from './GanttTaskBarItem';
+import { GanttTooltip } from './GanttTooltip';
 
-type ViewMode = 'Day' | 'Week' | 'Month';
-
-export interface GanttTreeItem extends GanttTask {
-  depth: number;
-  hasChildren: boolean;
-}
+export type { GanttTreeItem, ViewMode };
 
 const getDayOfWeekText = (date: Date, mode: ViewMode): string => {
   const day = date.getDay();
@@ -68,6 +51,14 @@ const getDayOfWeekText = (date: Date, mode: ViewMode): string => {
   }
 };
 
+const getTaskColor = (task: GanttTask) => {
+  if (task.isOverdue) return { bar: '#ef4444', fill: '#dc2626', bg: '#fee2e2' };
+  if (task.status === 'Completed') return { bar: '#10b981', fill: '#059669', bg: '#d1fae5' };
+  if (task.status === 'InProgress') return { bar: '#0284c7', fill: '#0369a1', bg: '#e0f2fe' };
+  if (task.status === 'OnHold') return { bar: '#f59e0b', fill: '#d97706', bg: '#fef3c7' };
+  return { bar: '#94a3b8', fill: '#64748b', bg: '#f1f5f9' };
+};
+
 interface InteractiveGanttProps {
   tasks: GanttTask[];
   links?: GanttLink[];
@@ -79,22 +70,19 @@ interface InteractiveGanttProps {
 
 export const InteractiveGantt: React.FC<InteractiveGanttProps> = ({
   tasks,
-  links = [],
-  onTaskUpdated,
   onTaskClick,
-  canEdit = true,
   filterBar,
 }) => {
   const [viewMode, setViewMode] = useState<ViewMode>('Day');
   const [collapsedIds, setCollapsedIds] = useState<Set<string>>(new Set());
 
   // Resizable left panel state
-  const [leftWidth, setLeftWidth] = useState<number>(360);
+  const [leftWidth, setLeftWidth] = useState<number>(320);
   const [isDraggingSplitter, setIsDraggingSplitter] = useState<boolean>(false);
   const [isLeftCollapsed, setIsLeftCollapsed] = useState<boolean>(false);
-  const prevLeftWidth = useRef<number>(360);
+  const prevLeftWidth = useRef<number>(320);
 
-  // Right timeline pan (grab-to-scroll) ref state (Ref-based to avoid React re-renders during drag)
+  // Right timeline pan (grab-to-scroll) ref state
   const isPanningRef = useRef<boolean>(false);
   const inertiaRafRef = useRef<number | null>(null);
 
@@ -108,7 +96,7 @@ export const InteractiveGantt: React.FC<InteractiveGanttProps> = ({
   const prevMinDateRef = useRef<Date | null>(null);
   const scrollPosRef = useRef<{ top: number; left: number }>({ top: 0, left: 0 });
 
-  // Zero React Re-render DOM Floating Tooltip Refs
+  // Floating Tooltip DOM Refs
   const tooltipRef = useRef<HTMLDivElement>(null);
   const tooltipTitleRef = useRef<HTMLDivElement>(null);
   const tooltipDatesRef = useRef<HTMLSpanElement>(null);
@@ -171,10 +159,10 @@ export const InteractiveGantt: React.FC<InteractiveGanttProps> = ({
   };
 
   // Determine timeline boundary
-  const { minDate, maxDate, totalDays } = useMemo(() => {
+  const { minDate, maxDate } = useMemo(() => {
     if (!tasks.length) {
       const now = new Date();
-      return { minDate: addDays(now, -10), maxDate: addDays(now, 30), totalDays: 40 };
+      return { minDate: addDays(now, -10), maxDate: addDays(now, 30) };
     }
 
     let min = new Date(tasks[0].start);
@@ -187,15 +175,12 @@ export const InteractiveGantt: React.FC<InteractiveGanttProps> = ({
       if (e > max) max = e;
     });
 
-    // Add padding days around timeline
     const paddedMin = addDays(min, -7);
     const paddedMax = addDays(max, 14);
-    const days = Math.max(differenceInDays(paddedMax, paddedMin) + 1, 30);
 
-    return { minDate: paddedMin, maxDate: paddedMax, totalDays: days };
+    return { minDate: paddedMin, maxDate: paddedMax };
   }, [tasks]);
 
-  // Column width according to viewMode
   const columnWidth = useMemo(() => {
     switch (viewMode) {
       case 'Day':
@@ -213,7 +198,6 @@ export const InteractiveGantt: React.FC<InteractiveGanttProps> = ({
     return eachDayOfInterval({ start: minDate, end: maxDate });
   }, [minDate, maxDate]);
 
-  // Pre-calculate Month Header Groups to prevent any text squishing / overlapping
   const monthGroups = useMemo(() => {
     if (!timelineDays.length) return [];
     const groups: { monthStr: string; yearMonth: string; daysCount: number; startDate: Date }[] = [];
@@ -257,11 +241,8 @@ export const InteractiveGantt: React.FC<InteractiveGanttProps> = ({
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const isSmall = useMediaQuery(theme.breakpoints.down('sm'));
 
-  // Track user explicit actions: 'collapsed' | 'expanded'
   const userActionsRef = useRef<Map<string, 'collapsed' | 'expanded'>>(new Map());
-  const hasInitializedCollapse = useRef(false);
 
-  // Expand / collapse subtasks
   const toggleCollapse = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     setCollapsedIds((prev) => {
@@ -308,28 +289,22 @@ export const InteractiveGantt: React.FC<InteractiveGanttProps> = ({
           if (hasChildren) {
             const userAction = userActionsRef.current.get(t.id);
             if (userAction === 'expanded') {
-              // User explicitly expanded this node -> Keep expanded
+              // Keep expanded
             } else if (userAction === 'collapsed') {
-              // User explicitly collapsed this node -> Keep collapsed
               next.add(t.id);
             } else if (prev.has(t.id)) {
-              // Node was already collapsed in state -> Keep collapsed
               next.add(t.id);
             }
-            // Default on initial load: all nodes start expanded (not collapsed)
           }
         });
-        hasInitializedCollapse.current = true;
         return next;
       });
     }
   }, [tasks]);
 
-  // Build hierarchical DFS tree ensuring all children are always placed directly under their parent
   const visibleTasks = useMemo(() => {
     if (!tasks.length) return [];
 
-    // Map children by parentId
     const childrenMap = new Map<string, GanttTask[]>();
     const allIds = new Set<string>(tasks.map((t) => t.id));
     const rootTasks: GanttTask[] = [];
@@ -369,17 +344,15 @@ export const InteractiveGantt: React.FC<InteractiveGanttProps> = ({
     return result;
   }, [tasks, collapsedIds]);
 
-  // Scroll to Today
   const scrollToToday = () => {
-    const todayIndex = timelineDays.findIndex((d) => isToday(d));
-    if (todayIndex >= 0 && containerRef.current) {
-      const targetLeft = Math.max(0, todayIndex * columnWidth - 250);
+    const todayIdx = timelineDays.findIndex((d) => isToday(d));
+    if (todayIdx >= 0 && containerRef.current) {
+      const targetLeft = Math.max(0, todayIdx * columnWidth - 250);
       containerRef.current.scrollLeft = targetLeft;
       scrollPosRef.current.left = targetLeft;
     }
   };
 
-  // Only run scrollToToday on initial mount/first data load
   useEffect(() => {
     if (!isInitialScrollDone.current && tasks.length > 0 && timelineDays.length > 0) {
       scrollToToday();
@@ -388,10 +361,8 @@ export const InteractiveGantt: React.FC<InteractiveGanttProps> = ({
     }
   }, [tasks.length, timelineDays]);
 
-  // When tasks data updates (e.g. after saving task, editing assignees, status), PRESERVE scroll position!
   useEffect(() => {
     if (isInitialScrollDone.current && containerRef.current) {
-      // Compensate if minDate shifted due to date adjustment
       if (prevMinDateRef.current && minDate) {
         const diff = differenceInDays(minDate, prevMinDateRef.current);
         if (diff !== 0) {
@@ -400,7 +371,6 @@ export const InteractiveGantt: React.FC<InteractiveGanttProps> = ({
       }
       prevMinDateRef.current = minDate;
 
-      // Restore exact scroll positions
       containerRef.current.scrollLeft = scrollPosRef.current.left;
       containerRef.current.scrollTop = scrollPosRef.current.top;
       if (leftPanelRef.current) {
@@ -409,25 +379,7 @@ export const InteractiveGantt: React.FC<InteractiveGanttProps> = ({
     }
   }, [tasks, minDate, columnWidth]);
 
-  // Date calculation utilities
-  const getTaskCoords = (start: Date, end: Date) => {
-    const startDiff = differenceInDays(start, minDate);
-    const duration = Math.max(differenceInDays(end, start) + 1, 1);
-    const left = startDiff * columnWidth;
-    const width = duration * columnWidth;
-    return { left, width };
-  };
-
-  // Colors per status
-  const getTaskColor = (task: GanttTask) => {
-    if (task.isOverdue) return { bar: '#ef4444', fill: '#dc2626', bg: '#fee2e2' };
-    if (task.status === 'Completed') return { bar: '#10b981', fill: '#059669', bg: '#d1fae5' };
-    if (task.status === 'InProgress') return { bar: '#0284c7', fill: '#0369a1', bg: '#e0f2fe' };
-    if (task.status === 'OnHold') return { bar: '#f59e0b', fill: '#d97706', bg: '#fef3c7' };
-    return { bar: '#94a3b8', fill: '#64748b', bg: '#f1f5f9' };
-  };
-
-  // Zero React Re-render Tooltip Control Functions
+  // Tooltip functions
   const showTooltip = (task: GanttTask, clientX: number, clientY: number) => {
     if (isPanningRef.current || !tooltipRef.current) return;
     const el = tooltipRef.current;
@@ -479,7 +431,6 @@ export const InteractiveGantt: React.FC<InteractiveGanttProps> = ({
     }
   };
 
-  // Handle Splitter Dragging (Left/Right resize) with requestAnimationFrame for 60fps smooth performance
   const handleSplitterMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
     setIsDraggingSplitter(true);
@@ -530,7 +481,6 @@ export const InteractiveGantt: React.FC<InteractiveGanttProps> = ({
     }
   };
 
-  // Cleanup inertia animation on unmount
   useEffect(() => {
     return () => {
       if (inertiaRafRef.current !== null) {
@@ -539,12 +489,10 @@ export const InteractiveGantt: React.FC<InteractiveGanttProps> = ({
     };
   }, []);
 
-  // Pan / Drag-to-scroll handler for the timeline canvas (with rAF throttling & momentum glide)
   const handleTimelineMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (e.button !== 0) return; // only left click
+    if (e.button !== 0) return;
     if (isDraggingSplitter) return;
 
-    // Do not pan if clicking on interactive buttons/inputs
     const target = e.target as HTMLElement;
     if (
       target.closest('button') ||
@@ -557,17 +505,13 @@ export const InteractiveGantt: React.FC<InteractiveGanttProps> = ({
     }
 
     if (!containerRef.current) return;
-
-    // Prevent default selection / drag behavior
     e.preventDefault();
 
-    // Cancel any ongoing inertia animation
     if (inertiaRafRef.current !== null) {
       cancelAnimationFrame(inertiaRafRef.current);
       inertiaRafRef.current = null;
     }
 
-    // Dismiss any active hover tooltip immediately
     hideTooltip();
 
     const container = containerRef.current;
@@ -645,7 +589,6 @@ export const InteractiveGantt: React.FC<InteractiveGanttProps> = ({
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
 
-      // Smooth Inertia Glide (quán tính lướt mượt mà sau khi thả chuột)
       if (Math.abs(velocityX) > 0.08 || Math.abs(velocityY) > 0.08) {
         let currentVx = velocityX * 14;
         let currentVy = velocityY * 14;
@@ -702,175 +645,21 @@ export const InteractiveGantt: React.FC<InteractiveGanttProps> = ({
       }}
     >
       {/* Top Toolbar */}
-      <Box
-        sx={{
-          p: { xs: 1.25, sm: 1.25 },
-          px: { xs: 1.5, sm: 2 },
-          display: 'flex',
-          flexDirection: { xs: 'column', sm: 'row' },
-          justifyContent: 'space-between',
-          alignItems: { xs: 'flex-start', sm: 'center' },
-          flexWrap: 'wrap',
-          gap: 1.5,
-          borderBottom: '1px solid #e2e8f0',
-          bgcolor: '#f8fafc',
-          flexShrink: 0,
+      <GanttToolbar
+        filterBar={filterBar}
+        isLeftCollapsed={isLeftCollapsed}
+        onToggleLeftPanel={toggleLeftPanel}
+        onExpandAll={expandAll}
+        onCollapseAll={collapseAll}
+        onExportGantt={handleExportGantt}
+        exporting={exporting}
+        onScrollToToday={scrollToToday}
+        viewMode={viewMode}
+        onViewModeChange={(mode) => {
+          setViewMode(mode);
+          setTimeout(() => scrollToToday(), 50);
         }}
-      >
-        {/* Left: Filter Controls */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', flexGrow: 1, minWidth: 0 }}>
-          {filterBar}
-        </Box>
-
-        {/* Right: View & Export Controls */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: { xs: '100%', lg: 'auto' }, justifyContent: { xs: 'flex-start', sm: 'flex-end' }, flexWrap: 'wrap' }}>
-          <Tooltip title={isLeftCollapsed ? 'Hiện cột danh sách công việc' : 'Ẩn bớt cột danh sách công việc'}>
-            <IconButton
-              size="small"
-              onClick={toggleLeftPanel}
-              sx={{
-                width: 32,
-                height: 32,
-                borderRadius: '6px',
-                bgcolor: '#ffffff',
-                border: '1px solid #e2e8f0',
-                color: '#0284c7',
-                boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
-                '&:hover': { bgcolor: '#f0f9ff', borderColor: '#bae6fd' },
-              }}
-            >
-              {isLeftCollapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
-            </IconButton>
-          </Tooltip>
-
-          <ButtonGroup size="small" variant="outlined">
-            <Button
-              onClick={expandAll}
-              title="Mở rộng toàn bộ cây công việc"
-              sx={{
-                height: 32,
-                px: 1.25,
-                fontSize: '0.78rem',
-                fontWeight: 600,
-                bgcolor: '#ffffff',
-                borderColor: '#e2e8f0',
-                color: '#334155',
-                textTransform: 'none',
-                '&:hover': { bgcolor: '#f8fafc', borderColor: '#cbd5e1' },
-              }}
-            >
-              Mở Rộng Hết
-            </Button>
-            <Button
-              onClick={collapseAll}
-              title="Thu gọn các nhánh công việc con"
-              sx={{
-                height: 32,
-                px: 1.25,
-                fontSize: '0.78rem',
-                fontWeight: 600,
-                bgcolor: '#ffffff',
-                borderColor: '#e2e8f0',
-                color: '#334155',
-                textTransform: 'none',
-                '&:hover': { bgcolor: '#f8fafc', borderColor: '#cbd5e1' },
-              }}
-            >
-              Thu Gọn Hết
-            </Button>
-          </ButtonGroup>
-
-          <Button
-            size="small"
-            variant="outlined"
-            startIcon={<Download size={14} />}
-            onClick={handleExportGantt}
-            disabled={exporting}
-            sx={{
-              height: 32,
-              px: 1.5,
-              fontSize: '0.78rem',
-              fontWeight: 600,
-              bgcolor: '#ffffff',
-              color: '#059669',
-              borderColor: '#bbf7d0',
-              borderRadius: '6px',
-              boxShadow: '0 1px 2px rgba(0,0,0,0.02)',
-              textTransform: 'none',
-              '&:hover': { bgcolor: '#f0fdf4', borderColor: '#86efac' },
-            }}
-          >
-            {exporting ? 'Đang xuất...' : 'Xuất Excel / CSV'}
-          </Button>
-
-          <Button
-            size="small"
-            variant="outlined"
-            startIcon={<Calendar size={14} />}
-            onClick={scrollToToday}
-            sx={{
-              height: 32,
-              px: 1.5,
-              fontSize: '0.78rem',
-              fontWeight: 600,
-              bgcolor: '#ffffff',
-              borderColor: '#e2e8f0',
-              color: '#334155',
-              borderRadius: '6px',
-              boxShadow: '0 1px 2px rgba(0,0,0,0.02)',
-              textTransform: 'none',
-              '&:hover': { bgcolor: '#f8fafc', borderColor: '#cbd5e1' },
-            }}
-          >
-            Hôm Nay
-          </Button>
-
-          {/* Segmented Control Pill Group for ViewMode */}
-          <Box
-            sx={{
-              display: 'inline-flex',
-              p: '3px',
-              bgcolor: '#e2e8f0',
-              borderRadius: '8px',
-              gap: '3px',
-            }}
-          >
-            {(['Day', 'Week', 'Month'] as ViewMode[]).map((mode) => {
-              const isSelected = viewMode === mode;
-              return (
-                <Button
-                  key={mode}
-                  size="small"
-                  onClick={() => {
-                    setViewMode(mode);
-                    setTimeout(() => scrollToToday(), 50);
-                  }}
-                  sx={{
-                    height: 26,
-                    px: 1.35,
-                    fontSize: '0.75rem',
-                    fontWeight: isSelected ? 700 : 500,
-                    textTransform: 'none',
-                    borderRadius: '6px',
-                    minWidth: 'auto',
-                    border: 'none',
-                    bgcolor: isSelected ? '#ffffff' : 'transparent',
-                    color: isSelected ? '#0284c7' : '#64748b',
-                    boxShadow: isSelected ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
-                    transition: 'all 0.15s ease',
-                    '&:hover': {
-                      bgcolor: isSelected ? '#ffffff' : 'rgba(255, 255, 255, 0.5)',
-                      color: isSelected ? '#0284c7' : '#0f172a',
-                    },
-                  }}
-                >
-                  {mode === 'Day' ? 'Ngày' : mode === 'Week' ? 'Tuần' : 'Tháng'}
-                </Button>
-              );
-            })}
-          </Box>
-        </Box>
-      </Box>
+      />
 
       {/* Gantt View Area (Left Table + Resizable Splitter + Right Timeline) */}
       <Box
@@ -886,129 +675,16 @@ export const InteractiveGantt: React.FC<InteractiveGanttProps> = ({
       >
         {/* Left Side: Task Hierarchy List */}
         {!isLeftCollapsed && (
-          <Box
-            ref={leftPanelRef}
+          <GanttLeftTree
+            leftPanelRef={leftPanelRef}
             onScroll={handleLeftScroll}
-            sx={{
-              width: effectiveLeftWidth,
-              minWidth: isSmall ? 160 : 180,
-              maxWidth: 750,
-              flexShrink: 0,
-              display: 'flex',
-              flexDirection: 'column',
-              bgcolor: '#ffffff',
-              height: '100%',
-              overflowY: 'auto',
-              overflowX: 'hidden',
-              scrollBehavior: 'auto',
-              willChange: 'scroll-position',
-            }}
-          >
-            {/* Left Table Header (matching 64px height) */}
-            <Box
-              sx={{
-                height: 64,
-                minHeight: 64,
-                px: 2,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                bgcolor: '#f8fafc',
-                borderBottom: '1px solid #cbd5e1',
-                position: 'sticky',
-                top: 0,
-                zIndex: 20,
-              }}
-            >
-              <Typography
-                variant="subtitle2"
-                sx={{ fontWeight: 700, color: '#475569', textTransform: 'uppercase', fontSize: '0.78rem' }}
-              >
-                Hạng Mục / Công Việc
-              </Typography>
-              <Typography variant="caption" sx={{ fontWeight: 700, color: '#64748b' }}>
-                Tiến độ
-              </Typography>
-            </Box>
-
-            {/* Rows */}
-            {visibleTasks.map((task) => {
-              const hasChildren = task.hasChildren;
-              const isCollapsed = collapsedIds.has(task.id);
-              const isProject = task.type === 'project';
-              const isPhase = task.type === 'phase';
-              const indent = (task.depth || 0) * 16;
-
-              const handleRowClick = (e: React.MouseEvent) => {
-                if (hasChildren || isProject || isPhase) {
-                  toggleCollapse(task.id, e);
-                } else if (onTaskClick) {
-                  onTaskClick(task);
-                }
-              };
-
-              return (
-                <Box
-                  key={task.id}
-                  onClick={handleRowClick}
-                  sx={{
-                    height: 44,
-                    minHeight: 44,
-                    px: 1.5,
-                    pl: `${8 + indent}px`,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    borderBottom: '1px solid #f1f5f9',
-                    bgcolor: isProject ? '#f1f5f9' : isPhase ? '#f8fafc' : '#ffffff',
-                    cursor: 'pointer',
-                    userSelect: 'none',
-                    contain: 'content',
-                    '&:hover': { bgcolor: '#f0f9ff' },
-                  }}
-                >
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, minWidth: 0, pr: 1 }}>
-                    {hasChildren ? (
-                      <IconButton
-                        size="small"
-                        onClick={(e) => toggleCollapse(task.id, e)}
-                        sx={{ p: 0.25, color: '#64748b' }}
-                      >
-                        {isCollapsed ? <ChevronRightIcon size={16} /> : <ChevronDown size={16} />}
-                      </IconButton>
-                    ) : (
-                      <Box sx={{ width: 24 }} />
-                    )}
-
-                    <Typography
-                      variant="body2"
-                      noWrap
-                      title={task.name}
-                      sx={{
-                        fontWeight: isProject ? 700 : isPhase ? 600 : 500,
-                        fontSize: isProject ? '0.875rem' : '0.8125rem',
-                        color: isProject ? '#0f172a' : isPhase ? '#1e293b' : '#334155',
-                      }}
-                    >
-                      {task.name}
-                    </Typography>
-                  </Box>
-
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0 }}>
-                    <Typography
-                      variant="caption"
-                      sx={{
-                        fontWeight: 700,
-                        color: task.progress >= 100 ? '#10b981' : task.progress > 0 ? '#0284c7' : '#94a3b8',
-                      }}
-                    >
-                      {task.progress}%
-                    </Typography>
-                  </Box>
-                </Box>
-              );
-            })}
-          </Box>
+            width={effectiveLeftWidth}
+            isSmall={Boolean(isSmall)}
+            visibleTasks={visibleTasks}
+            collapsedIds={collapsedIds}
+            onToggleCollapse={toggleCollapse}
+            onTaskClick={onTaskClick}
+          />
         )}
 
         {/* Draggable Resizer / Splitter Handle */}
@@ -1077,110 +753,14 @@ export const InteractiveGantt: React.FC<InteractiveGanttProps> = ({
               backgroundRepeat: 'repeat-x',
             }}
           >
-            {/* 2-Tier Timeline Header (Tier 1: Month Groups, Tier 2: Date Grid) */}
-            <Box
-              sx={{
-                position: 'sticky',
-                top: 0,
-                zIndex: 15,
-                bgcolor: '#ffffff',
-                borderBottom: '1px solid #cbd5e1',
-                boxShadow: '0 2px 4px rgba(0,0,0,0.03)',
-              }}
-            >
-              {/* Tier 1: Grouped Month Header */}
-              <Box sx={{ height: 26, display: 'flex', borderBottom: '1px solid #e2e8f0', bgcolor: '#f1f5f9' }}>
-                {monthGroups.map((mg, i) => (
-                  <Box
-                    key={i}
-                    sx={{
-                      width: mg.daysCount * columnWidth,
-                      minWidth: mg.daysCount * columnWidth,
-                      borderRight: '1px solid #cbd5e1',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      px: 1,
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    <Typography variant="caption" sx={{ fontWeight: 800, fontSize: '0.75rem', color: '#0369a1' }}>
-                      Tháng {mg.monthStr}
-                    </Typography>
-                  </Box>
-                ))}
-              </Box>
-
-              {/* Tier 2: Date Columns (Upper Line: Thứ, Lower Line: Ngày, Centered) */}
-              <Box sx={{ height: 38, display: 'flex', bgcolor: '#f8fafc' }}>
-                {timelineDays.map((date, idx) => {
-                  const today = isToday(date);
-                  const dayOfWeek = date.getDay();
-                  const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-                  const dayNum = date.getDate();
-                  const showLabel = viewMode !== 'Month' || dayNum === 1 || dayNum % 5 === 0;
-
-                  return (
-                    <Box
-                      key={idx}
-                      sx={{
-                        width: columnWidth,
-                        minWidth: columnWidth,
-                        borderRight: '1px solid #e2e8f0',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        textAlign: 'center',
-                        bgcolor: today ? '#e0f2fe' : isWeekend ? '#f1f5f9' : 'transparent',
-                        py: 0.25,
-                        overflow: 'hidden',
-                        userSelect: 'none',
-                      }}
-                    >
-                      {showLabel && (
-                        <>
-                          {/* Upper Line: Day of week */}
-                          <Typography
-                            variant="caption"
-                            sx={{
-                              fontWeight: today ? 800 : isWeekend ? 600 : 600,
-                              fontSize: viewMode === 'Week' ? '0.62rem' : '0.65rem',
-                              color: today ? '#0284c7' : isWeekend ? '#ef4444' : '#64748b',
-                              lineHeight: 1.1,
-                              textAlign: 'center',
-                              whiteSpace: 'nowrap',
-                              display: 'block',
-                            }}
-                          >
-                            {viewMode === 'Month' ? `${dayNum}` : getDayOfWeekText(date, viewMode)}
-                          </Typography>
-
-                          {/* Lower Line: Day number (for Day & Week modes) */}
-                          {viewMode !== 'Month' && (
-                            <Typography
-                              variant="caption"
-                              sx={{
-                                fontWeight: today ? 800 : 700,
-                                fontSize: '0.72rem',
-                                color: today ? '#0284c7' : isWeekend ? '#ef4444' : '#0f172a',
-                                lineHeight: 1.1,
-                                textAlign: 'center',
-                                display: 'block',
-                              }}
-                            >
-                              {dayNum}
-                            </Typography>
-                          )}
-                        </>
-                      )}
-                    </Box>
-                  );
-                })}
-              </Box>
-            </Box>
+            {/* 2-Tier Timeline Header */}
+            <GanttTimelineHeader
+              monthGroups={monthGroups}
+              timelineDays={timelineDays}
+              columnWidth={columnWidth}
+              viewMode={viewMode}
+              getDayOfWeekText={getDayOfWeekText}
+            />
 
             {/* Today Column Highlight */}
             {todayIndex >= 0 && (
@@ -1230,193 +810,32 @@ export const InteractiveGantt: React.FC<InteractiveGanttProps> = ({
 
             {/* Timeline Rows */}
             <Box sx={{ position: 'relative' }}>
-              {/* Task Rows */}
-              {visibleTasks.map((task) => {
-                const s = parseISO(task.start);
-                const en = parseISO(task.end);
-                const { left, width } = getTaskCoords(s, en);
-                const colors = getTaskColor(task);
-                const isProject = task.type === 'project';
-                const isPhase = task.type === 'phase';
-
-                const handleTaskBarMouseEnter = (e: React.MouseEvent) => {
-                  showTooltip(task, e.clientX, e.clientY);
-                };
-
-                const handleTaskBarMouseMove = (e: React.MouseEvent) => {
-                  moveTooltip(e.clientX, e.clientY);
-                };
-
-                const handleTaskBarMouseLeave = () => {
-                  hideTooltip();
-                };
-
-                return (
-                  <Box
-                    key={task.id}
-                    sx={{
-                      height: 44,
-                      position: 'relative',
-                      borderBottom: '1px solid #f1f5f9',
-                      bgcolor: isProject ? 'rgba(248, 250, 252, 0.5)' : 'transparent',
-                      zIndex: 1,
-                      contain: 'layout paint',
-                    }}
-                  >
-                    {/* Task Bar */}
-                    <Box
-                      className="gantt-task-bar"
-                      onMouseEnter={handleTaskBarMouseEnter}
-                      onMouseMove={handleTaskBarMouseMove}
-                      onMouseLeave={handleTaskBarMouseLeave}
-                      sx={{
-                        position: 'absolute',
-                        top: isProject ? 6 : isPhase ? 7 : 7,
-                        height: isProject ? 32 : isPhase ? 30 : 30,
-                        left: `${left}px`,
-                        width: `${Math.max(width, 16)}px`,
-                        bgcolor: colors.bg,
-                        border: `1.5px solid ${colors.bar}`,
-                        borderRadius: isProject ? '4px' : '6px',
-                        cursor: 'grab',
-                        boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        overflow: 'hidden',
-                        zIndex: 5,
-                        userSelect: 'none',
-                      }}
-                    >
-                      {/* Progress Fill inside task */}
-                      <Box
-                        sx={{
-                          position: 'absolute',
-                          left: 0,
-                          top: 0,
-                          bottom: 0,
-                          width: `${task.progress}%`,
-                          bgcolor: colors.fill,
-                          opacity: 0.85,
-                          borderRadius: '4px 0 0 4px',
-                          pointerEvents: 'none',
-                        }}
-                      />
-
-                      {/* Title text on bar if width is enough */}
-                      {width > 60 && (
-                        <Typography
-                          variant="caption"
-                          noWrap
-                          sx={{
-                            position: 'relative',
-                            zIndex: 3,
-                            px: 1,
-                            fontSize: '0.75rem',
-                            fontWeight: 700,
-                            color: '#ffffff',
-                            textShadow: '0 1px 3px rgba(0,0,0,0.8), 0 0 2px rgba(0,0,0,0.9)',
-                            letterSpacing: '0.01em',
-                            display: 'block',
-                            pointerEvents: 'none',
-                          }}
-                        >
-                          {task.name} ({task.progress}%)
-                        </Typography>
-                      )}
-                    </Box>
-
-                    {/* Task Title beside bar if width <= 60px */}
-                    {width <= 60 && (
-                      <Typography
-                        variant="caption"
-                        noWrap
-                        onMouseEnter={handleTaskBarMouseEnter}
-                        onMouseMove={handleTaskBarMouseMove}
-                        onMouseLeave={handleTaskBarMouseLeave}
-                        sx={{
-                          position: 'absolute',
-                          left: `${left + Math.max(width, 16) + 6}px`,
-                          top: isProject ? 11 : isPhase ? 12 : 12,
-                          zIndex: 4,
-                          fontSize: '0.75rem',
-                          fontWeight: 700,
-                          color: '#0f172a',
-                          cursor: 'grab',
-                        }}
-                      >
-                        {task.name} ({task.progress}%)
-                      </Typography>
-                    )}
-                  </Box>
-                );
-              })}
+              {visibleTasks.map((task) => (
+                <GanttTaskBarItem
+                  key={task.id}
+                  task={task}
+                  minDate={minDate}
+                  columnWidth={columnWidth}
+                  onMouseEnter={(t, e) => showTooltip(t, e.clientX, e.clientY)}
+                  onMouseMove={(e) => moveTooltip(e.clientX, e.clientY)}
+                  onMouseLeave={hideTooltip}
+                />
+              ))}
             </Box>
           </Box>
         </Box>
       </Box>
 
-      {/* Zero Re-render Hardware-Accelerated Floating Tooltip (Native DOM Performance) */}
-      <Box
-        ref={tooltipRef}
-        sx={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          display: 'none',
-          zIndex: 99999,
-          pointerEvents: 'none',
-          bgcolor: '#0f172a',
-          color: '#ffffff',
-          p: 1.5,
-          borderRadius: '8px',
-          border: '1px solid rgba(56, 189, 248, 0.4)',
-          boxShadow: '0 12px 28px -4px rgba(0, 0, 0, 0.5), 0 4px 10px rgba(0, 0, 0, 0.3)',
-          maxWidth: 320,
-          width: 'max-content',
-          willChange: 'transform',
-        }}
-      >
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
-          <Typography
-            ref={tooltipTitleRef}
-            variant="subtitle2"
-            sx={{ fontWeight: 800, color: '#38bdf8', fontSize: '0.85rem', lineHeight: 1.3 }}
-          />
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Calendar size={13} color="#94a3b8" />
-            <Typography
-              ref={tooltipDatesRef}
-              component="span"
-              variant="caption"
-              sx={{ color: '#f1f5f9', fontWeight: 600 }}
-            />
-          </Box>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 0.5, gap: 1.5 }}>
-            <Typography variant="caption" sx={{ color: '#cbd5e1' }}>
-              Tiến độ: <strong ref={tooltipProgressRef} style={{ color: '#34d399' }}>0%</strong>
-            </Typography>
-            <Box
-              ref={tooltipStatusRef}
-              sx={{
-                height: 20,
-                fontSize: '0.65rem',
-                fontWeight: 700,
-                px: 1,
-                display: 'inline-flex',
-                alignItems: 'center',
-                borderRadius: '16px',
-                border: '1px solid transparent',
-              }}
-            />
-          </Box>
-          <Box ref={tooltipAssigneeRef} sx={{ display: 'none', alignItems: 'center', gap: 1, mt: 0.5 }}>
-            <User size={13} color="#94a3b8" />
-            <Typography variant="caption" sx={{ color: '#cbd5e1', lineHeight: 1.2 }}>
-              Phụ trách: <strong ref={tooltipAssigneeTextRef} />
-            </Typography>
-          </Box>
-        </Box>
-      </Box>
+      {/* Floating Tooltip */}
+      <GanttTooltip
+        tooltipRef={tooltipRef}
+        tooltipTitleRef={tooltipTitleRef}
+        tooltipDatesRef={tooltipDatesRef}
+        tooltipProgressRef={tooltipProgressRef}
+        tooltipStatusRef={tooltipStatusRef}
+        tooltipAssigneeRef={tooltipAssigneeRef}
+        tooltipAssigneeTextRef={tooltipAssigneeTextRef}
+      />
     </Paper>
   );
 };

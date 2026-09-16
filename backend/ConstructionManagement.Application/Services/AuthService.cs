@@ -60,6 +60,7 @@ public class AuthService : IAuthService
         var permissions = await _roleService.GetUserPermissionsAsync(user.Id);
         var roleNames = user.UserRoles.Where(ur => ur.Role != null).Select(ur => ur.Role!.Name).ToList();
         var roleIds = user.UserRoles.Select(ur => ur.RoleId).ToList();
+        var roleColor = user.UserRoles.Where(ur => ur.Role != null && !string.IsNullOrEmpty(ur.Role.Color)).Select(ur => ur.Role!.Color).FirstOrDefault();
 
         var token = _jwtTokenService.GenerateToken(user);
         var userDto = new UserDto
@@ -71,6 +72,7 @@ public class AuthService : IAuthService
             Department = user.Department,
             AvatarUrl = user.AvatarUrl,
             Role = user.Role,
+            RoleColor = roleColor,
             Roles = roleNames.Count > 0 ? roleNames : new List<string> { user.Role.ToString() },
             RoleIds = roleIds,
             Permissions = permissions,
@@ -112,6 +114,7 @@ public class AuthService : IAuthService
         var permissions = await _roleService.GetUserPermissionsAsync(user.Id);
         var roleNames = user.UserRoles.Where(ur => ur.Role != null).Select(ur => ur.Role!.Name).ToList();
         var roleIds = user.UserRoles.Select(ur => ur.RoleId).ToList();
+        var roleColor = user.UserRoles.Where(ur => ur.Role != null && !string.IsNullOrEmpty(ur.Role.Color)).Select(ur => ur.Role!.Color).FirstOrDefault();
 
         return ApiResponse<UserDto>.Ok(new UserDto
         {
@@ -122,6 +125,7 @@ public class AuthService : IAuthService
             Department = user.Department,
             AvatarUrl = user.AvatarUrl,
             Role = user.Role,
+            RoleColor = roleColor,
             Roles = roleNames.Count > 0 ? roleNames : new List<string> { user.Role.ToString() },
             RoleIds = roleIds,
             Permissions = permissions,

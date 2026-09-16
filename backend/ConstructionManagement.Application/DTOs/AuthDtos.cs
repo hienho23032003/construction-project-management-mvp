@@ -26,7 +26,8 @@ public class UserDto
     public string? Department { get; set; }
     public string? AvatarUrl { get; set; }
     public UserRole Role { get; set; }
-    public string RoleName => Role.ToString();
+    public string RoleName => Roles.Count > 0 ? Roles[0] : Role.ToString();
+    public string? RoleColor { get; set; }
     public List<string> Roles { get; set; } = new();
     public List<Guid> RoleIds { get; set; } = new();
     public List<string> Permissions { get; set; } = new();

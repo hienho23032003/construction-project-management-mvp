@@ -111,6 +111,7 @@ public class RoleService : IRoleService
                 Name = r.Name,
                 Code = r.Code,
                 Description = r.Description,
+                Color = r.Color,
                 IsSystem = r.IsSystem,
                 UserCount = r.UserRoles.Count,
                 Permissions = r.Permissions.Select(p => p.PermissionCode).ToList(),
@@ -136,6 +137,7 @@ public class RoleService : IRoleService
             Name = r.Name,
             Code = r.Code,
             Description = r.Description,
+            Color = r.Color,
             IsSystem = r.IsSystem,
             UserCount = r.UserRoles.Count,
             Permissions = r.Permissions.Select(p => p.PermissionCode).ToList(),
@@ -160,6 +162,7 @@ public class RoleService : IRoleService
             Name = request.Name.Trim(),
             Code = code,
             Description = request.Description,
+            Color = !string.IsNullOrWhiteSpace(request.Color) ? request.Color.Trim() : "#0284c7",
             IsSystem = false,
             CreatedAt = DateTime.UtcNow
         };
@@ -187,6 +190,7 @@ public class RoleService : IRoleService
             Name = role.Name,
             Code = role.Code,
             Description = role.Description,
+            Color = role.Color,
             IsSystem = role.IsSystem,
             UserCount = 0,
             Permissions = role.Permissions.Select(p => p.PermissionCode).ToList(),
@@ -215,6 +219,10 @@ public class RoleService : IRoleService
             role.Code = code;
         }
         role.Description = request.Description;
+        if (!string.IsNullOrWhiteSpace(request.Color))
+        {
+            role.Color = request.Color.Trim();
+        }
         role.UpdatedAt = DateTime.UtcNow;
 
         // Update permissions safely without clearing tracked collection

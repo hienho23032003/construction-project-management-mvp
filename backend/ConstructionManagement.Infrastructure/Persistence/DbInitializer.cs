@@ -79,6 +79,23 @@ public static class DbInitializer
                 await context.SaveChangesAsync();
             }
 
+            // Auto update default colors for existing roles if missing
+            var rolesWithNoColor = await context.Roles.Where(r => string.IsNullOrEmpty(r.Color)).ToListAsync();
+            if (rolesWithNoColor.Any())
+            {
+                foreach (var r in rolesWithNoColor)
+                {
+                    var upper = (r.Code ?? "").ToUpper();
+                    if (upper.Contains("ADMIN") || upper == "SUPER_ADMIN" || upper == "SUPERADMIN") r.Color = "#b91c1c";
+                    else if (upper.Contains("PROJECT") || upper.Contains("PM")) r.Color = "#0369a1";
+                    else if (upper.Contains("SUPERVISOR")) r.Color = "#b45309";
+                    else if (upper.Contains("ENGINEER")) r.Color = "#047857";
+                    else if (upper.Contains("ACCOUNTANT")) r.Color = "#0f766e";
+                    else r.Color = "#0284c7";
+                }
+                await context.SaveChangesAsync();
+            }
+
             return; // DB already seeded
         }
 
@@ -173,6 +190,7 @@ public static class DbInitializer
             Name = "Super Admin (Quản Trị Tối Cao)",
             Code = "SUPER_ADMIN",
             Description = "Toàn quyền quản trị toàn bộ hệ thống, phân quyền và giám sát dự án",
+            Color = "#b91c1c",
             IsSystem = true,
             CreatedAt = DateTime.UtcNow
         };
@@ -183,6 +201,7 @@ public static class DbInitializer
             Name = "Quản Lý (PM)",
             Code = "PROJECT_MANAGER",
             Description = "Quản lý toàn diện tiến độ, nhân sự, phê duyệt và điều phối công trình",
+            Color = "#0369a1",
             IsSystem = false,
             CreatedAt = DateTime.UtcNow
         };
@@ -193,6 +212,7 @@ public static class DbInitializer
             Name = "Giám Sát Công Trường (Site Supervisor)",
             Code = "SITE_SUPERVISOR",
             Description = "Giám sát kỹ thuật hiện trường, nghiệm thu, giao việc và theo dõi tiến độ thi công",
+            Color = "#b45309",
             IsSystem = false,
             CreatedAt = DateTime.UtcNow
         };
@@ -203,6 +223,7 @@ public static class DbInitializer
             Name = "Kỹ Sư Thi Công / Hiện Trường",
             Code = "FIELD_ENGINEER",
             Description = "Thực hiện các hạng mục công việc, cập nhật tiến độ thi công và thảo luận kỹ thuật",
+            Color = "#047857",
             IsSystem = false,
             CreatedAt = DateTime.UtcNow
         };
@@ -213,6 +234,7 @@ public static class DbInitializer
             Name = "Kế Toán & Quản Lý Vật Tư",
             Code = "ACCOUNTANT_SUPPLY",
             Description = "Theo dõi xuất nhập vật tư và tra cứu báo cáo tài chính dự án",
+            Color = "#0f766e",
             IsSystem = false,
             CreatedAt = DateTime.UtcNow
         };

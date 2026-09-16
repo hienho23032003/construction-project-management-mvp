@@ -47,6 +47,10 @@ import { PERMISSIONS } from '../constants/permissions';
 import { RoleModal, RoleFormData } from '../components/roles/RoleModal';
 import { RoleTable } from '../components/roles/RoleTable';
 import { useDebounce } from '../hooks/useDebounce';
+import { CommonSelect } from '../components/common/CommonSelect';
+import { CardGridSkeleton } from '../components/common/CardGridSkeleton';
+import { TableSkeleton } from '../components/common/TableSkeleton';
+import { getRoleChipStyle } from '../utils/roleColors';
 
 export const RolesPage: React.FC = () => {
   const { data: roles = [], isLoading } = useRolesQuery();
@@ -102,6 +106,7 @@ export const RolesPage: React.FC = () => {
           name: data.name,
           code: data.code,
           description: data.description,
+          color: data.color,
           permissions: data.permissions,
         },
       });
@@ -110,6 +115,7 @@ export const RolesPage: React.FC = () => {
         name: data.name,
         code: data.code,
         description: data.description,
+        color: data.color,
         permissions: data.permissions,
       });
     }
@@ -315,23 +321,28 @@ export const RolesPage: React.FC = () => {
                   <CardContent sx={{ p: 2.5, flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
                     {/* Header: Title & Badges */}
                     <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', mb: 1.5 }}>
-                      <Box>
-                        <Typography variant="h6" sx={{ fontWeight: 700, color: '#0f172a', fontSize: '1.05rem', lineHeight: 1.3 }}>
-                          {role.name}
-                        </Typography>
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                        <Chip
+                          label={role.name}
+                          size="small"
+                          sx={{
+                            fontWeight: 700,
+                            fontSize: '0.8rem',
+                            height: 24,
+                            width: 'fit-content',
+                            ...getRoleChipStyle(role.color, role.code || role.name),
+                          }}
+                        />
                         <Typography
                           variant="caption"
                           sx={{
                             fontFamily: 'monospace',
-                            color: '#0284c7',
+                            color: '#64748b',
                             fontWeight: 600,
-                            bgcolor: '#f0f9ff',
-                            px: 0.8,
-                            py: 0.2,
-                            borderRadius: 1,
+                            fontSize: '0.72rem',
                           }}
                         >
-                          {role.code}
+                          Mã: {role.code}
                         </Typography>
                       </Box>
                       <Box sx={{ display: 'flex', gap: 0.5 }}>

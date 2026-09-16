@@ -44,9 +44,9 @@ export const authApi = {
 export const roleApi = {
   getAll: () => apiClient.get<ApiResponse<RoleItem[]>>('/roles'),
   getById: (id: string) => apiClient.get<ApiResponse<RoleItem>>(`/roles/${id}`),
-  create: (data: { name: string; code: string; description?: string; permissions: string[] }) =>
+  create: (data: { name: string; code: string; description?: string; color?: string; permissions: string[] }) =>
     apiClient.post<ApiResponse<RoleItem>>('/roles', data),
-  update: (id: string, data: { name: string; code?: string; description?: string; permissions: string[] }) =>
+  update: (id: string, data: { name: string; code?: string; description?: string; color?: string; permissions: string[] }) =>
     apiClient.put<ApiResponse<RoleItem>>(`/roles/${id}`, data),
   delete: (id: string) => apiClient.delete<ApiResponse<boolean>>(`/roles/${id}`),
   getPermissionsMatrix: () => apiClient.get<ApiResponse<PermissionModuleGroup[]>>('/roles/permissions-matrix'),

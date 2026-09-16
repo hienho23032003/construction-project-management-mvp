@@ -63,7 +63,7 @@ export const useCreateRoleMutation = () => {
   const { showSuccess, showError } = useToast();
 
   return useMutation({
-    mutationFn: (data: { name: string; code: string; description?: string; permissions: string[] }) =>
+    mutationFn: (data: { name: string; code: string; description?: string; color?: string; permissions: string[] }) =>
       roleApi.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['roles'] });
@@ -81,7 +81,7 @@ export const useUpdateRoleMutation = () => {
   const { showSuccess, showError } = useToast();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: { name: string; code?: string; description?: string; permissions: string[] } }) =>
+    mutationFn: ({ id, data }: { id: string; data: { name: string; code?: string; description?: string; color?: string; permissions: string[] } }) =>
       roleApi.update(id, data),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['roles'] });

@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { useForm, Controller } from 'react-hook-form';
+import React, { useEffect, useCallback, memo, useState } from 'react';
+import { useForm, Controller, useWatch, Control } from 'react-hook-form';
 import {
   Dialog,
   DialogTitle,
@@ -18,14 +18,16 @@ import {
   IconButton,
   Tooltip,
 } from '@mui/material';
-import { X, Settings, CheckSquare, Square } from 'lucide-react';
+import { X, Settings, CheckSquare, Square, Palette, Check } from 'lucide-react';
 import { RoleItem, PermissionModuleGroup } from '../../types';
 import { usePermissionsMatrixQuery } from '../../hooks/useRoles';
+import { ROLE_COLOR_PRESETS, getRoleChipStyle } from '../../utils/roleColors';
 
 export interface RoleFormData {
   name: string;
   code: string;
   description: string;
+  color?: string;
   permissions: string[];
 }
 
@@ -37,6 +39,382 @@ interface RoleModalProps {
   isSubmitting?: boolean;
 }
 
+// -------------------------------------------------------------
+// Isolated Color Picker Component - 100% Zero-Lag Local Dragging
+// -------------------------------------------------------------
+interface RoleColorPickerProps {
+  value: string;
+  onChange: (newColor: string) => void;
+  control: Control<RoleFormData>;
+}
+
+const RoleColorPicker: React.FC<RoleColorPickerProps> = memo(({
+  value,
+  onChange,
+  control,
+}) => {
+  const [localColor, setLocalColor] = useState(value || '#0284c7');
+  const roleName = useWatch({ control, name: 'name' }) || '';
+
+  useEffect(() => {
+    if (value) {
+      setLocalColor(value);
+    }
+  }, [value]);
+
+  const handleCustomInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // 100% direct local state update - Zero parent re-renders while dragging
+    setLocalColor(e.target.value);
+  };
+
+  const handleCustomChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Sync to form only when user finishes / releases mouse
+    setLocalColor(e.target.value);
+    onChange(e.target.value);
+  };
+
+  const handleHexInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setLocalColor(val);
+    if (/^#[0-9A-Fa-f]{6}$/.test(val) || /^#[0-9A-Fa-f]{3}$/.test(val)) {
+      onChange(val);
+    }
+  };
+
+  const handleSelectPreset = (presetColor: string) => {
+    setLocalColor(presetColor);
+    onChange(presetColor);
+  };
+
+  return (
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 1.5,
+        bgcolor: '#ffffff',
+        p: 1.5,
+        borderRadius: '8px',
+        border: '1px solid #e2e8f0',
+      }}
+    >
+      {/* Preset color swatches */}
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+        {ROLE_COLOR_PRESETS.map((preset) => {
+          const isSelected =
+            localColor.toLowerCase() === preset.color.toLowerCase() ||
+            localColor.toLowerCase() === preset.key.toLowerCase();
+          return (
+            <Tooltip key={preset.key} title={preset.name} arrow>
+              <Box
+                onClick={() => handleSelectPreset(preset.color)}
+                sx={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: '50%',
+                  bgcolor: preset.color,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'transform 0.1s ease',
+                  border: isSelected ? '3px solid #ffffff' : '2px solid transparent',
+                  boxShadow: isSelected
+                    ? `0 0 0 2px ${preset.color}, 0 2px 6px rgba(0,0,0,0.2)`
+                    : 'none',
+                  '&:hover': { transform: 'scale(1.15)' },
+                }}
+              >
+                {isSelected && <Check size={14} color="#ffffff" strokeWidth={3} />}
+              </Box>
+            </Tooltip>
+          );
+        })}
+
+        {/* Custom color picker input + Hex code input */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, ml: { xs: 0, sm: 'auto' }, flexWrap: 'wrap' }}>
+          <Typography variant="caption" sx={{ color: '#64748b', fontSize: '0.75rem', fontWeight: 600 }}>
+            Mã màu:
+          </Typography>
+          <input
+            type="text"
+            value={localColor}
+            onChange={handleHexInputChange}
+            maxLength={7}
+            style={{
+              width: 76,
+              height: 30,
+              fontSize: '0.8rem',
+              fontFamily: 'monospace',
+              fontWeight: 600,
+              padding: '2px 8px',
+              border: '1px solid #cbd5e1',
+              borderRadius: '6px',
+              color: '#0f172a',
+              background: '#f8fafc',
+            }}
+          />
+          <input
+            type="color"
+            value={localColor.startsWith('#') ? localColor : '#0284c7'}
+            onInput={handleCustomInput}
+            onChange={handleCustomChange}
+            style={{
+              width: 32,
+              height: 32,
+              border: '1px solid #cbd5e1',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              padding: '2px',
+              background: '#ffffff',
+            }}
+          />
+        </Box>
+      </Box>
+
+      {/* Live Preview */}
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, pt: 1, borderTop: '1px dashed #e2e8f0' }}>
+        <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 600, fontSize: '0.75rem' }}>
+          Xem trước hiển thị:
+        </Typography>
+        <Chip
+          label={roleName.trim() ? roleName : 'Tên Vai Trò Mẫu'}
+          size="small"
+          sx={{
+            height: 24,
+            fontSize: '0.75rem',
+            fontWeight: 700,
+            ...getRoleChipStyle(localColor, roleName),
+          }}
+        />
+      </Box>
+    </Box>
+  );
+});
+
+// -------------------------------------------------------------
+// Memoized Permission Matrix Section
+// -------------------------------------------------------------
+interface PermissionMatrixProps {
+  matrix: PermissionModuleGroup[];
+  control: Control<RoleFormData>;
+  setValue: (name: keyof RoleFormData, value: any, options?: any) => void;
+  getValues: (name: keyof RoleFormData) => any;
+  loadingMatrix: boolean;
+}
+
+const PermissionMatrixSection: React.FC<PermissionMatrixProps> = memo(({
+  matrix,
+  control,
+  setValue,
+  getValues,
+  loadingMatrix,
+}) => {
+  const selectedPermissions: string[] = useWatch({ control, name: 'permissions' }) || [];
+  const totalAvailablePerms = matrix.reduce((acc, g) => acc + g.permissions.length, 0);
+
+  const handleTogglePermission = useCallback((code: string) => {
+    const current: string[] = getValues('permissions') || [];
+    setValue(
+      'permissions',
+      current.includes(code) ? current.filter((p) => p !== code) : [...current, code],
+      { shouldDirty: true }
+    );
+  }, [getValues, setValue]);
+
+  const handleToggleModule = useCallback((moduleGroup: PermissionModuleGroup) => {
+    const current: string[] = getValues('permissions') || [];
+    const moduleCodes = moduleGroup.permissions.map((p) => p.code);
+    const allSelected = moduleCodes.every((code) => current.includes(code));
+
+    if (allSelected) {
+      setValue(
+        'permissions',
+        current.filter((p) => !moduleCodes.includes(p)),
+        { shouldDirty: true }
+      );
+    } else {
+      const newPerms = Array.from(new Set([...current, ...moduleCodes]));
+      setValue('permissions', newPerms, { shouldDirty: true });
+    }
+  }, [getValues, setValue]);
+
+  const handleSelectAll = useCallback(() => {
+    const current: string[] = getValues('permissions') || [];
+    const allCodes = matrix.flatMap((g) => g.permissions.map((p) => p.code));
+    if (current.length === allCodes.length) {
+      setValue('permissions', [], { shouldDirty: true });
+    } else {
+      setValue('permissions', allCodes, { shouldDirty: true });
+    }
+  }, [matrix, getValues, setValue]);
+
+  return (
+    <Box>
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: { xs: 'column', sm: 'row' },
+          alignItems: { xs: 'flex-start', sm: 'center' },
+          justifyContent: 'space-between',
+          gap: 1.25,
+          mb: 1.5,
+        }}
+      >
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#0f172a', whiteSpace: 'nowrap' }}>
+            Ma Trận Phân Quyền Chi Tiết
+          </Typography>
+          <Chip
+            label={`${selectedPermissions.length}/${totalAvailablePerms} quyền đã chọn`}
+            size="small"
+            sx={{ bgcolor: '#e0f2fe', color: '#0284c7', fontWeight: 600, fontSize: '0.75rem', whiteSpace: 'nowrap' }}
+          />
+        </Box>
+        <Button
+          size="small"
+          variant="outlined"
+          onClick={handleSelectAll}
+          startIcon={selectedPermissions.length === totalAvailablePerms ? <Square size={14} /> : <CheckSquare size={14} />}
+          sx={{
+            textTransform: 'none',
+            fontSize: '0.8rem',
+            py: 0.4,
+            px: 1.5,
+            borderRadius: '8px',
+            whiteSpace: 'nowrap',
+            width: { xs: '100%', sm: 'auto' },
+          }}
+        >
+          {selectedPermissions.length === totalAvailablePerms ? 'Bỏ chọn tất cả' : 'Chọn tất cả quyền'}
+        </Button>
+      </Box>
+
+      {loadingMatrix ? (
+        <Typography variant="body2" sx={{ color: '#64748b', py: 3, textAlign: 'center' }}>
+          Đang tải ma trận quyền...
+        </Typography>
+      ) : (
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          {matrix.map((moduleGroup) => {
+            const moduleCodes = moduleGroup.permissions.map((p) => p.code);
+            const selectedInModule = moduleCodes.filter((c) => selectedPermissions.includes(c));
+            const isAllModuleSelected = selectedInModule.length === moduleCodes.length;
+            const isPartiallySelected = selectedInModule.length > 0 && !isAllModuleSelected;
+
+            return (
+              <Paper
+                key={moduleGroup.module}
+                variant="outlined"
+                sx={{
+                  p: { xs: 1.5, sm: 2 },
+                  borderRadius: '8px',
+                  border: selectedInModule.length > 0 ? '1px solid #bae6fd' : '1px solid #e2e8f0',
+                  bgcolor: selectedInModule.length > 0 ? 'rgba(240, 249, 255, 0.4)' : '#ffffff',
+                  transition: 'all 0.2s ease',
+                }}
+              >
+                {/* Module Header */}
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1, flexWrap: 'wrap', gap: 0.5 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexWrap: 'wrap', minWidth: 0, flex: 1 }}>
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={isAllModuleSelected}
+                          indeterminate={isPartiallySelected}
+                          onChange={() => handleToggleModule(moduleGroup)}
+                          size="small"
+                          sx={{ color: '#0284c7', '&.Mui-checked': { color: '#0284c7' } }}
+                        />
+                      }
+                      label={
+                        <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#1e293b' }}>
+                          {moduleGroup.moduleName}
+                        </Typography>
+                      }
+                      sx={{ mr: 0.5 }}
+                    />
+                    {moduleGroup.description && (
+                      <Typography variant="caption" sx={{ color: '#64748b' }}>
+                        ({moduleGroup.description})
+                      </Typography>
+                    )}
+                  </Box>
+                  <Chip
+                    label={`${selectedInModule.length}/${moduleCodes.length}`}
+                    size="small"
+                    variant={selectedInModule.length > 0 ? 'filled' : 'outlined'}
+                    sx={{
+                      fontSize: '0.7rem',
+                      height: 20,
+                      bgcolor: selectedInModule.length > 0 ? '#0284c7' : 'transparent',
+                      color: selectedInModule.length > 0 ? '#ffffff' : '#94a3b8',
+                      fontWeight: 600,
+                      flexShrink: 0,
+                    }}
+                  />
+                </Box>
+                <Divider sx={{ my: 1 }} />
+
+                {/* Permissions Grid */}
+                <Grid container spacing={1}>
+                  {moduleGroup.permissions.map((perm) => {
+                    const isChecked = selectedPermissions.includes(perm.code);
+                    return (
+                      <Grid item xs={12} sm={6} key={perm.code}>
+                        <Box
+                          onClick={() => handleTogglePermission(perm.code)}
+                          sx={{
+                            display: 'flex',
+                            alignItems: 'flex-start',
+                            gap: 1,
+                            p: 1,
+                            borderRadius: '8px',
+                            cursor: 'pointer',
+                            bgcolor: isChecked ? '#e0f2fe' : '#f8fafc',
+                            border: isChecked ? '1px solid #7dd3fc' : '1px solid #f1f5f9',
+                            transition: 'all 0.15s ease',
+                            '&:hover': {
+                              bgcolor: isChecked ? '#bae6fd' : '#f1f5f9',
+                            },
+                          }}
+                        >
+                          <Checkbox
+                            checked={isChecked}
+                            size="small"
+                            sx={{ p: 0.2, color: '#0284c7', '&.Mui-checked': { color: '#0284c7' } }}
+                          />
+                          <Box sx={{ minWidth: 0, flexGrow: 1 }}>
+                            <Typography
+                              variant="body2"
+                              sx={{ fontWeight: isChecked ? 600 : 500, fontSize: '0.8125rem', color: '#0f172a' }}
+                            >
+                              {perm.name}
+                            </Typography>
+                            <Typography
+                              variant="caption"
+                              sx={{ color: '#64748b', fontSize: '0.7rem', display: 'block' }}
+                            >
+                              {perm.description}
+                            </Typography>
+                          </Box>
+                        </Box>
+                      </Grid>
+                    );
+                  })}
+                </Grid>
+              </Paper>
+            );
+          })}
+        </Box>
+      )}
+    </Box>
+  );
+});
+
+// -------------------------------------------------------------
+// Main Modal Component
+// -------------------------------------------------------------
 export const RoleModal: React.FC<RoleModalProps> = ({
   open,
   onClose,
@@ -49,8 +427,8 @@ export const RoleModal: React.FC<RoleModalProps> = ({
   const {
     control,
     handleSubmit,
-    watch,
     setValue,
+    getValues,
     reset,
     formState: { errors },
   } = useForm<RoleFormData>({
@@ -58,11 +436,10 @@ export const RoleModal: React.FC<RoleModalProps> = ({
       name: '',
       code: '',
       description: '',
+      color: '#0284c7',
       permissions: [],
     },
   });
-
-  const selectedPermissions = watch('permissions') || [];
 
   useEffect(() => {
     if (open) {
@@ -71,6 +448,7 @@ export const RoleModal: React.FC<RoleModalProps> = ({
           name: initialData.name,
           code: initialData.code,
           description: initialData.description || '',
+          color: initialData.color || '#0284c7',
           permissions: initialData.permissions || [],
         });
       } else {
@@ -78,51 +456,14 @@ export const RoleModal: React.FC<RoleModalProps> = ({
           name: '',
           code: '',
           description: '',
+          color: '#0284c7',
           permissions: [],
         });
       }
     }
   }, [open, initialData, reset]);
 
-  const handleTogglePermission = (code: string) => {
-    if (selectedPermissions.includes(code)) {
-      setValue(
-        'permissions',
-        selectedPermissions.filter((p) => p !== code),
-        { shouldDirty: true }
-      );
-    } else {
-      setValue('permissions', [...selectedPermissions, code], { shouldDirty: true });
-    }
-  };
-
-  const handleToggleModule = (moduleGroup: PermissionModuleGroup) => {
-    const moduleCodes = moduleGroup.permissions.map((p) => p.code);
-    const allSelected = moduleCodes.every((code) => selectedPermissions.includes(code));
-
-    if (allSelected) {
-      setValue(
-        'permissions',
-        selectedPermissions.filter((p) => !moduleCodes.includes(p)),
-        { shouldDirty: true }
-      );
-    } else {
-      const newPerms = Array.from(new Set([...selectedPermissions, ...moduleCodes]));
-      setValue('permissions', newPerms, { shouldDirty: true });
-    }
-  };
-
-  const handleSelectAll = () => {
-    const allCodes = matrix.flatMap((g) => g.permissions.map((p) => p.code));
-    if (selectedPermissions.length === allCodes.length) {
-      setValue('permissions', [], { shouldDirty: true });
-    } else {
-      setValue('permissions', allCodes, { shouldDirty: true });
-    }
-  };
-
   const isEditing = Boolean(initialData);
-  const totalAvailablePerms = matrix.reduce((acc, g) => acc + g.permissions.length, 0);
 
   return (
     <Dialog
@@ -247,169 +588,39 @@ export const RoleModal: React.FC<RoleModalProps> = ({
                     )}
                   />
                 </Grid>
+
+                {/* Role Chip Color Option */}
+                <Grid item xs={12}>
+                  <Typography variant="caption" sx={{ fontWeight: 700, color: '#334155', display: 'block', mb: 1 }}>
+                    <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.75 }}>
+                      <Palette size={15} color="#0284c7" />
+                      Màu Sắc Đại Diện Cho Vai Trò (Role Chip Color)
+                    </Box>
+                  </Typography>
+
+                  <Controller
+                    name="color"
+                    control={control}
+                    render={({ field }) => (
+                      <RoleColorPicker
+                        value={field.value || '#0284c7'}
+                        onChange={field.onChange}
+                        control={control}
+                      />
+                    )}
+                  />
+                </Grid>
               </Grid>
             </Paper>
 
             {/* Permission Matrix */}
-            <Box>
-              <Box
-                sx={{
-                  display: 'flex',
-                  flexDirection: { xs: 'column', sm: 'row' },
-                  alignItems: { xs: 'flex-start', sm: 'center' },
-                  justifyContent: 'space-between',
-                  gap: 1.25,
-                  mb: 1.5,
-                }}
-              >
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-                  <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#0f172a', whiteSpace: 'nowrap' }}>
-                    Ma Trận Phân Quyền Chi Tiết
-                  </Typography>
-                  <Chip
-                    label={`${selectedPermissions.length}/${totalAvailablePerms} quyền đã chọn`}
-                    size="small"
-                    sx={{ bgcolor: '#e0f2fe', color: '#0284c7', fontWeight: 600, fontSize: '0.75rem', whiteSpace: 'nowrap' }}
-                  />
-                </Box>
-                <Button
-                  size="small"
-                  variant="outlined"
-                  onClick={handleSelectAll}
-                  startIcon={selectedPermissions.length === totalAvailablePerms ? <Square size={14} /> : <CheckSquare size={14} />}
-                  sx={{
-                    textTransform: 'none',
-                    fontSize: '0.8rem',
-                    py: 0.4,
-                    px: 1.5,
-                    borderRadius: '8px',
-                    whiteSpace: 'nowrap',
-                    width: { xs: '100%', sm: 'auto' },
-                  }}
-                >
-                  {selectedPermissions.length === totalAvailablePerms ? 'Bỏ chọn tất cả' : 'Chọn tất cả quyền'}
-                </Button>
-              </Box>
-
-              {loadingMatrix ? (
-                <Typography variant="body2" sx={{ color: '#64748b', py: 3, textAlign: 'center' }}>
-                  Đang tải ma trận quyền...
-                </Typography>
-              ) : (
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                  {matrix.map((moduleGroup) => {
-                    const moduleCodes = moduleGroup.permissions.map((p) => p.code);
-                    const selectedInModule = moduleCodes.filter((c) => selectedPermissions.includes(c));
-                    const isAllModuleSelected = selectedInModule.length === moduleCodes.length;
-                    const isPartiallySelected = selectedInModule.length > 0 && !isAllModuleSelected;
-
-                    return (
-                      <Paper
-                        key={moduleGroup.module}
-                        variant="outlined"
-                        sx={{
-                          p: { xs: 1.5, sm: 2 },
-                          borderRadius: '8px',
-                          border: selectedInModule.length > 0 ? '1px solid #bae6fd' : '1px solid #e2e8f0',
-                          bgcolor: selectedInModule.length > 0 ? 'rgba(240, 249, 255, 0.4)' : '#ffffff',
-                          transition: 'all 0.2s ease',
-                        }}
-                      >
-                        {/* Module Header */}
-                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1, flexWrap: 'wrap', gap: 0.5 }}>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexWrap: 'wrap', minWidth: 0, flex: 1 }}>
-                            <FormControlLabel
-                              control={
-                                <Checkbox
-                                  checked={isAllModuleSelected}
-                                  indeterminate={isPartiallySelected}
-                                  onChange={() => handleToggleModule(moduleGroup)}
-                                  size="small"
-                                  sx={{ color: '#0284c7', '&.Mui-checked': { color: '#0284c7' } }}
-                                />
-                              }
-                              label={
-                                <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#1e293b' }}>
-                                  {moduleGroup.moduleName}
-                                </Typography>
-                              }
-                              sx={{ mr: 0.5 }}
-                            />
-                            {moduleGroup.description && (
-                              <Typography variant="caption" sx={{ color: '#64748b' }}>
-                                ({moduleGroup.description})
-                              </Typography>
-                            )}
-                          </Box>
-                          <Chip
-                            label={`${selectedInModule.length}/${moduleCodes.length}`}
-                            size="small"
-                            variant={selectedInModule.length > 0 ? 'filled' : 'outlined'}
-                            sx={{
-                              fontSize: '0.7rem',
-                              height: 20,
-                              bgcolor: selectedInModule.length > 0 ? '#0284c7' : 'transparent',
-                              color: selectedInModule.length > 0 ? '#ffffff' : '#94a3b8',
-                              fontWeight: 600,
-                              flexShrink: 0,
-                            }}
-                          />
-                        </Box>
-                        <Divider sx={{ my: 1 }} />
-
-                        {/* Permissions Grid */}
-                        <Grid container spacing={1}>
-                          {moduleGroup.permissions.map((perm) => {
-                            const isChecked = selectedPermissions.includes(perm.code);
-                            return (
-                              <Grid item xs={12} sm={6} key={perm.code}>
-                                <Box
-                                  onClick={() => handleTogglePermission(perm.code)}
-                                  sx={{
-                                    display: 'flex',
-                                    alignItems: 'flex-start',
-                                    gap: 1,
-                                    p: 1,
-                                    borderRadius: '8px',
-                                    cursor: 'pointer',
-                                    bgcolor: isChecked ? '#e0f2fe' : '#f8fafc',
-                                    border: isChecked ? '1px solid #7dd3fc' : '1px solid #f1f5f9',
-                                    transition: 'all 0.15s ease',
-                                    '&:hover': {
-                                      bgcolor: isChecked ? '#bae6fd' : '#f1f5f9',
-                                    },
-                                  }}
-                                >
-                                  <Checkbox
-                                    checked={isChecked}
-                                    size="small"
-                                    sx={{ p: 0.2, color: '#0284c7', '&.Mui-checked': { color: '#0284c7' } }}
-                                  />
-                                  <Box sx={{ minWidth: 0, flexGrow: 1 }}>
-                                    <Typography
-                                      variant="body2"
-                                      sx={{ fontWeight: isChecked ? 600 : 500, fontSize: '0.8125rem', color: '#0f172a' }}
-                                    >
-                                      {perm.name}
-                                    </Typography>
-                                    <Typography
-                                      variant="caption"
-                                      sx={{ color: '#64748b', fontSize: '0.7rem', display: 'block' }}
-                                    >
-                                      {perm.description}
-                                    </Typography>
-                                  </Box>
-                                </Box>
-                              </Grid>
-                            );
-                          })}
-                        </Grid>
-                      </Paper>
-                    );
-                  })}
-                </Box>
-              )}
-            </Box>
+            <PermissionMatrixSection
+              matrix={matrix}
+              control={control}
+              setValue={setValue}
+              getValues={getValues}
+              loadingMatrix={loadingMatrix}
+            />
           </Box>
         </DialogContent>
 

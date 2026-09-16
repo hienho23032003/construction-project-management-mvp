@@ -16,10 +16,13 @@ import {
   Switch,
   IconButton,
   Typography,
+  Box,
+  Chip,
 } from '@mui/material';
 import { X } from 'lucide-react';
 import { User, UserRole, RoleItem } from '../../types';
 import { useRolesQuery } from '../../hooks/useRoles';
+import { getRoleChipStyle } from '../../utils/roleColors';
 
 export interface EmployeeFormData {
   fullName: string;
@@ -41,46 +44,65 @@ interface EmployeeFormModalProps {
 }
 
 const getInitialRoleValue = (user: User | null | undefined, roles: RoleItem[]): string => {
+  if (!roles || roles.length === 0) {
+    return user?.role || 'Employee';
+  }
+
   if (!user) {
     const engineer = roles.find((r) => r.code === 'FIELD_ENGINEER');
-    return engineer ? engineer.code : 'Employee';
+    return engineer ? engineer.id : roles[0].id;
   }
 
-  // 1. Match by roleIds
+  // 1. Match by user.roleIds
   if (user.roleIds && user.roleIds.length > 0) {
     const matched = roles.find((r) => user.roleIds?.includes(r.id));
-    if (matched) return matched.code;
+    if (matched) return matched.id;
   }
 
-  // 2. Match by enum string
+  // 2. Match by user.roles (role names from dynamic roles)
+  if (user.roles && user.roles.length > 0) {
+    const matched = roles.find(
+      (r) =>
+        r.name.trim().toLowerCase() === user.roles![0].trim().toLowerCase() ||
+        r.code.trim().toLowerCase() === user.roles![0].trim().toLowerCase()
+    );
+    if (matched) return matched.id;
+  }
+
+  // 3. Match by user.roleName
+  if (user.roleName) {
+    const matched = roles.find(
+      (r) =>
+        r.name.trim().toLowerCase() === user.roleName!.trim().toLowerCase() ||
+        r.code.trim().toLowerCase() === user.roleName!.trim().toLowerCase()
+    );
+    if (matched) return matched.id;
+  }
+
+  // 4. Match by legacy enum string or code
   if (user.role) {
     const roleUpper = String(user.role).toUpperCase();
     if (roleUpper === 'SUPERADMIN' || roleUpper === 'SUPER_ADMIN') {
       const r = roles.find((x) => x.code === 'SUPER_ADMIN' || x.code === 'SuperAdmin');
-      if (r) return r.code || 'SUPER_ADMIN';
-      return 'SUPER_ADMIN';
+      if (r) return r.id;
     }
     if (roleUpper === 'PROJECTMANAGER' || roleUpper === 'PROJECT_MANAGER') {
       const r = roles.find((x) => x.code === 'PROJECT_MANAGER' || x.code === 'ProjectManager');
-      if (r) return r.code || 'PROJECT_MANAGER';
-      return 'PROJECT_MANAGER';
+      if (r) return r.id;
     }
     if (roleUpper === 'SUPERVISOR' || roleUpper === 'SITE_SUPERVISOR') {
       const r = roles.find((x) => x.code === 'SITE_SUPERVISOR' || x.code === 'Supervisor');
-      if (r) return r.code || 'SITE_SUPERVISOR';
-      return 'SITE_SUPERVISOR';
+      if (r) return r.id;
     }
     if (roleUpper === 'EMPLOYEE' || roleUpper === 'FIELD_ENGINEER') {
       const r = roles.find((x) => x.code === 'FIELD_ENGINEER' || x.code === 'Employee');
-      if (r) return r.code || 'FIELD_ENGINEER';
-      return 'FIELD_ENGINEER';
+      if (r) return r.id;
     }
     const directMatch = roles.find((x) => x.code === user.role || x.id === user.role);
-    if (directMatch) return directMatch.code;
-    return String(user.role);
+    if (directMatch) return directMatch.id;
   }
 
-  return roles.length > 0 ? roles[0].code : 'Employee';
+  return roles[0].id;
 };
 
 export const EmployeeFormModal: React.FC<EmployeeFormModalProps> = ({
@@ -104,7 +126,7 @@ export const EmployeeFormModal: React.FC<EmployeeFormModalProps> = ({
       password: '',
       phone: '',
       department: '',
-      role: 'FIELD_ENGINEER',
+      role: '',
       roleIds: [],
       isActive: true,
     },
@@ -140,16 +162,18 @@ export const EmployeeFormModal: React.FC<EmployeeFormModalProps> = ({
   }, [open, editingUser, roleList, reset]);
 
   const handleFormSubmit = (data: EmployeeFormData) => {
-    const selectedCode = String(data.role || '');
-    const matchedRole = roleList.find((r) => r.code === selectedCode || r.id === selectedCode);
+    const selectedVal = String(data.role || '');
+    const matchedRole = roleList.find((r) => r.id === selectedVal || r.code === selectedVal);
 
     // Map back to UserRole enum for backend
     let enumRole: UserRole = 'Employee';
-    const upper = selectedCode.toUpperCase();
-    if (upper === 'SUPER_ADMIN' || upper === 'SUPERADMIN') enumRole = 'SuperAdmin';
-    else if (upper === 'PROJECT_MANAGER' || upper === 'PROJECTMANAGER') enumRole = 'ProjectManager';
-    else if (upper === 'SITE_SUPERVISOR' || upper === 'SUPERVISOR') enumRole = 'Supervisor';
-    else enumRole = 'Employee';
+    if (matchedRole) {
+      const upper = (matchedRole.code || '').toUpperCase();
+      if (upper === 'SUPER_ADMIN' || upper === 'SUPERADMIN') enumRole = 'SuperAdmin';
+      else if (upper === 'PROJECT_MANAGER' || upper === 'PROJECTMANAGER') enumRole = 'ProjectManager';
+      else if (upper === 'SITE_SUPERVISOR' || upper === 'SUPERVISOR') enumRole = 'Supervisor';
+      else enumRole = 'Employee';
+    }
 
     const payload: EmployeeFormData = {
       ...data,
@@ -298,13 +322,62 @@ export const EmployeeFormModal: React.FC<EmployeeFormModalProps> = ({
             render={({ field }) => (
               <FormControl fullWidth>
                 <InputLabel>Vai Trò / Phân Quyền</InputLabel>
-                <Select {...field} label="Vai Trò / Phân Quyền">
+                <Select
+                  {...field}
+                  label="Vai Trò / Phân Quyền"
+                  renderValue={(selectedId) => {
+                    const matched = roleList.find((r) => r.id === selectedId || r.code === selectedId);
+                    if (matched) {
+                      const cleanName = matched.name.replace('Chỉ Huy Trưởng', 'Quản Lý (PM)').replace('Người Quản Lý', 'Quản Lý (PM)');
+                      return (
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Chip
+                            label={cleanName}
+                            size="small"
+                            sx={{
+                              height: 22,
+                              fontSize: '0.72rem',
+                              fontWeight: 700,
+                              ...getRoleChipStyle(matched.color, matched.code || matched.name),
+                            }}
+                          />
+                          <Typography variant="caption" sx={{ color: '#64748b' }}>
+                            ({matched.code})
+                          </Typography>
+                        </Box>
+                      );
+                    }
+                    return selectedId;
+                  }}
+                >
                   {roleList.length > 0 ? (
-                    roleList.map((r) => (
-                      <MenuItem key={r.id} value={r.code}>
-                        {r.name.replace('Chỉ Huy Trưởng', 'Quản Lý (PM)').replace('Người Quản Lý', 'Quản Lý (PM)')} ({r.code}) {r.isSystem ? '• Hệ thống' : '• Tùy chỉnh'}
-                      </MenuItem>
-                    ))
+                    roleList.map((r) => {
+                      const cleanName = r.name.replace('Chỉ Huy Trưởng', 'Quản Lý (PM)').replace('Người Quản Lý', 'Quản Lý (PM)');
+                      return (
+                        <MenuItem key={r.id} value={r.id}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', gap: 1 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <Chip
+                                label={cleanName}
+                                size="small"
+                                sx={{
+                                  height: 22,
+                                  fontSize: '0.72rem',
+                                  fontWeight: 700,
+                                  ...getRoleChipStyle(r.color, r.code || r.name),
+                                }}
+                              />
+                              <Typography variant="caption" sx={{ color: '#64748b', fontFamily: 'monospace' }}>
+                                ({r.code})
+                              </Typography>
+                            </Box>
+                            <Typography variant="caption" sx={{ color: '#94a3b8', fontSize: '0.7rem' }}>
+                              {r.isSystem ? '• Hệ thống' : '• Tùy chỉnh'}
+                            </Typography>
+                          </Box>
+                        </MenuItem>
+                      );
+                    })
                   ) : (
                     <>
                       <MenuItem value="FIELD_ENGINEER">Kỹ Sư / Nhân Viên (FIELD_ENGINEER)</MenuItem>

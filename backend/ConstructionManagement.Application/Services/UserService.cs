@@ -32,6 +32,14 @@ public class UserService : IUserService
             query = query.Where(u => u.FullName.ToLower().Contains(s) || u.Email.ToLower().Contains(s) || (u.Department != null && u.Department.ToLower().Contains(s)));
         }
 
+        if (!string.IsNullOrWhiteSpace(pagination.Role) && pagination.Role != "ALL")
+        {
+            var r = pagination.Role.Trim().ToLower();
+            query = query.Where(u =>
+                u.Role.ToString().ToLower() == r ||
+                u.UserRoles.Any(ur => ur.Role != null && (ur.Role.Name.ToLower() == r || ur.Role.Code.ToLower() == r)));
+        }
+
         var totalCount = await query.CountAsync();
 
         query = pagination.SortBy?.ToLower() switch
@@ -55,6 +63,7 @@ public class UserService : IUserService
                 Department = u.Department,
                 AvatarUrl = u.AvatarUrl,
                 Role = u.Role,
+                RoleColor = u.UserRoles.Where(ur => ur.Role != null && !string.IsNullOrEmpty(ur.Role.Color)).Select(ur => ur.Role!.Color).FirstOrDefault(),
                 Roles = u.UserRoles.Where(ur => ur.Role != null).Select(ur => ur.Role!.Name).ToList(),
                 RoleIds = u.UserRoles.Select(ur => ur.RoleId).ToList(),
                 IsActive = u.IsActive,
@@ -87,6 +96,7 @@ public class UserService : IUserService
                 Department = u.Department,
                 AvatarUrl = u.AvatarUrl,
                 Role = u.Role,
+                RoleColor = u.UserRoles.Where(ur => ur.Role != null && !string.IsNullOrEmpty(ur.Role.Color)).Select(ur => ur.Role!.Color).FirstOrDefault(),
                 Roles = u.UserRoles.Where(ur => ur.Role != null).Select(ur => ur.Role!.Name).ToList(),
                 RoleIds = u.UserRoles.Select(ur => ur.RoleId).ToList(),
                 IsActive = u.IsActive,
@@ -118,6 +128,7 @@ public class UserService : IUserService
             Department = user.Department,
             AvatarUrl = user.AvatarUrl,
             Role = user.Role,
+            RoleColor = user.UserRoles.Where(ur => ur.Role != null && !string.IsNullOrEmpty(ur.Role.Color)).Select(ur => ur.Role!.Color).FirstOrDefault(),
             Roles = user.UserRoles.Where(ur => ur.Role != null).Select(ur => ur.Role!.Name).ToList(),
             RoleIds = user.UserRoles.Select(ur => ur.RoleId).ToList(),
             IsActive = user.IsActive,
@@ -349,6 +360,7 @@ public class UserService : IUserService
             Department = user.Department,
             AvatarUrl = user.AvatarUrl,
             Role = user.Role,
+            RoleColor = user.UserRoles.Where(ur => ur.Role != null && !string.IsNullOrEmpty(ur.Role.Color)).Select(ur => ur.Role!.Color).FirstOrDefault(),
             Roles = user.UserRoles.Where(ur => ur.Role != null).Select(ur => ur.Role!.Name).ToList(),
             RoleIds = user.UserRoles.Select(ur => ur.RoleId).ToList(),
             IsActive = user.IsActive,

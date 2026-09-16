@@ -13,6 +13,7 @@ import { User } from '../../types';
 import { roleLabels } from '../../pages/EmployeesPage';
 import { getMediaUrl } from '../../utils/fileUtils';
 import { CommonTable, ColumnDef } from '../common/CommonTable';
+import { getRoleChipStyle } from '../../utils/roleColors';
 
 interface EmployeeTableProps {
   users: User[];
@@ -123,30 +124,22 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = memo(({
         accessorKey: 'role',
         sortable: true,
         minWidth: 150,
-        cell: ({ row }) => (
-          <Chip
-            label={roleLabels[row.role] || row.roleName || row.role}
-            size="small"
-            sx={{
-              height: 22,
-              fontSize: '0.7rem',
-              fontWeight: 700,
-              whiteSpace: 'nowrap',
-              bgcolor:
-                row.role === 'SuperAdmin'
-                  ? '#fee2e2'
-                  : row.role === 'ProjectManager'
-                  ? '#e0f2fe'
-                  : '#ecfdf5',
-              color:
-                row.role === 'SuperAdmin'
-                  ? '#b91c1c'
-                  : row.role === 'ProjectManager'
-                  ? '#0369a1'
-                  : '#047857',
-            }}
-          />
-        ),
+        cell: ({ row }) => {
+          const displayRole = (row.roles && row.roles.length > 0 ? row.roles[0] : null) || row.roleName || roleLabels[row.role] || row.role;
+          return (
+            <Chip
+              label={displayRole}
+              size="small"
+              sx={{
+                height: 22,
+                fontSize: '0.7rem',
+                fontWeight: 700,
+                whiteSpace: 'nowrap',
+                ...getRoleChipStyle(row.roleColor, displayRole),
+              }}
+            />
+          );
+        },
       },
       {
         id: 'status',

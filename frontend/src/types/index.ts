@@ -27,6 +27,7 @@ export interface User {
   avatarUrl?: string;
   role: UserRole;
   roleName?: string;
+  roleColor?: string;
   roles?: string[];
   roleIds?: string[];
   permissions?: string[];
@@ -44,6 +45,7 @@ export interface RoleItem {
   name: string;
   code: string;
   description?: string;
+  color?: string;
   isSystem: boolean;
   userCount: number;
   permissions: string[];

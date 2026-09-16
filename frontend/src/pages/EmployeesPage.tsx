@@ -40,6 +40,7 @@ import {
   useDeleteUserMutation,
   useResetUserPasswordMutation,
 } from '../hooks/useEmployees';
+import { useRolesQuery } from '../hooks/useRoles';
 
 export const roleLabels: Record<string, string> = {
   SuperAdmin: 'Quản Trị Viên (Super Admin)',
@@ -71,6 +72,29 @@ export const EmployeesPage: React.FC = () => {
   const [toggleTarget, setToggleTarget] = useState<User | null>(null);
 
   const debouncedSearch = useDebounce(search, 300);
+
+  const { data: roleList = [] } = useRolesQuery();
+
+  const roleFilterOptions = React.useMemo(() => {
+    const base = [{ value: 'ALL', label: 'Tất Cả Vai Trò' }];
+    if (roleList && roleList.length > 0) {
+      roleList.forEach((r) => {
+        const cleanName = r.name.replace('Chỉ Huy Trưởng', 'Quản Lý (PM)').replace('Người Quản Lý', 'Quản Lý (PM)');
+        base.push({
+          value: r.code || r.name,
+          label: `${cleanName} ${!r.isSystem ? '(Tùy chỉnh)' : ''}`.trim(),
+        });
+      });
+    } else {
+      base.push(
+        { value: 'SuperAdmin', label: 'Quản Trị Viên (Admin)' },
+        { value: 'ProjectManager', label: 'Quản Lý Dự Án (PM)' },
+        { value: 'Supervisor', label: 'Giám Sát Hiện Trường' },
+        { value: 'Employee', label: 'Kỹ Sư / Nhân Viên' }
+      );
+    }
+    return base;
+  }, [roleList]);
 
   // Queries & Mutations
   const { data, isLoading, isFetching } = useUsersQuery({
@@ -200,7 +224,7 @@ export const EmployeesPage: React.FC = () => {
         </Box>
 
         {/* Role Filter */}
-        <Box sx={{ minWidth: 160, flex: { xs: '1 1 100%', sm: '0 0 auto' } }}>
+        <Box sx={{ minWidth: 180, flex: { xs: '1 1 100%', sm: '0 0 auto' } }}>
           <CommonSelect
             size="small"
             value={roleFilter}
@@ -208,13 +232,7 @@ export const EmployeesPage: React.FC = () => {
               setRoleFilter(val);
               setPage(0);
             }}
-            options={[
-              { value: 'ALL', label: 'Tất Cả Vai Trò' },
-              { value: 'SuperAdmin', label: 'Quản Trị Viên (Admin)' },
-              { value: 'ProjectManager', label: 'Quản Lý Dự Án (PM)' },
-              { value: 'Supervisor', label: 'Giám Sát Hiện Trường' },
-              { value: 'Employee', label: 'Kỹ Sư / Nhân Viên' },
-            ]}
+            options={roleFilterOptions}
           />
         </Box>
 

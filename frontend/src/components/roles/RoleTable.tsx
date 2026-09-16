@@ -9,6 +9,7 @@ import {
 import { Lock, Sparkles, CheckCircle2, Users, Edit2, Trash2 } from 'lucide-react';
 import { RoleItem } from '../../types';
 import { CommonTable, ColumnDef } from '../common/CommonTable';
+import { getRoleChipStyle } from '../../utils/roleColors';
 
 interface RoleTableProps {
   roles: RoleItem[];
@@ -31,29 +32,34 @@ export const RoleTable: React.FC<RoleTableProps> = memo(({
     () => [
       {
         id: 'name',
-        header: 'Tên & Mã Vai Trò',
-        minWidth: 170,
+        header: 'Tên & Chip Vai Trò',
+        minWidth: 200,
         cell: ({ row }) => (
-          <Box sx={{ whiteSpace: 'nowrap' }}>
-            <Typography variant="body2" sx={{ fontWeight: 700, color: '#0f172a', whiteSpace: 'nowrap' }}>
-              {row.name}
-            </Typography>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, whiteSpace: 'nowrap' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Chip
+                label={row.name}
+                size="small"
+                sx={{
+                  fontWeight: 700,
+                  fontSize: '0.75rem',
+                  height: 24,
+                  whiteSpace: 'nowrap',
+                  ...getRoleChipStyle(row.color, row.code || row.name),
+                }}
+              />
+            </Box>
             <Typography
               variant="caption"
               sx={{
                 fontFamily: 'monospace',
-                color: '#0284c7',
+                color: '#64748b',
                 fontWeight: 600,
-                bgcolor: '#f0f9ff',
-                px: 0.8,
-                py: 0.2,
-                borderRadius: 1,
-                display: 'inline-block',
-                mt: 0.2,
+                fontSize: '0.7rem',
                 whiteSpace: 'nowrap',
               }}
             >
-              {row.code}
+              Mã: {row.code}
             </Typography>
           </Box>
         ),
