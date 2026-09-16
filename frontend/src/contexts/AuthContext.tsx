@@ -51,13 +51,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
               setPermissions(userData.permissions);
               localStorage.setItem('permissions', JSON.stringify(userData.permissions));
             }
-
-            // Immediately ping server to mark user as Active online
-            if (savedSessionId) {
-              sessionApi.ping(savedSessionId).catch((err) => {
-                console.warn('Session ping error on startup:', err);
-              });
-            }
           }
         } catch (err) {
           console.error('Failed to verify token:', err);
@@ -70,50 +63,50 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     initAuth();
   }, []);
 
-  // Setup periodic Heartbeat (every 30 seconds) and pagehide beacon when user is active
+  // Setup periodic Heartbeat (every 30 seconds), tab focus/visibility refresh, and pagehide beacon when user is active
   useEffect(() => {
     const currentSessionId = sessionId || localStorage.getItem('sessionId');
     if (!token || !user || !currentSessionId) return;
 
-    // 1. Initial and recurring Heartbeat ping
+    // 1. Initial and recurring Heartbeat ping & visibility resume
     const sendPing = () => {
       const sId = sessionId || localStorage.getItem('sessionId');
       if (sId && localStorage.getItem('token')) {
-        sessionApi.ping(sId).catch(() => {});
+        sessionApi
+          .ping(sId)
+          .then((pingRes) => {
+            if (pingRes.data.success && pingRes.data.data?.sessionId) {
+              const returnedId = pingRes.data.data.sessionId;
+              if (returnedId !== sId) {
+                setSessionId(returnedId);
+                localStorage.setItem('sessionId', returnedId);
+              }
+            }
+          })
+          .catch(() => {});
       }
     };
 
     sendPing();
     const interval = setInterval(sendPing, 30000);
 
-    // 2. Handle tab close / browser exit with sendBeacon (without logging out token)
-    const handleLeave = () => {
-      const sId = sessionId || localStorage.getItem('sessionId');
-      if (sId && localStorage.getItem('token')) {
-        const url = `${API_BASE_URL}/user-sessions/leave`;
-        const payload = JSON.stringify({ sessionId: sId });
-        const blob = new Blob([payload], { type: 'application/json' });
-
-        if (navigator.sendBeacon) {
-          navigator.sendBeacon(url, blob);
-        } else {
-          fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: payload,
-            keepalive: true,
-          }).catch(() => {});
-        }
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        sendPing();
       }
     };
 
-    window.addEventListener('pagehide', handleLeave);
-    window.addEventListener('beforeunload', handleLeave);
+    const handleFocus = () => {
+      sendPing();
+    };
+
+    window.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
 
     return () => {
       clearInterval(interval);
-      window.removeEventListener('pagehide', handleLeave);
-      window.removeEventListener('beforeunload', handleLeave);
+      window.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
     };
   }, [token, user, sessionId]);
 

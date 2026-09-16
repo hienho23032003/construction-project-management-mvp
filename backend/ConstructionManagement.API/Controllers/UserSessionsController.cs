@@ -49,11 +49,11 @@ public class UserSessionsController : BaseApiController
     {
         if (!request.SessionId.HasValue || request.SessionId.Value == Guid.Empty)
         {
-            return BadRequest(ApiResponse<bool>.Fail("SessionId is required."));
+            return BadRequest(ApiResponse<PingSessionResultDto>.Fail("SessionId is required."));
         }
 
-        var success = await _sessionService.PingSessionAsync(request.SessionId.Value, CurrentUserId);
-        return Ok(ApiResponse<bool>.Ok(success));
+        var result = await _sessionService.PingSessionAsync(request.SessionId.Value, CurrentUserId);
+        return Ok(result);
     }
 
     [AllowAnonymous]

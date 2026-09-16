@@ -67,38 +67,72 @@ public class UserSessionService : IUserSessionService
         return true;
     }
 
-    public async Task<bool> PingSessionAsync(Guid sessionId, Guid userId)
+    public async Task<ApiResponse<PingSessionResultDto>> PingSessionAsync(Guid sessionId, Guid userId)
     {
         var now = DateTime.UtcNow;
         var session = await _context.UserLoginSessions.FirstOrDefaultAsync(s => s.Id == sessionId);
 
         if (session == null)
         {
-            if (sessionId == Guid.Empty) sessionId = Guid.NewGuid();
-            session = new UserLoginSession
+            var newId = sessionId != Guid.Empty ? sessionId : Guid.NewGuid();
+            var newSession = new UserLoginSession
             {
-                Id = sessionId,
+                Id = newId,
                 UserId = userId,
                 LoginTime = now,
                 LastActiveTime = now,
                 Status = SessionStatus.Active,
                 CreatedAt = now
             };
-            _context.UserLoginSessions.Add(session);
+            _context.UserLoginSessions.Add(newSession);
             await _context.SaveChangesAsync();
-            return true;
+            return ApiResponse<PingSessionResultDto>.Ok(new PingSessionResultDto
+            {
+                SessionId = newSession.Id,
+                IsNewSession = true
+            });
+        }
+
+        var lastActivity = session.LastActiveTime ?? session.LoginTime;
+        var idleGapMinutes = (now - lastActivity).TotalMinutes;
+
+        // If inactive for > 30 minutes or already logged out, finalize previous session and start fresh new session
+        if (idleGapMinutes > 30.0 || session.Status != SessionStatus.Active)
+        {
+            session.LogoutTime = lastActivity;
+            session.Status = SessionStatus.LoggedOut;
+            session.DurationMinutes = Math.Max(0.1, Math.Round((lastActivity - session.LoginTime).TotalMinutes, 1));
+
+            var newSession = new UserLoginSession
+            {
+                Id = Guid.NewGuid(),
+                UserId = userId,
+                LoginTime = now,
+                LastActiveTime = now,
+                IpAddress = session.IpAddress,
+                UserAgent = session.UserAgent,
+                Status = SessionStatus.Active,
+                CreatedAt = now
+            };
+            _context.UserLoginSessions.Add(newSession);
+            await _context.SaveChangesAsync();
+
+            return ApiResponse<PingSessionResultDto>.Ok(new PingSessionResultDto
+            {
+                SessionId = newSession.Id,
+                IsNewSession = true
+            });
         }
 
         session.LastActiveTime = now;
-        if (session.Status != SessionStatus.Active)
-        {
-            session.Status = SessionStatus.Active;
-            session.LogoutTime = null;
-        }
         session.DurationMinutes = Math.Round((now - session.LoginTime).TotalMinutes, 1);
-
         await _context.SaveChangesAsync();
-        return true;
+
+        return ApiResponse<PingSessionResultDto>.Ok(new PingSessionResultDto
+        {
+            SessionId = session.Id,
+            IsNewSession = false
+        });
     }
 
     public async Task<ApiResponse<PagedResult<UserLoginSessionDto>>> GetLoginHistoryAsync(

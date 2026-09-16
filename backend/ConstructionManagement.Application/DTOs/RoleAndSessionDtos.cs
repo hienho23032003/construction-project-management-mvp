@@ -91,6 +91,12 @@ public class PingSessionRequest
     public Guid? SessionId { get; set; }
 }
 
+public class PingSessionResultDto
+{
+    public Guid SessionId { get; set; }
+    public bool IsNewSession { get; set; }
+}
+
 public class LeaveSessionRequest
 {
     public Guid? SessionId { get; set; }

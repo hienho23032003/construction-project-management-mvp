@@ -36,7 +36,7 @@ public interface IUserSessionService
 {
     Task<Guid> CreateSessionAsync(Guid userId, string? ipAddress, string? userAgent);
     Task<bool> CloseSessionAsync(Guid sessionId);
-    Task<bool> PingSessionAsync(Guid sessionId, Guid userId);
+    Task<ApiResponse<PingSessionResultDto>> PingSessionAsync(Guid sessionId, Guid userId);
     Task<bool> LeaveSessionAsync(Guid sessionId);
     Task<ApiResponse<PagedResult<UserLoginSessionDto>>> GetLoginHistoryAsync(
         DateTime? fromDate,

@@ -82,6 +82,7 @@ public class TasksController : BaseApiController
 
     // Direct Status Update (Assigned employee or Manager/Admin)
     [HttpPatch("{id}/status")]
+    [HttpPut("{id}/status")]
     public async Task<IActionResult> UpdateStatus(Guid id, [FromBody] UpdateTaskStatusRequest request)
     {
         var result = await _taskService.UpdateStatusAsync(id, request, CurrentUserId);
@@ -91,6 +92,7 @@ public class TasksController : BaseApiController
 
     // Direct Progress Update (Assigned employee or Manager/Admin)
     [HttpPatch("{id}/progress")]
+    [HttpPut("{id}/progress")]
     public async Task<IActionResult> UpdateProgress(Guid id, [FromBody] UpdateTaskProgressRequest request)
     {
         var result = await _taskService.UpdateProgressAsync(id, request, CurrentUserId);
@@ -100,6 +102,7 @@ public class TasksController : BaseApiController
 
     // Gantt Drag & Drop Dates Update (Supervisor / Manager / Admin)
     [HttpPatch("{id}/dates")]
+    [HttpPut("{id}/dates")]
     [RequirePermission("tasks.edit")]
     public async Task<IActionResult> UpdateDates(Guid id, [FromBody] UpdateTaskDatesRequest request)
     {

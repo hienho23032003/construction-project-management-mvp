@@ -566,21 +566,26 @@ public class TaskService : ITaskService
     {
         var task = await _context.Tasks
             .Include(t => t.Assignees)
-            .Include(t => t.Project)
+            .Include(t => t.Project).ThenInclude(p => p.Members)
             .FirstOrDefaultAsync(t => t.Id == id);
         if (task == null) return ApiResponse<TaskDto>.Fail("Không tìm thấy công việc.");
 
-        // Check if current user is assigned, project manager, superadmin, or has role permission
+        // Check if current user is assigned, project manager, superadmin, or has supervisor override permission
         var isAssigned = task.Assignees.Any(a => a.UserId == currentUserId);
         if (!isAssigned)
         {
             var user = await _context.Users.FindAsync(currentUserId);
             var isSuperAdmin = user?.Role == UserRole.SuperAdmin;
-            var isProjectManager = task.Project?.ManagerId == currentUserId || task.Project?.CreatedById == currentUserId || task.CreatedById == currentUserId;
+            var isProjectManager = task.Project?.ManagerId == currentUserId || 
+                                   task.Project?.CreatedById == currentUserId || 
+                                   task.CreatedById == currentUserId ||
+                                   task.Project?.Members.Any(m => m.UserId == currentUserId && (m.RoleInProject == "Quản lý công trình (PM)" || m.RoleInProject == "Quản lý dự án" || m.RoleInProject == "Chỉ huy trưởng")) == true;
+            
             var permissions = await _roleService.GetUserPermissionsAsync(currentUserId);
-            var hasPermission = permissions.Contains("tasks.update_status") || permissions.Contains("tasks.edit");
+            var canOverride = (permissions.Contains("tasks.edit") || permissions.Contains("tasks.update_status")) &&
+                              (permissions.Contains("tasks.view_all") || (permissions.Contains("tasks.view_project") && task.Project?.Members.Any(m => m.UserId == currentUserId) == true));
 
-            if (!isSuperAdmin && !isProjectManager && !hasPermission)
+            if (!isSuperAdmin && !isProjectManager && !canOverride)
             {
                 return ApiResponse<TaskDto>.Fail("Bạn không được phân công công việc này nên không có quyền thay đổi trạng thái.");
             }
@@ -673,21 +678,26 @@ public class TaskService : ITaskService
     {
         var task = await _context.Tasks
             .Include(t => t.Assignees)
-            .Include(t => t.Project)
+            .Include(t => t.Project).ThenInclude(p => p.Members)
             .FirstOrDefaultAsync(t => t.Id == id);
         if (task == null) return ApiResponse<TaskDto>.Fail("Không tìm thấy công việc.");
 
-        // Check if current user is assigned, project manager, superadmin, or has role permission
+        // Check if current user is assigned, project manager, superadmin, or has supervisor override permission
         var isAssigned = task.Assignees.Any(a => a.UserId == currentUserId);
         if (!isAssigned)
         {
             var user = await _context.Users.FindAsync(currentUserId);
             var isSuperAdmin = user?.Role == UserRole.SuperAdmin;
-            var isProjectManager = task.Project?.ManagerId == currentUserId || task.Project?.CreatedById == currentUserId || task.CreatedById == currentUserId;
+            var isProjectManager = task.Project?.ManagerId == currentUserId || 
+                                   task.Project?.CreatedById == currentUserId || 
+                                   task.CreatedById == currentUserId ||
+                                   task.Project?.Members.Any(m => m.UserId == currentUserId && (m.RoleInProject == "Quản lý công trình (PM)" || m.RoleInProject == "Quản lý dự án" || m.RoleInProject == "Chỉ huy trưởng")) == true;
+            
             var permissions = await _roleService.GetUserPermissionsAsync(currentUserId);
-            var hasPermission = permissions.Contains("tasks.update_progress") || permissions.Contains("tasks.edit");
+            var canOverride = (permissions.Contains("tasks.edit") || permissions.Contains("tasks.update_progress")) &&
+                              (permissions.Contains("tasks.view_all") || (permissions.Contains("tasks.view_project") && task.Project?.Members.Any(m => m.UserId == currentUserId) == true));
 
-            if (!isSuperAdmin && !isProjectManager && !hasPermission)
+            if (!isSuperAdmin && !isProjectManager && !canOverride)
             {
                 return ApiResponse<TaskDto>.Fail("Bạn không được phân công công việc này nên không có quyền thay đổi tiến độ.");
             }

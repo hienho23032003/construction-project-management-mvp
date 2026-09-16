@@ -59,7 +59,7 @@ export const sessionApi = {
   getStats: (params?: { fromDate?: string; toDate?: string }) =>
     apiClient.get<ApiResponse<LoginSessionStats>>('/user-sessions/stats', { params }),
   ping: (sessionId: string) =>
-    apiClient.post<ApiResponse<boolean>>('/user-sessions/ping', { sessionId }),
+    apiClient.post<ApiResponse<{ sessionId: string; isNewSession: boolean }>>('/user-sessions/ping', { sessionId }),
   leave: (sessionId: string) =>
     apiClient.post<ApiResponse<boolean>>('/user-sessions/leave', { sessionId }),
 };
