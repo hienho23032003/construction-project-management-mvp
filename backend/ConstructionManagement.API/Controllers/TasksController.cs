@@ -1,3 +1,4 @@
+using ConstructionManagement.API.Filters;
 using ConstructionManagement.Application.Common;
 using ConstructionManagement.Application.DTOs;
 using ConstructionManagement.Application.Interfaces;
@@ -11,13 +12,16 @@ namespace ConstructionManagement.API.Controllers;
 public class TasksController : BaseApiController
 {
     private readonly ITaskService _taskService;
+    private readonly IRoleService _roleService;
 
-    public TasksController(ITaskService taskService)
+    public TasksController(ITaskService taskService, IRoleService roleService)
     {
         _taskService = taskService;
+        _roleService = roleService;
     }
 
     [HttpGet]
+    [RequirePermission("tasks.view")]
     public async Task<IActionResult> GetAll(
         [FromQuery] PaginationParams pagination,
         [FromQuery] Guid? projectId,
@@ -30,6 +34,7 @@ public class TasksController : BaseApiController
     }
 
     [HttpGet("{id}")]
+    [RequirePermission("tasks.view")]
     public async Task<IActionResult> GetById(Guid id)
     {
         var result = await _taskService.GetTaskByIdAsync(id);
@@ -38,7 +43,7 @@ public class TasksController : BaseApiController
     }
 
     [HttpPost]
-    [Authorize(Roles = "SuperAdmin,ProjectManager,Supervisor")]
+    [RequirePermission("tasks.create")]
     public async Task<IActionResult> Create([FromBody] CreateTaskRequest request)
     {
         var result = await _taskService.CreateTaskAsync(request, CurrentUserId);
@@ -47,7 +52,7 @@ public class TasksController : BaseApiController
     }
 
     [HttpPut("{id}")]
-    [Authorize(Roles = "SuperAdmin,ProjectManager,Supervisor")]
+    [RequirePermission("tasks.edit")]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateTaskRequest request)
     {
         var result = await _taskService.UpdateTaskAsync(id, request, CurrentUserId);
@@ -56,7 +61,7 @@ public class TasksController : BaseApiController
     }
 
     [HttpDelete("{id}")]
-    [Authorize(Roles = "SuperAdmin,ProjectManager")]
+    [RequirePermission("tasks.delete")]
     public async Task<IActionResult> Delete(Guid id)
     {
         var result = await _taskService.DeleteTaskAsync(id, CurrentUserId);
@@ -66,6 +71,7 @@ public class TasksController : BaseApiController
 
     // Direct Status Update (Employee / Supervisor / Manager)
     [HttpPatch("{id}/status")]
+    [RequirePermission("tasks.update_status")]
     public async Task<IActionResult> UpdateStatus(Guid id, [FromBody] UpdateTaskStatusRequest request)
     {
         var result = await _taskService.UpdateStatusAsync(id, request, CurrentUserId);
@@ -75,6 +81,7 @@ public class TasksController : BaseApiController
 
     // Direct Progress Update (Employee / Supervisor / Manager)
     [HttpPatch("{id}/progress")]
+    [RequirePermission("tasks.update_progress")]
     public async Task<IActionResult> UpdateProgress(Guid id, [FromBody] UpdateTaskProgressRequest request)
     {
         var result = await _taskService.UpdateProgressAsync(id, request, CurrentUserId);
@@ -84,7 +91,7 @@ public class TasksController : BaseApiController
 
     // Gantt Drag & Drop Dates Update (Supervisor / Manager / Admin)
     [HttpPatch("{id}/dates")]
-    [Authorize(Roles = "SuperAdmin,ProjectManager,Supervisor")]
+    [RequirePermission("tasks.edit")]
     public async Task<IActionResult> UpdateDates(Guid id, [FromBody] UpdateTaskDatesRequest request)
     {
         var result = await _taskService.UpdateDatesAsync(id, request, CurrentUserId);
@@ -94,6 +101,7 @@ public class TasksController : BaseApiController
 
     // Gantt Data endpoint
     [HttpGet("gantt")]
+    [RequirePermission("gantt.view")]
     public async Task<IActionResult> GetGanttData(
         [FromQuery] Guid? projectId,
         [FromQuery] TaskItemStatus? status,
@@ -101,12 +109,20 @@ public class TasksController : BaseApiController
         [FromQuery] DateTime? fromDate,
         [FromQuery] DateTime? toDate)
     {
-        var result = await _taskService.GetGanttDataAsync(projectId, status, activeOnly, fromDate, toDate);
+        var canViewAll = User.IsInRole("SuperAdmin");
+        if (!canViewAll && CurrentUserId != Guid.Empty)
+        {
+            var permissions = await _roleService.GetUserPermissionsAsync(CurrentUserId);
+            canViewAll = permissions.Contains("gantt.view_all");
+        }
+
+        var result = await _taskService.GetGanttDataAsync(projectId, status, activeOnly, fromDate, toDate, CurrentUserId, canViewAll);
         return Ok(result);
     }
 
     // Comments
     [HttpGet("{id}/comments")]
+    [RequirePermission("tasks.view")]
     public async Task<IActionResult> GetComments(Guid id)
     {
         var result = await _taskService.GetTaskCommentsAsync(id);
@@ -114,6 +130,7 @@ public class TasksController : BaseApiController
     }
 
     [HttpPost("{id}/comments")]
+    [RequirePermission("tasks.comment")]
     public async Task<IActionResult> AddComment(Guid id, [FromBody] CreateCommentRequest request)
     {
         var result = await _taskService.AddCommentAsync(id, request, CurrentUserId);
@@ -122,6 +139,7 @@ public class TasksController : BaseApiController
     }
 
     [HttpPost("{id}/comments-with-attachments")]
+    [RequirePermission("tasks.comment")]
     public async Task<IActionResult> AddCommentWithAttachments(Guid id, [FromForm] CreateCommentWithFilesRequest request)
     {
         var result = await _taskService.AddCommentWithAttachmentsAsync(id, request, CurrentUserId);
@@ -130,6 +148,7 @@ public class TasksController : BaseApiController
     }
 
     [HttpDelete("comments/{commentId}")]
+    [RequirePermission("tasks.comment")]
     public async Task<IActionResult> DeleteComment(Guid commentId)
     {
         var result = await _taskService.DeleteCommentAsync(commentId, CurrentUserId);
@@ -139,6 +158,7 @@ public class TasksController : BaseApiController
 
     // Dependencies
     [HttpGet("{id}/dependencies")]
+    [RequirePermission("tasks.view")]
     public async Task<IActionResult> GetDependencies(Guid id)
     {
         var result = await _taskService.GetTaskDependenciesAsync(id);
@@ -146,7 +166,7 @@ public class TasksController : BaseApiController
     }
 
     [HttpPost("dependencies")]
-    [Authorize(Roles = "SuperAdmin,ProjectManager,Supervisor")]
+    [RequirePermission("tasks.edit")]
     public async Task<IActionResult> AddDependency([FromBody] CreateDependencyRequest request)
     {
         var result = await _taskService.AddDependencyAsync(request, CurrentUserId);
@@ -155,7 +175,7 @@ public class TasksController : BaseApiController
     }
 
     [HttpDelete("dependencies/{dependencyId}")]
-    [Authorize(Roles = "SuperAdmin,ProjectManager,Supervisor")]
+    [RequirePermission("tasks.edit")]
     public async Task<IActionResult> DeleteDependency(Guid dependencyId)
     {
         var result = await _taskService.DeleteDependencyAsync(dependencyId, CurrentUserId);
@@ -163,3 +183,4 @@ public class TasksController : BaseApiController
         return Ok(result);
     }
 }
+

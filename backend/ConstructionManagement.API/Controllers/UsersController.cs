@@ -1,3 +1,4 @@
+using ConstructionManagement.API.Filters;
 using ConstructionManagement.Application.Common;
 using ConstructionManagement.Application.DTOs;
 using ConstructionManagement.Application.Interfaces;
@@ -19,6 +20,7 @@ public class UsersController : BaseApiController
     }
 
     [HttpGet]
+    [RequirePermission("employees.view")]
     public async Task<IActionResult> GetAllUsers([FromQuery] PaginationParams pagination)
     {
         var result = await _userService.GetAllUsersAsync(pagination);
@@ -26,6 +28,7 @@ public class UsersController : BaseApiController
     }
 
     [HttpGet("all")]
+    [RequirePermission("employees.view")]
     public async Task<IActionResult> GetAllUsersList()
     {
         var result = await _userService.GetAllUsersListAsync();
@@ -33,6 +36,7 @@ public class UsersController : BaseApiController
     }
 
     [HttpGet("workload")]
+    [RequirePermission("employees.view")]
     public async Task<IActionResult> GetWorkloadSummary()
     {
         var result = await _userService.GetWorkloadSummaryAsync();
@@ -40,6 +44,7 @@ public class UsersController : BaseApiController
     }
 
     [HttpGet("{id:guid}")]
+    [RequirePermission("employees.view")]
     public async Task<IActionResult> GetUserById(Guid id)
     {
         var result = await _userService.GetUserByIdAsync(id);
@@ -48,6 +53,7 @@ public class UsersController : BaseApiController
     }
 
     [HttpGet("{id:guid}/progress-summary")]
+    [RequirePermission("employees.view")]
     public async Task<IActionResult> GetProgressSummary(Guid id)
     {
         var result = await _userService.GetUserProgressSummaryAsync(id);
@@ -56,7 +62,7 @@ public class UsersController : BaseApiController
     }
 
     [HttpPost]
-    [Authorize(Roles = "SuperAdmin")]
+    [RequirePermission("employees.create")]
     public async Task<IActionResult> CreateUser([FromBody] CreateUserRequest request)
     {
         var result = await _userService.CreateUserAsync(request);
@@ -65,7 +71,7 @@ public class UsersController : BaseApiController
     }
 
     [HttpPut("{id:guid}")]
-    [Authorize(Roles = "SuperAdmin")]
+    [RequirePermission("employees.edit")]
     public async Task<IActionResult> UpdateUser(Guid id, [FromBody] UpdateUserRequest request)
     {
         var result = await _userService.UpdateUserAsync(id, request);
@@ -74,7 +80,7 @@ public class UsersController : BaseApiController
     }
 
     [HttpPost("{id:guid}/avatar")]
-    [Authorize(Roles = "SuperAdmin")]
+    [RequirePermission("employees.edit")]
     public async Task<IActionResult> UploadUserAvatar(Guid id, [FromForm] IFormFile file)
     {
         if (file == null || file.Length == 0)
@@ -88,7 +94,7 @@ public class UsersController : BaseApiController
     }
 
     [HttpDelete("{id:guid}")]
-    [Authorize(Roles = "SuperAdmin")]
+    [RequirePermission("employees.delete")]
     public async Task<IActionResult> DeleteUser(Guid id)
     {
         var result = await _userService.DeleteUserAsync(id);
@@ -97,7 +103,7 @@ public class UsersController : BaseApiController
     }
 
     [HttpPatch("{id:guid}/toggle-status")]
-    [Authorize(Roles = "SuperAdmin")]
+    [RequirePermission("employees.delete")]
     public async Task<IActionResult> ToggleUserStatus(Guid id)
     {
         var result = await _userService.ToggleUserStatusAsync(id);
@@ -106,20 +112,12 @@ public class UsersController : BaseApiController
     }
 
     [HttpPost("{id:guid}/reset-password")]
+    [RequirePermission("employees.reset_password")]
     public async Task<IActionResult> ResetPassword(Guid id, [FromBody] AdminResetPasswordRequest request)
     {
-        var isSuperAdmin = CurrentUserRole == "SuperAdmin";
-        if (!isSuperAdmin)
-        {
-            var userPermissions = await _roleService.GetUserPermissionsAsync(CurrentUserId);
-            if (!userPermissions.Contains("employees.reset_password"))
-            {
-                return StatusCode(403, ApiResponse<bool>.Fail("Bạn không có quyền đặt lại mật khẩu cho nhân viên."));
-            }
-        }
-
         var result = await _userService.ResetPasswordAsync(id, request.NewPassword, CurrentUserId);
         if (!result.Success) return BadRequest(result);
         return Ok(result);
     }
 }
+

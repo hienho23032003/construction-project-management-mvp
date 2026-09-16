@@ -1,3 +1,4 @@
+using ConstructionManagement.API.Filters;
 using ConstructionManagement.Application.Common;
 using ConstructionManagement.Application.DTOs;
 using ConstructionManagement.Application.Interfaces;
@@ -18,6 +19,7 @@ public class UserSessionsController : BaseApiController
     }
 
     [HttpGet("history")]
+    [RequirePermission("audit.view_sessions")]
     public async Task<IActionResult> GetLoginHistory(
         [FromQuery] DateTime? fromDate,
         [FromQuery] DateTime? toDate,
@@ -33,6 +35,7 @@ public class UserSessionsController : BaseApiController
     }
 
     [HttpGet("stats")]
+    [RequirePermission("audit.view_sessions")]
     public async Task<IActionResult> GetStats(
         [FromQuery] DateTime? fromDate,
         [FromQuery] DateTime? toDate)

@@ -40,7 +40,15 @@ import { useAppSearchParams } from '../hooks/useAppSearchParams';
 import { usePresenceHeartbeat } from '../hooks/usePresence';
 import { ProjectPresenceAvatars } from '../components/presence/ProjectPresenceAvatars';
 
+import { usePermission } from '../hooks/usePermission';
+import { PERMISSIONS } from '../constants/permissions';
+
 export const TasksPage: React.FC = () => {
+  const { can, isSuperAdmin } = usePermission();
+  const canUpdateStatus = isSuperAdmin || can(PERMISSIONS.TASKS_UPDATE_STATUS);
+  const canUpdateProgress = isSuperAdmin || can(PERMISSIONS.TASKS_UPDATE_PROGRESS);
+  const canComment = isSuperAdmin || can(PERMISSIONS.TASKS_COMMENT);
+
   const { getParam, getNumberParam, setParam, setParams, removeParams } = useAppSearchParams();
   const taskIdParam = getParam('taskId');
   const projectParam = getParam('projectId', 'ALL');
@@ -328,6 +336,8 @@ export const TasksPage: React.FC = () => {
                 <Grid item xs={12} sm={6} md={4} key={t.id} sx={{ minWidth: 0, width: '100%', pl: { xs: '0 !important', sm: '16px !important' }, pt: { xs: '16px !important', sm: '16px !important' } }}>
                   <TaskCard
                     task={t}
+                    canUpdateStatus={canUpdateStatus}
+                    canUpdateProgress={canUpdateProgress}
                     onCardClick={handleRowClick}
                     onStatusChange={handleStatusChange}
                     onProgressChange={handleProgressChange}
@@ -362,6 +372,8 @@ export const TasksPage: React.FC = () => {
             onRowClick={handleRowClick}
             onStatusChange={handleStatusChange}
             onProgressChange={handleProgressChange}
+            canUpdateStatus={canUpdateStatus}
+            canUpdateProgress={canUpdateProgress}
           />
           <CommonPagination
             page={page}

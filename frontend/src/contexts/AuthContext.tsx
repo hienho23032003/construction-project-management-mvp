@@ -47,7 +47,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             const userData = res.data.data;
             setUser(userData);
             localStorage.setItem('user', JSON.stringify(userData));
-            if (userData.permissions && userData.permissions.length > 0) {
+            if (userData.permissions) {
               setPermissions(userData.permissions);
               localStorage.setItem('permissions', JSON.stringify(userData.permissions));
             }
@@ -180,8 +180,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       const res = await authApi.getMe();
       if (res.data.success && res.data.data) {
-        setUser(res.data.data);
-        localStorage.setItem('user', JSON.stringify(res.data.data));
+        const userData = res.data.data;
+        setUser(userData);
+        localStorage.setItem('user', JSON.stringify(userData));
+        if (userData.permissions) {
+          setPermissions(userData.permissions);
+          localStorage.setItem('permissions', JSON.stringify(userData.permissions));
+        }
       }
     } catch (e) {
       console.error('Failed to refresh user:', e);

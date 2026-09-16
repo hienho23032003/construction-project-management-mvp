@@ -56,14 +56,20 @@ import { useUsersListQuery } from '../hooks/useEmployees';
 import { usePresenceHeartbeat } from '../hooks/usePresence';
 import { ProjectPresenceAvatars } from '../components/presence/ProjectPresenceAvatars';
 
+import { usePermission } from '../hooks/usePermission';
+import { PERMISSIONS } from '../constants/permissions';
+
 const TAB_NAME_MAP: Record<string, number> = {
   overview: 0,
   tasks: 1,
-  tree: 1,
   gantt: 2,
   members: 3,
   activities: 4,
-  logs: 4,
+  '0': 0,
+  '1': 1,
+  '2': 2,
+  '3': 3,
+  '4': 4,
 };
 
 const TAB_INDEX_MAP: Record<number, string> = {
@@ -78,8 +84,14 @@ export const ProjectDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { getParam, getBooleanParam, setParam, setParams, removeParams } = useAppSearchParams();
-  const { user } = useAuth();
-  const canEditTask = user?.role === 'SuperAdmin' || user?.role === 'ProjectManager' || user?.role === 'Supervisor';
+  const { can, isSuperAdmin } = usePermission();
+
+  const canCreateTask = isSuperAdmin || can(PERMISSIONS.TASKS_CREATE);
+  const canEditTask = isSuperAdmin || can(PERMISSIONS.TASKS_EDIT);
+  const canDeleteTask = isSuperAdmin || can(PERMISSIONS.TASKS_DELETE);
+  const canUpdateStatus = isSuperAdmin || can(PERMISSIONS.TASKS_UPDATE_STATUS);
+  const canUpdateProgress = isSuperAdmin || can(PERMISSIONS.TASKS_UPDATE_PROGRESS);
+  const canManageMembers = isSuperAdmin || can(PERMISSIONS.PROJECTS_MANAGE_MEMBERS);
 
   const tabParam = getParam('tab');
   const taskIdParam = getParam('taskId');
@@ -280,7 +292,7 @@ export const ProjectDetailPage: React.FC = () => {
 
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
           <ProjectPresenceAvatars projectId={id} />
-          {canEditTask && (
+          {canCreateTask && (
             <Button
               variant="contained"
               startIcon={<Plus size={16} />}
@@ -332,7 +344,11 @@ export const ProjectDetailPage: React.FC = () => {
         {activeTab === 1 && (
           <ProjectTaskTreeTab
             tasks={taskTree}
+            canCreateTask={canCreateTask}
             canEditTask={canEditTask}
+            canDeleteTask={canDeleteTask}
+            canUpdateStatus={canUpdateStatus}
+            canUpdateProgress={canUpdateProgress}
             onStatusChange={(taskId, status) => updateStatusMutation.mutate({ id: taskId, status })}
             onProgressChange={(taskId, progress) => updateProgressMutation.mutate({ id: taskId, progress })}
             onCreateSubTask={handleOpenCreateTask}
@@ -365,7 +381,7 @@ export const ProjectDetailPage: React.FC = () => {
                 <InteractiveGantt
                   tasks={ganttData?.tasks || []}
                   links={ganttData?.links || []}
-                  canEdit={canEditTask}
+                  canEdit={false}
                   onTaskClick={(task) => handleSelectTask(task.realTaskId || task.id)}
                   onTaskUpdated={refetchTasks}
                 />
@@ -376,7 +392,7 @@ export const ProjectDetailPage: React.FC = () => {
         {activeTab === 3 && (
           <ProjectMembersTab
             members={project.members}
-            canEditTask={canEditTask}
+            canManageMembers={canManageMembers}
             onOpenAddMember={() => setOpenMemberModal(true)}
             onRemoveMember={(userId) => setRemoveMemberUserId(userId)}
           />

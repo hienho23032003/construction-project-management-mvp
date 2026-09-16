@@ -16,17 +16,20 @@ import { getMediaUrl } from '../../utils/fileUtils';
 
 interface ProjectMembersTabProps {
   members: ProjectMember[];
-  canEditTask: boolean;
+  canManageMembers?: boolean;
+  canEditTask?: boolean;
   onOpenAddMember: () => void;
   onRemoveMember: (userId: string) => void;
 }
 
 export const ProjectMembersTab: React.FC<ProjectMembersTabProps> = memo(({
   members,
+  canManageMembers,
   canEditTask,
   onOpenAddMember,
   onRemoveMember,
 }) => {
+  const allowManage = canManageMembers ?? canEditTask ?? false;
   return (
     <Box sx={{ p: { xs: 1.5, sm: 3 } }}>
       <Box
@@ -42,7 +45,7 @@ export const ProjectMembersTab: React.FC<ProjectMembersTabProps> = memo(({
         <Typography variant="h4" sx={{ fontWeight: 700, fontSize: { xs: '0.95rem', sm: '1.05rem' }, color: '#0f172a' }}>
           Đội Ngũ Ban Quản Lý & Kỹ Sư Công Trình ({members.length} nhân sự)
         </Typography>
-        {canEditTask && (
+        {allowManage && (
           <Button
             variant="outlined"
             size="small"
@@ -84,7 +87,7 @@ export const ProjectMembersTab: React.FC<ProjectMembersTabProps> = memo(({
                         />
                       </Box>
                     </Box>
-                    {canEditTask && (
+                    {allowManage && (
                       <IconButton size="small" onClick={() => onRemoveMember(m.userId)}>
                         <Trash2 size={15} color="#ef4444" />
                       </IconButton>

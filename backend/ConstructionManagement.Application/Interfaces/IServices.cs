@@ -103,7 +103,7 @@ public interface ITaskService
     Task<ApiResponse<bool>> DeleteDependencyAsync(Guid dependencyId, Guid currentUserId);
 
     // Gantt Data with server-side filtering
-    Task<ApiResponse<GanttDataResponse>> GetGanttDataAsync(Guid? projectId = null, TaskItemStatus? status = null, bool? activeOnly = null, DateTime? fromDate = null, DateTime? toDate = null);
+    Task<ApiResponse<GanttDataResponse>> GetGanttDataAsync(Guid? projectId = null, TaskItemStatus? status = null, bool? activeOnly = null, DateTime? fromDate = null, DateTime? toDate = null, Guid? currentUserId = null, bool canViewAll = true);
 
     // Hierarchy business calculation
     Task RecalculateParentTaskProgressAsync(Guid? parentTaskId);

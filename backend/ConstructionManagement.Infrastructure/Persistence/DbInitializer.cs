@@ -34,14 +34,39 @@ public static class DbInitializer
         if (await context.Users.AnyAsync())
         {
             // Auto update any legacy role names or departments if present
-            var legacyRoles = await context.Roles.Where(r => r.Name.Contains("Chỉ Huy Trưởng")).ToListAsync();
+            var legacyRoles = await context.Roles.Where(r => r.Name.Contains("Chỉ Huy Trưởng") || r.Name.Contains("Người Quản Lý")).ToListAsync();
             if (legacyRoles.Any())
             {
                 foreach (var r in legacyRoles)
                 {
-                    r.Name = r.Name.Replace("Chỉ Huy Trưởng", "Người Quản Lý");
+                    r.Name = "Quản Lý (PM)";
                 }
                 await context.SaveChangesAsync();
+            }
+
+            // Remove legacy gantt.edit_timeline and add gantt.view_all for PM & SuperAdmin
+            var obsoleteGanttPerms = await context.RolePermissions.Where(p => p.PermissionCode == "gantt.edit_timeline").ToListAsync();
+            if (obsoleteGanttPerms.Any())
+            {
+                context.RolePermissions.RemoveRange(obsoleteGanttPerms);
+                await context.SaveChangesAsync();
+            }
+
+            var pmRole = await context.Roles.FirstOrDefaultAsync(r => r.Code == "PROJECT_MANAGER");
+            if (pmRole != null)
+            {
+                var hasViewAll = await context.RolePermissions.AnyAsync(p => p.RoleId == pmRole.Id && p.PermissionCode == "gantt.view_all");
+                if (!hasViewAll)
+                {
+                    context.RolePermissions.Add(new RolePermission
+                    {
+                        Id = Guid.NewGuid(),
+                        RoleId = pmRole.Id,
+                        PermissionCode = "gantt.view_all",
+                        CreatedAt = DateTime.UtcNow
+                    });
+                    await context.SaveChangesAsync();
+                }
             }
 
             var legacyUsers = await context.Users.Where(u => u.Department != null && u.Department.Contains("Ban Chỉ Huy")).ToListAsync();
@@ -155,7 +180,7 @@ public static class DbInitializer
         var rolePm = new AppRole
         {
             Id = Guid.NewGuid(),
-            Name = "Người Quản Lý (Project Manager)",
+            Name = "Quản Lý (PM)",
             Code = "PROJECT_MANAGER",
             Description = "Quản lý toàn diện tiến độ, nhân sự, phê duyệt và điều phối công trình",
             IsSystem = false,
@@ -207,7 +232,7 @@ public static class DbInitializer
         {
             "projects.view", "projects.create", "projects.edit", "projects.manage_members",
             "tasks.view", "tasks.create", "tasks.edit", "tasks.delete", "tasks.update_status", "tasks.update_progress", "tasks.comment",
-            "gantt.view", "gantt.edit_timeline",
+            "gantt.view", "gantt.view_all",
             "employees.view", "reports.view", "reports.export", "audit.view_sessions"
         };
         foreach (var p in pmPerms)
@@ -220,7 +245,7 @@ public static class DbInitializer
         {
             "projects.view",
             "tasks.view", "tasks.create", "tasks.edit", "tasks.update_status", "tasks.update_progress", "tasks.comment",
-            "gantt.view", "gantt.edit_timeline",
+            "gantt.view",
             "employees.view", "reports.view"
         };
         foreach (var p in supPerms)

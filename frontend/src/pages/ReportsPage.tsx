@@ -48,6 +48,9 @@ import { CommonPagination } from '../components/common/CommonPagination';
 import { TaskDetailDrawer } from '../components/tasks/TaskDetailDrawer';
 import { useToast } from '../contexts/ToastContext';
 
+import { usePermission } from '../hooks/usePermission';
+import { PERMISSIONS } from '../constants/permissions';
+
 const TAB_NAME_MAP: Record<string, number> = {
   progress: 0,
   projects: 0,
@@ -70,6 +73,8 @@ const TAB_INDEX_MAP: Record<number, string> = {
 
 export const ReportsPage: React.FC = () => {
   const navigate = useNavigate();
+  const { can, isSuperAdmin } = usePermission();
+  const canExport = isSuperAdmin || can(PERMISSIONS.REPORTS_EXPORT);
   const { getParam, getNumberParam, setParam, setParams, removeParams } = useAppSearchParams();
 
   const tabParam = getParam('tab');
@@ -228,15 +233,17 @@ export const ReportsPage: React.FC = () => {
           </Typography>
         </Box>
 
-        <Button
-          variant="contained"
-          startIcon={<Download size={18} />}
-          onClick={handleExportCsv}
-          disabled={exporting}
-          sx={{ bgcolor: '#10b981', '&:hover': { bgcolor: '#059669' }, fontWeight: 700 }}
-        >
-          {exporting ? 'Đang xuất dữ liệu...' : 'Xuất Báo Cáo Excel / CSV'}
-        </Button>
+        {canExport && (
+          <Button
+            variant="contained"
+            startIcon={<Download size={18} />}
+            onClick={handleExportCsv}
+            disabled={exporting}
+            sx={{ bgcolor: '#10b981', '&:hover': { bgcolor: '#059669' }, fontWeight: 700 }}
+          >
+            {exporting ? 'Đang xuất dữ liệu...' : 'Xuất Báo Cáo Excel / CSV'}
+          </Button>
+        )}
       </Box>
 
       {/* Filter Toolbar */}

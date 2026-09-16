@@ -27,6 +27,8 @@ import { getMediaUrl } from '../../utils/fileUtils';
 interface TaskTableRowProps {
   task: TaskItem;
   stt: number;
+  canUpdateStatus?: boolean;
+  canUpdateProgress?: boolean;
   onRowClick: (task: TaskItem) => void;
   onStatusChange: (taskId: string, status: TaskStatus) => void;
   onProgressChange: (taskId: string, progress: number) => void;
@@ -35,6 +37,8 @@ interface TaskTableRowProps {
 const TaskTableRow: React.FC<TaskTableRowProps> = memo(({
   task,
   stt,
+  canUpdateStatus = true,
+  canUpdateProgress = true,
   onRowClick,
   onStatusChange,
   onProgressChange,
@@ -157,6 +161,7 @@ const TaskTableRow: React.FC<TaskTableRowProps> = memo(({
         <StatusSelect
           value={task.status}
           onChange={(status) => onStatusChange(task.id, status)}
+          disabled={!canUpdateStatus}
         />
       </TableCell>
       <TableCell onClick={(e) => e.stopPropagation()} sx={{ whiteSpace: 'nowrap', minWidth: 120 }}>
@@ -167,6 +172,7 @@ const TaskTableRow: React.FC<TaskTableRowProps> = memo(({
             min={0}
             max={100}
             step={5}
+            disabled={!canUpdateProgress}
             onChange={(_, val) => setLocalProgress(val as number)}
             onChangeCommitted={(_, val) => {
               const nextVal = val as number;
@@ -198,6 +204,8 @@ interface TaskTableProps {
   onRowClick: (task: TaskItem) => void;
   onStatusChange: (taskId: string, status: TaskStatus) => void;
   onProgressChange: (taskId: string, progress: number) => void;
+  canUpdateStatus?: boolean;
+  canUpdateProgress?: boolean;
 }
 
 export const TaskTable: React.FC<TaskTableProps> = memo(({
@@ -213,6 +221,8 @@ export const TaskTable: React.FC<TaskTableProps> = memo(({
   onRowClick,
   onStatusChange,
   onProgressChange,
+  canUpdateStatus = true,
+  canUpdateProgress = true,
 }) => {
   // State for tracking collapsed project groups (if not controlled from parent)
   const [internalCollapsedGroups, setInternalCollapsedGroups] = useState<Record<string, boolean>>({});
@@ -447,6 +457,8 @@ export const TaskTable: React.FC<TaskTableProps> = memo(({
                         key={item.task.id}
                         task={item.task}
                         stt={item.originalIndex + 1}
+                        canUpdateStatus={canUpdateStatus}
+                        canUpdateProgress={canUpdateProgress}
                         onRowClick={onRowClick}
                         onStatusChange={onStatusChange}
                         onProgressChange={onProgressChange}

@@ -43,8 +43,14 @@ const getInitialMonthRange = () => {
   };
 };
 
+import { usePermission } from '../hooks/usePermission';
+import { PERMISSIONS } from '../constants/permissions';
+
 export const GanttPage: React.FC = () => {
-  const { canEditTask } = useAuth();
+  const { user } = useAuth();
+  const { can, isSuperAdmin } = usePermission();
+  const canViewAll = isSuperAdmin || can(PERMISSIONS.GANTT_VIEW_ALL);
+  const canCreateTask = isSuperAdmin || can(PERMISSIONS.TASKS_CREATE);
   const { getParam, getBooleanParam, setParams, removeParams } = useAppSearchParams();
   const initialMonth = useMemo(() => getInitialMonthRange(), []);
 
@@ -436,12 +442,25 @@ export const GanttPage: React.FC = () => {
           width: '100%',
         }}
       >
-        <Box>
-          <Typography variant="h2" sx={{ fontWeight: 800, fontSize: { xs: '1.15rem', sm: '1.35rem' }, color: '#0f172a' }}>
-            Biểu Đồ Tiến Độ Gantt Toàn Hệ Thống
-          </Typography>
-          <Typography variant="body2" sx={{ color: '#64748b', mt: 0.25, fontSize: { xs: '0.78rem', sm: '0.875rem' } }}>
-            Theo dõi dòng thời gian thi công, phân cấp công việc và kéo thả timeline để di chuyển góc nhìn trực quan
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25, flexWrap: 'wrap' }}>
+            <Typography variant="h2" sx={{ fontWeight: 800, fontSize: { xs: '1.15rem', sm: '1.35rem' }, color: '#0f172a' }}>
+              Biểu Đồ Tiến Độ Gantt
+            </Typography>
+            <Chip
+              size="small"
+              label={canViewAll ? 'Chế độ: Toàn bộ tiến độ' : 'Chế độ: Công việc của tôi'}
+              sx={{
+                bgcolor: canViewAll ? '#eff6ff' : '#f0fdf4',
+                color: canViewAll ? '#1d4ed8' : '#15803d',
+                fontWeight: 700,
+                fontSize: '0.75rem',
+                border: `1px solid ${canViewAll ? '#bfdbfe' : '#bbf7d0'}`,
+              }}
+            />
+          </Box>
+          <Typography variant="body2" sx={{ color: '#64748b', fontSize: { xs: '0.78rem', sm: '0.875rem' } }}>
+            Theo dõi dòng thời gian thi công, phân rã cây công việc (WBS) và giám sát tiến độ thực tế
           </Typography>
         </Box>
         {selectedProjectId !== 'ALL' && (
@@ -457,7 +476,7 @@ export const GanttPage: React.FC = () => {
           <InteractiveGantt
             tasks={tasksList}
             links={linksList}
-            canEdit={canEditTask}
+            canEdit={false}
             onTaskUpdated={refetch}
             filterBar={filterBar}
           />
@@ -527,6 +546,7 @@ export const GanttPage: React.FC = () => {
           onClose={handleCloseModal}
           onSubmit={handleSaveTask}
           editingTask={editingTask}
+          onlySelfAssign={!canViewAll && !isSuperAdmin}
           projectId={
             modalState.projectId ||
             editingTask?.projectId ||

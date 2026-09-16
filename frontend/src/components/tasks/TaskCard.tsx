@@ -15,6 +15,8 @@ import { PriorityBadge, StatusSelect } from '../common';
 
 interface TaskCardProps {
   task: TaskItem;
+  canUpdateStatus?: boolean;
+  canUpdateProgress?: boolean;
   onCardClick: (task: TaskItem) => void;
   onStatusChange: (taskId: string, status: TaskStatus) => void;
   onProgressChange: (taskId: string, progress: number) => void;
@@ -22,6 +24,8 @@ interface TaskCardProps {
 
 export const TaskCard: React.FC<TaskCardProps> = memo(({
   task,
+  canUpdateStatus = true,
+  canUpdateProgress = true,
   onCardClick,
   onStatusChange,
   onProgressChange,
@@ -77,6 +81,7 @@ export const TaskCard: React.FC<TaskCardProps> = memo(({
             <StatusSelect
               value={task.status}
               onChange={(status) => onStatusChange(task.id, status)}
+              disabled={!canUpdateStatus}
             />
           </Box>
         </Box>
@@ -171,6 +176,7 @@ export const TaskCard: React.FC<TaskCardProps> = memo(({
             min={0}
             max={100}
             step={5}
+            disabled={!canUpdateProgress}
             onChange={(_, val) => setLocalProgress(val as number)}
             onChangeCommitted={(_, val) => {
               const nextVal = val as number;

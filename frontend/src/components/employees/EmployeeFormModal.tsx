@@ -302,14 +302,14 @@ export const EmployeeFormModal: React.FC<EmployeeFormModalProps> = ({
                   {roleList.length > 0 ? (
                     roleList.map((r) => (
                       <MenuItem key={r.id} value={r.code}>
-                        {r.name.replace('Chỉ Huy Trưởng', 'Người Quản Lý')} ({r.code}) {r.isSystem ? '• Hệ thống' : '• Tùy chỉnh'}
+                        {r.name.replace('Chỉ Huy Trưởng', 'Quản Lý (PM)').replace('Người Quản Lý', 'Quản Lý (PM)')} ({r.code}) {r.isSystem ? '• Hệ thống' : '• Tùy chỉnh'}
                       </MenuItem>
                     ))
                   ) : (
                     <>
                       <MenuItem value="FIELD_ENGINEER">Kỹ Sư / Nhân Viên (FIELD_ENGINEER)</MenuItem>
                       <MenuItem value="SITE_SUPERVISOR">Giám Sát Hiện Trường (SITE_SUPERVISOR)</MenuItem>
-                      <MenuItem value="PROJECT_MANAGER">Người Quản Lý (PM) (PROJECT_MANAGER)</MenuItem>
+                      <MenuItem value="PROJECT_MANAGER">Quản Lý (PM) (PROJECT_MANAGER)</MenuItem>
                       <MenuItem value="SUPER_ADMIN">Quản Trị Viên Toàn Quyền (SUPER_ADMIN)</MenuItem>
                     </>
                   )}

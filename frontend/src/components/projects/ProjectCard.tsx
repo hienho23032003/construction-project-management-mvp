@@ -12,6 +12,7 @@ interface ProjectCardProps {
   onEditClick?: (p: Project, e: React.MouseEvent) => void;
   onDeleteClick?: (id: string, e: React.MouseEvent) => void;
   canEdit?: boolean;
+  canDelete?: boolean;
   isAdmin?: boolean;
 }
 
@@ -21,8 +22,11 @@ export const ProjectCard: React.FC<ProjectCardProps> = memo(({
   onEditClick,
   onDeleteClick,
   canEdit = false,
+  canDelete = false,
   isAdmin = false,
 }) => {
+  const showDelete = canDelete || isAdmin;
+
   return (
     <Card
       variant="outlined"
@@ -55,9 +59,9 @@ export const ProjectCard: React.FC<ProjectCardProps> = memo(({
                 <Edit size={16} color="#64748b" />
               </IconButton>
             )}
-            {isAdmin && onDeleteClick && (
+            {showDelete && onDeleteClick && (
               <IconButton size="small" onClick={(e) => onDeleteClick(p.id, e)} sx={{ '&:hover': { color: '#ef4444' } }}>
-                <Trash2 size={16} />
+                <Trash2 size={16} color="#ef4444" />
               </IconButton>
             )}
           </Box>

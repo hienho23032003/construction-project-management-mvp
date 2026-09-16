@@ -23,6 +23,7 @@ interface ProjectTableProps {
   onEditClick?: (p: Project, e: React.MouseEvent) => void;
   onDeleteClick?: (id: string, e: React.MouseEvent) => void;
   canEdit?: boolean;
+  canDelete?: boolean;
   isAdmin?: boolean;
 }
 
@@ -38,8 +39,10 @@ export const ProjectTable: React.FC<ProjectTableProps> = memo(({
   onEditClick,
   onDeleteClick,
   canEdit = false,
+  canDelete = false,
   isAdmin = false,
 }) => {
+  const showDelete = canDelete || isAdmin;
   const columns: ColumnDef<Project>[] = useMemo(
     () => [
       {
@@ -59,43 +62,69 @@ export const ProjectTable: React.FC<ProjectTableProps> = memo(({
       },
       {
         id: 'name',
-        header: 'Tên Công Trình',
+        header: 'Tên Công Trình / Dự Án',
         accessorKey: 'name',
         sortable: true,
-        minWidth: 200,
-        cellSx: { fontWeight: 700, color: '#0f172a' },
+        minWidth: 220,
+        cell: ({ value, row }) => (
+          <div>
+            <Typography variant="body2" sx={{ fontWeight: 700, color: '#0f172a' }}>
+              {value}
+            </Typography>
+            {row.location && (
+              <Typography variant="caption" sx={{ color: '#64748b' }}>
+                {row.location}
+              </Typography>
+            )}
+          </div>
+        ),
       },
       {
-        id: 'location',
-        header: 'Địa Điểm',
-        accessorKey: 'location',
-        minWidth: 160,
-        cell: ({ value }) => value || '-',
+        id: 'status',
+        header: 'Trạng Thái',
+        accessorKey: 'status',
+        sortable: true,
+        width: 130,
+        minWidth: 130,
+        cell: ({ value, row }) => (
+          <StatusChip status={value} isOverdue={row.isOverdue} />
+        ),
       },
       {
         id: 'managerName',
-        header: 'Người Quản Lý (PM)',
+        header: 'Quản Lý (PM)',
         accessorKey: 'managerName',
+        sortable: true,
         minWidth: 150,
-        cell: ({ value }) => value || 'Chưa gán',
+        cell: ({ value }) => (
+          <Typography variant="body2" sx={{ color: '#334155' }}>
+            {value || '—'}
+          </Typography>
+        ),
+      },
+      {
+        id: 'startDate',
+        header: 'Ngày Bắt Đầu',
+        accessorKey: 'startDate',
+        sortable: true,
+        width: 110,
+        minWidth: 110,
+        cell: ({ value }) => (
+          <Typography variant="body2" sx={{ color: '#475569' }}>
+            {formatDate(value)}
+          </Typography>
+        ),
       },
       {
         id: 'plannedEndDate',
-        header: 'Hạn Hoàn Thành',
+        header: 'Hạn Dự Kiến',
         accessorKey: 'plannedEndDate',
         sortable: true,
-        width: 130,
-        minWidth: 120,
-        cell: ({ row }) => (
-          <Typography
-            variant="caption"
-            sx={{
-              fontWeight: 600,
-              color: row.isOverdue ? '#ef4444' : '#334155',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {formatDate(row.plannedEndDate)}
+        width: 110,
+        minWidth: 110,
+        cell: ({ value }) => (
+          <Typography variant="body2" sx={{ color: '#475569' }}>
+            {formatDate(value)}
           </Typography>
         ),
       },
@@ -104,25 +133,18 @@ export const ProjectTable: React.FC<ProjectTableProps> = memo(({
         header: 'Tiến Độ',
         accessorKey: 'progress',
         sortable: true,
-        width: 130,
-        minWidth: 120,
-        cell: ({ value }) => <ProgressBar value={value} height={7} />,
-      },
-      {
-        id: 'status',
-        header: 'Trạng Thái',
-        accessorKey: 'status',
-        sortable: true,
-        width: 130,
-        minWidth: 120,
-        cell: ({ row }) => <StatusChip status={row.status} isOverdue={row.isOverdue} />,
+        width: 160,
+        minWidth: 140,
+        cell: ({ value }) => (
+          <ProgressBar value={value} showText={true} height={8} />
+        ),
       },
       {
         id: 'actions',
         header: 'Thao Tác',
+        width: 90,
+        minWidth: 90,
         align: 'right',
-        width: 100,
-        minWidth: 100,
         cell: ({ row }) => (
           <span onClick={(e) => e.stopPropagation()}>
             {canEdit && onEditClick && (
@@ -130,7 +152,7 @@ export const ProjectTable: React.FC<ProjectTableProps> = memo(({
                 <Edit size={16} color="#64748b" />
               </IconButton>
             )}
-            {isAdmin && onDeleteClick && (
+            {showDelete && onDeleteClick && (
               <IconButton size="small" onClick={(e) => onDeleteClick(row.id, e)}>
                 <Trash2 size={16} color="#ef4444" />
               </IconButton>
@@ -139,7 +161,7 @@ export const ProjectTable: React.FC<ProjectTableProps> = memo(({
         ),
       },
     ],
-    [canEdit, isAdmin, onDeleteClick, onEditClick]
+    [canEdit, showDelete, onDeleteClick, onEditClick]
   );
 
   return (

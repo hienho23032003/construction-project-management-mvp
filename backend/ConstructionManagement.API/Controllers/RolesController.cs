@@ -1,3 +1,4 @@
+using ConstructionManagement.API.Filters;
 using ConstructionManagement.Application.Common;
 using ConstructionManagement.Application.DTOs;
 using ConstructionManagement.Application.Interfaces;
@@ -17,6 +18,7 @@ public class RolesController : BaseApiController
     }
 
     [HttpGet]
+    [RequirePermission("roles.view")]
     public async Task<IActionResult> GetAll()
     {
         var result = await _roleService.GetAllRolesAsync();
@@ -24,6 +26,7 @@ public class RolesController : BaseApiController
     }
 
     [HttpGet("{id:guid}")]
+    [RequirePermission("roles.view")]
     public async Task<IActionResult> GetById(Guid id)
     {
         var result = await _roleService.GetRoleByIdAsync(id);
@@ -32,6 +35,7 @@ public class RolesController : BaseApiController
     }
 
     [HttpPost]
+    [RequirePermission("roles.manage")]
     public async Task<IActionResult> Create([FromBody] CreateRoleRequest request)
     {
         var result = await _roleService.CreateRoleAsync(request);
@@ -40,6 +44,7 @@ public class RolesController : BaseApiController
     }
 
     [HttpPut("{id:guid}")]
+    [RequirePermission("roles.manage")]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateRoleRequest request)
     {
         var result = await _roleService.UpdateRoleAsync(id, request);
@@ -48,6 +53,7 @@ public class RolesController : BaseApiController
     }
 
     [HttpDelete("{id:guid}")]
+    [RequirePermission("roles.manage")]
     public async Task<IActionResult> Delete(Guid id)
     {
         var result = await _roleService.DeleteRoleAsync(id);
@@ -69,3 +75,4 @@ public class RolesController : BaseApiController
         return Ok(ApiResponse<List<string>>.Ok(permissions));
     }
 }
+

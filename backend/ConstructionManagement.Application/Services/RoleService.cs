@@ -46,8 +46,8 @@ public class RoleService : IRoleService
             ModuleName = "Tiến Độ Biểu Đồ Gantt",
             Permissions = new List<PermissionItemDto>
             {
-                new() { Code = "gantt.view", Name = "Xem biểu đồ Gantt", Description = "Theo dõi tiến độ trực quan trên timeline Gantt" },
-                new() { Code = "gantt.edit_timeline", Name = "Kéo giãn thời gian", Description = "Kéo thả thanh tiến độ để dời ngày bắt đầu/kết thúc" }
+                new() { Code = "gantt.view", Name = "Xem biểu đồ Gantt cá nhân", Description = "Xem tiến độ Gantt các công việc được giao cho bản thân" },
+                new() { Code = "gantt.view_all", Name = "Xem toàn bộ biểu đồ Gantt", Description = "Xem toàn bộ tiến độ và công việc của tất cả thành viên trên Gantt" }
             }
         },
         new PermissionModuleGroupDto
@@ -322,7 +322,7 @@ public class RoleService : IRoleService
                     {
                         "projects.view", "projects.create", "projects.edit", "projects.manage_members",
                         "tasks.view", "tasks.create", "tasks.edit", "tasks.delete", "tasks.update_status", "tasks.update_progress", "tasks.comment",
-                        "gantt.view", "gantt.edit_timeline",
+                        "gantt.view", "gantt.view_all",
                         "employees.view", "reports.view", "reports.export", "audit.view_sessions"
                     };
                     break;
@@ -331,7 +331,7 @@ public class RoleService : IRoleService
                     {
                         "projects.view",
                         "tasks.view", "tasks.create", "tasks.edit", "tasks.update_status", "tasks.update_progress", "tasks.comment",
-                        "gantt.view", "gantt.edit_timeline",
+                        "gantt.view",
                         "employees.view", "reports.view"
                     };
                     break;

@@ -34,7 +34,7 @@ export const ProjectOverviewTab: React.FC<ProjectOverviewTabProps> = memo(({ pro
             </Grid>
             <Grid item xs={6}>
               <Typography variant="caption" sx={{ color: '#64748b' }}>
-                Chỉ huy trưởng / Quản lý
+                Quản Lý (PM)
               </Typography>
               <Typography variant="body2" sx={{ fontWeight: 600 }}>
                 {project.managerName || 'Chưa phân công'}

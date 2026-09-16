@@ -61,7 +61,7 @@ export const ProjectProgressReport: React.FC<ProjectProgressReportProps> = memo(
         },
         {
           id: 'managerName',
-          header: 'Chỉ Huy Trưởng',
+          header: 'Quản Lý (PM)',
           accessorKey: 'managerName',
           minWidth: 140,
         },

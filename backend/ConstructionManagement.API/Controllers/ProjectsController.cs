@@ -1,3 +1,4 @@
+using ConstructionManagement.API.Filters;
 using ConstructionManagement.Application.Common;
 using ConstructionManagement.Application.DTOs;
 using ConstructionManagement.Application.Interfaces;
@@ -20,6 +21,7 @@ public class ProjectsController : BaseApiController
     }
 
     [HttpGet]
+    [RequirePermission("projects.view")]
     public async Task<IActionResult> GetAll([FromQuery] PaginationParams pagination, [FromQuery] ProjectStatus? status)
     {
         var result = await _projectService.GetAllProjectsAsync(pagination, status);
@@ -27,6 +29,7 @@ public class ProjectsController : BaseApiController
     }
 
     [HttpGet("all")]
+    [RequirePermission("projects.view")]
     public async Task<IActionResult> GetAllList()
     {
         var result = await _projectService.GetAllProjectsListAsync();
@@ -34,6 +37,7 @@ public class ProjectsController : BaseApiController
     }
 
     [HttpGet("{id}")]
+    [RequirePermission("projects.view")]
     public async Task<IActionResult> GetById(Guid id)
     {
         var result = await _projectService.GetProjectByIdAsync(id);
@@ -42,7 +46,7 @@ public class ProjectsController : BaseApiController
     }
 
     [HttpPost]
-    [Authorize(Roles = "SuperAdmin,ProjectManager")]
+    [RequirePermission("projects.create")]
     public async Task<IActionResult> Create([FromBody] CreateProjectRequest request)
     {
         var result = await _projectService.CreateProjectAsync(request, CurrentUserId);
@@ -51,7 +55,7 @@ public class ProjectsController : BaseApiController
     }
 
     [HttpPut("{id}")]
-    [Authorize(Roles = "SuperAdmin,ProjectManager")]
+    [RequirePermission("projects.edit")]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateProjectRequest request)
     {
         var result = await _projectService.UpdateProjectAsync(id, request, CurrentUserId);
@@ -60,7 +64,7 @@ public class ProjectsController : BaseApiController
     }
 
     [HttpDelete("{id}")]
-    [Authorize(Roles = "SuperAdmin")]
+    [RequirePermission("projects.delete")]
     public async Task<IActionResult> Delete(Guid id)
     {
         var result = await _projectService.DeleteProjectAsync(id, CurrentUserId);
@@ -69,6 +73,7 @@ public class ProjectsController : BaseApiController
     }
 
     [HttpGet("{id}/tasks")]
+    [RequirePermission("tasks.view")]
     public async Task<IActionResult> GetProjectTasks(Guid id)
     {
         var result = await _taskService.GetTaskTreeByProjectAsync(id);
@@ -76,6 +81,7 @@ public class ProjectsController : BaseApiController
     }
 
     [HttpGet("{id}/members")]
+    [RequirePermission("projects.view")]
     public async Task<IActionResult> GetMembers(Guid id)
     {
         var result = await _projectService.GetProjectMembersAsync(id);
@@ -83,7 +89,7 @@ public class ProjectsController : BaseApiController
     }
 
     [HttpPost("{id}/members")]
-    [Authorize(Roles = "SuperAdmin,ProjectManager")]
+    [RequirePermission("projects.manage_members")]
     public async Task<IActionResult> AddMember(Guid id, [FromBody] AddProjectMemberRequest request)
     {
         var result = await _projectService.AddProjectMemberAsync(id, request);
@@ -92,7 +98,7 @@ public class ProjectsController : BaseApiController
     }
 
     [HttpDelete("{id}/members/{userId}")]
-    [Authorize(Roles = "SuperAdmin,ProjectManager")]
+    [RequirePermission("projects.manage_members")]
     public async Task<IActionResult> RemoveMember(Guid id, Guid userId)
     {
         var result = await _projectService.RemoveProjectMemberAsync(id, userId);
@@ -100,3 +106,4 @@ public class ProjectsController : BaseApiController
         return Ok(result);
     }
 }
+

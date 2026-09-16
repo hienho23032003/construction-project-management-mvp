@@ -26,6 +26,8 @@ import { useProjectMembersQuery, useProjectsListQuery } from '../../hooks/usePro
 import { usePresenceHeartbeat } from '../../hooks/usePresence';
 import { CoEditingWarningBanner } from '../presence/ProjectPresenceAvatars';
 
+import { useAuth } from '../../contexts/AuthContext';
+
 export interface TaskFormData {
   name: string;
   description: string;
@@ -48,6 +50,7 @@ interface TaskFormModalProps {
   projectId?: string;
   users?: User[];
   isSubmitting?: boolean;
+  onlySelfAssign?: boolean;
 }
 
 export const TaskFormModal: React.FC<TaskFormModalProps> = ({
@@ -59,7 +62,9 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
   projectId,
   users = [],
   isSubmitting = false,
+  onlySelfAssign = false,
 }) => {
+  const { user: currentUser } = useAuth();
   const { data: allProjects = [] } = useProjectsListQuery();
   const [selectedProjId, setSelectedProjId] = React.useState<string>('');
 
@@ -76,8 +81,21 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
   const targetProjectId = projectId || editingTask?.projectId || selectedProjId;
   const { data: projectMembers = [] } = useProjectMembersQuery(targetProjectId || undefined);
 
-  // Filter selectable assignees: Only show members belonging to the current project
+  // Filter selectable assignees: Only show members belonging to the current project, or restrict to self if onlySelfAssign
   const selectableUsers = useMemo(() => {
+    if (onlySelfAssign && currentUser) {
+      return [{
+        id: currentUser.id,
+        fullName: currentUser.fullName,
+        email: currentUser.email,
+        department: currentUser.department || '',
+        role: currentUser.role || 'Employee',
+        roleName: 'Bản thân',
+        isActive: true,
+        createdAt: '',
+      }];
+    }
+
     // If a project context exists, strictly restrict assignees to members of this project
     if (targetProjectId) {
       const memberMap = new Map<string, User>();
@@ -123,7 +141,7 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
 
     // Only if no project was specified at all do we fall back to all users
     return users;
-  }, [targetProjectId, projectMembers, users, editingTask]);
+  }, [targetProjectId, projectMembers, users, editingTask, onlySelfAssign, currentUser]);
 
   const {
     control,
@@ -142,7 +160,7 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
       actualEndDate: '',
       priority: 'Medium',
       status: 'NotStarted',
-      assigneeIds: [],
+      assigneeIds: onlySelfAssign && currentUser ? [currentUser.id] : [],
     },
   });
 
@@ -161,7 +179,7 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
           actualEndDate: editingTask.actualEndDate ? editingTask.actualEndDate.split('T')[0] : (editingTask.status === 'Completed' ? (editingTask.plannedEndDate ? editingTask.plannedEndDate.split('T')[0] : new Date().toISOString().split('T')[0]) : ''),
           priority: editingTask.priority,
           status: editingTask.status,
-          assigneeIds: editingTask.assignees ? editingTask.assignees.map((a) => a.userId || a.id) : [],
+          assigneeIds: editingTask.assignees ? editingTask.assignees.map((a) => a.userId || a.id) : (onlySelfAssign && currentUser ? [currentUser.id] : []),
         });
       } else {
         reset({
@@ -172,11 +190,11 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
           actualEndDate: '',
           priority: 'Medium',
           status: 'NotStarted',
-          assigneeIds: [],
+          assigneeIds: onlySelfAssign && currentUser ? [currentUser.id] : [],
         });
       }
     }
-  }, [open, editingTask, reset]);
+  }, [open, editingTask, reset, onlySelfAssign, currentUser]);
 
   usePresenceHeartbeat({
     projectId: targetProjectId || undefined,
@@ -444,6 +462,7 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
             render={({ field }) => (
               <Autocomplete
                 multiple
+                disabled={onlySelfAssign}
                 options={selectableUsers}
                 getOptionLabel={(option) =>
                   typeof option === 'string'
@@ -456,8 +475,9 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
                 renderInput={(params) => (
                   <TextField
                     {...params}
-                    label="Người Thực Hiện (Chỉ nhân sự thuộc dự án)"
+                    label="Người Thực Hiện"
                     placeholder={field.value?.length ? '' : 'Chọn nhân sự trong dự án...'}
+                    helperText={onlySelfAssign ? 'Chỉ được tạo công việc cho chính bạn (Do không có quyền Xem toàn bộ)' : undefined}
                   />
                 )}
                 renderTags={(value, getTagProps) =>

@@ -49,10 +49,11 @@ export const roleLabels: Record<string, string> = {
 };
 
 export const EmployeesPage: React.FC = () => {
-  const { isAdmin } = useAuth();
-  const { can } = usePermission();
-  const canCreate = isAdmin || can(PERMISSIONS.EMPLOYEES_CREATE);
-  const canResetPassword = isAdmin || can(PERMISSIONS.EMPLOYEES_RESET_PASSWORD);
+  const { can, isSuperAdmin } = usePermission();
+  const canCreate = isSuperAdmin || can(PERMISSIONS.EMPLOYEES_CREATE);
+  const canEdit = isSuperAdmin || can(PERMISSIONS.EMPLOYEES_EDIT);
+  const canDelete = isSuperAdmin || can(PERMISSIONS.EMPLOYEES_DELETE);
+  const canResetPassword = isSuperAdmin || can(PERMISSIONS.EMPLOYEES_RESET_PASSWORD);
 
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('table');
   const [page, setPage] = useState(0);
@@ -253,7 +254,8 @@ export const EmployeesPage: React.FC = () => {
                     <EmployeeCard
                       user={u}
                       workload={workload}
-                      isAdmin={isAdmin}
+                      canEdit={canEdit}
+                      canDelete={canDelete}
                       canResetPassword={canResetPassword}
                       onEdit={handleOpenEdit}
                       onResetPassword={(target) => setResetPasswordTarget(target)}
@@ -290,7 +292,8 @@ export const EmployeesPage: React.FC = () => {
             sortBy={sortBy}
             isDescending={isDescending}
             onSort={handleSort}
-            isAdmin={isAdmin}
+            canEdit={canEdit}
+            canDelete={canDelete}
             canResetPassword={canResetPassword}
             onEdit={handleOpenEdit}
             onResetPassword={(target) => setResetPasswordTarget(target)}

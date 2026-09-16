@@ -898,16 +898,26 @@ public class TaskService : ITaskService
         TaskItemStatus? status = null,
         bool? activeOnly = null,
         DateTime? fromDate = null,
-        DateTime? toDate = null)
+        DateTime? toDate = null,
+        Guid? currentUserId = null,
+        bool canViewAll = true)
     {
         var now = DateTime.UtcNow.Date;
-        var hasFilters = projectId.HasValue || status.HasValue || (activeOnly == true) || fromDate.HasValue || toDate.HasValue;
+        var hasFilters = projectId.HasValue || status.HasValue || (activeOnly == true) || fromDate.HasValue || toDate.HasValue || (!canViewAll && currentUserId.HasValue);
 
         var tasksQuery = _context.Tasks
             .Include(t => t.Project)
             .Include(t => t.Assignees).ThenInclude(a => a.User)
             .Include(t => t.Predecessors)
             .AsNoTracking();
+
+        if (!canViewAll && currentUserId.HasValue)
+        {
+            var uid = currentUserId.Value;
+            tasksQuery = tasksQuery.Where(t =>
+                t.Assignees.Any(a => a.UserId == uid) ||
+                t.CreatedById == uid);
+        }
 
         if (projectId.HasValue)
         {

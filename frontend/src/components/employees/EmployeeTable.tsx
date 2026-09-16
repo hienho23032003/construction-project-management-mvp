@@ -22,8 +22,10 @@ interface EmployeeTableProps {
   sortBy: string;
   isDescending: boolean;
   onSort: (field: string) => void;
-  isAdmin?: boolean;
+  canEdit?: boolean;
+  canDelete?: boolean;
   canResetPassword?: boolean;
+  isAdmin?: boolean;
   onEdit?: (user: User) => void;
   onResetPassword?: (user: User) => void;
   onToggleStatus?: (user: User) => void;
@@ -39,14 +41,19 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = memo(({
   sortBy,
   isDescending,
   onSort,
-  isAdmin = false,
+  canEdit = false,
+  canDelete = false,
   canResetPassword = false,
+  isAdmin = false,
   onEdit,
   onResetPassword,
   onToggleStatus,
   onDelete,
   loading = false,
 }) => {
+  const allowEdit = canEdit || isAdmin;
+  const allowDelete = canDelete || isAdmin;
+  const allowReset = canResetPassword || isAdmin;
   const navigate = useNavigate();
 
   const columns: ColumnDef<User>[] = useMemo(
@@ -187,7 +194,7 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = memo(({
         id: 'actions',
         header: 'Thao Tác',
         align: 'center' as const,
-        minWidth: isAdmin || canResetPassword ? 160 : 80,
+        minWidth: allowReset || allowEdit || allowDelete ? 160 : 80,
         cell: ({ row }: { row: User }) => {
           const isUserActive = row.isActive ?? true;
           return (
@@ -210,7 +217,7 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = memo(({
                 </IconButton>
               </Tooltip>
 
-              {(isAdmin || canResetPassword) && onResetPassword && (
+              {allowReset && onResetPassword && (
                 <Tooltip title="Đặt lại mật khẩu">
                   <IconButton
                     size="small"
@@ -222,18 +229,20 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = memo(({
                 </Tooltip>
               )}
 
-              {isAdmin && (
-                <>
-                  <Tooltip title="Chỉnh sửa thông tin">
-                    <IconButton
-                      size="small"
-                      onClick={() => onEdit && onEdit(row)}
-                      sx={{ color: '#475569', '&:hover': { bgcolor: '#f1f5f9' } }}
-                    >
-                      <Edit2 size={16} />
-                    </IconButton>
-                  </Tooltip>
+              {allowEdit && (
+                <Tooltip title="Chỉnh sửa thông tin">
+                  <IconButton
+                    size="small"
+                    onClick={() => onEdit && onEdit(row)}
+                    sx={{ color: '#475569', '&:hover': { bgcolor: '#f1f5f9' } }}
+                  >
+                    <Edit2 size={16} />
+                  </IconButton>
+                </Tooltip>
+              )}
 
+              {allowDelete && (
+                <>
                   <Tooltip title={isUserActive ? 'Khóa tài khoản' : 'Mở khóa tài khoản'}>
                     <IconButton
                       size="small"
@@ -263,7 +272,7 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = memo(({
         },
       },
     ],
-    [isAdmin, canResetPassword, navigate, onDelete, onEdit, onResetPassword, onToggleStatus, workloads]
+    [allowEdit, allowDelete, allowReset, navigate, onDelete, onEdit, onResetPassword, onToggleStatus, workloads]
   );
 
   return (

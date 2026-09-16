@@ -13,8 +13,10 @@ interface EmployeeCardProps {
     completedTasks: number;
     overdueTasks: number;
   };
-  isAdmin?: boolean;
+  canEdit?: boolean;
+  canDelete?: boolean;
   canResetPassword?: boolean;
+  isAdmin?: boolean;
   onEdit?: (user: User) => void;
   onResetPassword?: (user: User) => void;
   onToggleStatus?: (user: User) => void;
@@ -24,13 +26,18 @@ interface EmployeeCardProps {
 export const EmployeeCard: React.FC<EmployeeCardProps> = memo(({
   user: u,
   workload,
-  isAdmin = false,
+  canEdit = false,
+  canDelete = false,
   canResetPassword = false,
+  isAdmin = false,
   onEdit,
   onResetPassword,
   onToggleStatus,
   onDelete,
 }) => {
+  const allowEdit = canEdit || isAdmin;
+  const allowDelete = canDelete || isAdmin;
+  const allowReset = canResetPassword || isAdmin;
   const navigate = useNavigate();
   const isUserActive = u.isActive ?? true;
 
@@ -197,11 +204,11 @@ export const EmployeeCard: React.FC<EmployeeCardProps> = memo(({
         </Button>
       </CardContent>
 
-      {(isAdmin || canResetPassword) && (
+      {(allowReset || allowEdit || allowDelete) && (
         <Box sx={{ px: 2, pb: 1.5, pt: 0 }}>
           <Divider sx={{ mb: 1.25, borderColor: '#f1f5f9' }} />
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 1 }}>
-            {(isAdmin || canResetPassword) && onResetPassword && (
+            {allowReset && onResetPassword && (
               <Tooltip title="Đặt lại mật khẩu">
                 <IconButton
                   size="small"
@@ -213,18 +220,20 @@ export const EmployeeCard: React.FC<EmployeeCardProps> = memo(({
               </Tooltip>
             )}
 
-            {isAdmin && (
-              <>
-                <Tooltip title="Chỉnh sửa thông tin">
-                  <IconButton
-                    size="small"
-                    onClick={() => onEdit && onEdit(u)}
-                    sx={{ color: '#0284c7', '&:hover': { bgcolor: '#e0f2fe' } }}
-                  >
-                    <Edit2 size={16} />
-                  </IconButton>
-                </Tooltip>
+            {allowEdit && (
+              <Tooltip title="Chỉnh sửa thông tin">
+                <IconButton
+                  size="small"
+                  onClick={() => onEdit && onEdit(u)}
+                  sx={{ color: '#0284c7', '&:hover': { bgcolor: '#e0f2fe' } }}
+                >
+                  <Edit2 size={16} />
+                </IconButton>
+              </Tooltip>
+            )}
 
+            {allowDelete && (
+              <>
                 <Tooltip title={isUserActive ? 'Khóa tài khoản' : 'Mở khóa tài khoản'}>
                   <IconButton
                     size="small"

@@ -1,3 +1,4 @@
+using ConstructionManagement.API.Filters;
 using ConstructionManagement.Application.DTOs;
 using ConstructionManagement.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -16,6 +17,7 @@ public class ReportsController : BaseApiController
     }
 
     [HttpGet("project-progress")]
+    [RequirePermission("reports.view")]
     public async Task<IActionResult> GetProjectProgress([FromQuery] ReportFilterRequest filter)
     {
         var result = await _reportService.GetProjectProgressReportAsync(filter);
@@ -23,6 +25,7 @@ public class ReportsController : BaseApiController
     }
 
     [HttpGet("tasks")]
+    [RequirePermission("reports.view")]
     public async Task<IActionResult> GetTasks([FromQuery] ReportFilterRequest filter)
     {
         var result = await _reportService.GetTaskReportAsync(filter);
@@ -30,6 +33,7 @@ public class ReportsController : BaseApiController
     }
 
     [HttpGet("overdue")]
+    [RequirePermission("reports.view")]
     public async Task<IActionResult> GetOverdue([FromQuery] ReportFilterRequest filter)
     {
         var result = await _reportService.GetOverdueReportAsync(filter);
@@ -37,6 +41,7 @@ public class ReportsController : BaseApiController
     }
 
     [HttpGet("workload")]
+    [RequirePermission("reports.view")]
     public async Task<IActionResult> GetWorkload([FromQuery] ReportFilterRequest filter)
     {
         var result = await _reportService.GetEmployeeWorkloadReportAsync(filter);
@@ -44,6 +49,7 @@ public class ReportsController : BaseApiController
     }
 
     [HttpGet("export")]
+    [RequirePermission("reports.export")]
     public async Task<IActionResult> ExportCsv([FromQuery] string type, [FromQuery] ReportFilterRequest filter)
     {
         var bytes = await _reportService.ExportReportCsvAsync(type ?? "tasks", filter);
@@ -51,3 +57,4 @@ public class ReportsController : BaseApiController
         return File(bytes, "text/csv; charset=utf-8", fileName);
     }
 }
+

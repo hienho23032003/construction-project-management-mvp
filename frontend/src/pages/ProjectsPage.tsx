@@ -19,6 +19,8 @@ import {
   List as ListIcon,
   FolderKanban,
 } from 'lucide-react';
+import { usePermission } from '../hooks/usePermission';
+import { PERMISSIONS } from '../constants/permissions';
 import { useAuth } from '../contexts/AuthContext';
 import { Project } from '../types';
 import {
@@ -42,9 +44,11 @@ import { useDebounce } from '../hooks/useDebounce';
 export const ProjectsPage: React.FC = () => {
   const navigate = useNavigate();
   const { getParam, getNumberParam, getBooleanParam, setParam, setParams, removeParams } = useAppSearchParams();
-  const { user } = useAuth();
-  const isAdmin = user?.role === 'SuperAdmin';
-  const canEditProject = isAdmin || user?.role === 'ProjectManager';
+  const { can, isSuperAdmin } = usePermission();
+
+  const canCreateProject = isSuperAdmin || can(PERMISSIONS.PROJECTS_CREATE);
+  const canEditProject = isSuperAdmin || can(PERMISSIONS.PROJECTS_EDIT);
+  const canDeleteProject = isSuperAdmin || can(PERMISSIONS.PROJECTS_DELETE);
 
   const editProjectIdParam = getParam('editProjectId') || getParam('edit');
   const createProjectParam = getBooleanParam('createProject');
@@ -208,7 +212,7 @@ export const ProjectsPage: React.FC = () => {
           </Typography>
         </Box>
 
-        {canEditProject && (
+        {canCreateProject && (
           <Button
             variant="contained"
             startIcon={<Plus size={18} />}
@@ -318,7 +322,7 @@ export const ProjectsPage: React.FC = () => {
                       setDeleteId(id);
                     }}
                     canEdit={canEditProject}
-                    isAdmin={isAdmin}
+                    canDelete={canDeleteProject}
                   />
                 </Grid>
               ))}
@@ -355,7 +359,7 @@ export const ProjectsPage: React.FC = () => {
               setDeleteId(id);
             }}
             canEdit={canEditProject}
-            isAdmin={isAdmin}
+            canDelete={canDeleteProject}
           />
           <CommonPagination
             page={page}

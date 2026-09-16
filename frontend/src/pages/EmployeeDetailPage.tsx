@@ -54,9 +54,8 @@ import { getMediaUrl } from '../utils/fileUtils';
 export const EmployeeDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { isAdmin } = useAuth();
-  const { can } = usePermission();
-  const canResetPassword = isAdmin || can(PERMISSIONS.EMPLOYEES_RESET_PASSWORD);
+  const { can, isSuperAdmin } = usePermission();
+  const canResetPassword = isSuperAdmin || can(PERMISSIONS.EMPLOYEES_RESET_PASSWORD);
 
   const [activeTab, setActiveTab] = useState(0);
   const [taskSearch, setTaskSearch] = useState('');

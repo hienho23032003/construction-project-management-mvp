@@ -25,7 +25,11 @@ import { getMediaUrl } from '../../utils/fileUtils';
 
 interface ProjectTaskTreeTabProps {
   tasks: TaskTreeItem[];
-  canEditTask: boolean;
+  canEditTask?: boolean;
+  canCreateTask?: boolean;
+  canDeleteTask?: boolean;
+  canUpdateStatus?: boolean;
+  canUpdateProgress?: boolean;
   onStatusChange: (taskId: string, status: TaskStatus) => void;
   onProgressChange: (taskId: string, progress: number) => void;
   onCreateSubTask: (parentId: string) => void;
@@ -42,7 +46,11 @@ interface FlattenedTaskItem {
 
 export const ProjectTaskTreeTab: React.FC<ProjectTaskTreeTabProps> = memo(({
   tasks,
-  canEditTask,
+  canEditTask = false,
+  canCreateTask = false,
+  canDeleteTask = false,
+  canUpdateStatus = false,
+  canUpdateProgress = false,
   onStatusChange,
   onProgressChange,
   onCreateSubTask,
@@ -50,6 +58,11 @@ export const ProjectTaskTreeTab: React.FC<ProjectTaskTreeTabProps> = memo(({
   onDeleteTask,
   onOpenCreateModal,
 }) => {
+  const allowCreate = canCreateTask || canEditTask;
+  const allowEdit = canEditTask;
+  const allowDelete = canDeleteTask;
+  const allowStatus = canUpdateStatus || canEditTask;
+  const allowProgress = canUpdateProgress || canEditTask;
   const tableContainerRef = useRef<HTMLDivElement>(null);
 
   // Flatten the recursive tree into a flat list with depth levels for virtualization
@@ -115,7 +128,7 @@ export const ProjectTaskTreeTab: React.FC<ProjectTaskTreeTabProps> = memo(({
                 <Typography variant="body2" sx={{ color: '#94a3b8', mb: 1, whiteSpace: 'nowrap' }}>
                   Chưa có hạng mục công việc nào trong dự án này.
                 </Typography>
-                {canEditTask && (
+                {allowCreate && (
                   <Button
                     size="small"
                     variant="outlined"
@@ -231,7 +244,7 @@ export const ProjectTaskTreeTab: React.FC<ProjectTaskTreeTabProps> = memo(({
                       <StatusSelect
                         value={task.status}
                         onChange={(status) => onStatusChange(task.id, status)}
-                        disabled={!canEditTask}
+                        disabled={!allowStatus}
                       />
                     </TableCell>
 
@@ -244,6 +257,7 @@ export const ProjectTaskTreeTab: React.FC<ProjectTaskTreeTabProps> = memo(({
                           min={0}
                           max={100}
                           step={5}
+                          disabled={!allowProgress}
                           onChange={(_, val) => onProgressChange(task.id, val as number)}
                           sx={{ color: task.progress >= 100 ? '#10b981' : '#0284c7', width: 70 }}
                         />
@@ -256,21 +270,21 @@ export const ProjectTaskTreeTab: React.FC<ProjectTaskTreeTabProps> = memo(({
                     {/* Actions */}
                     <TableCell align="right" sx={{ whiteSpace: 'nowrap', py: 1 }}>
                       <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 0.5 }}>
-                        {canEditTask && (
+                        {allowCreate && (
                           <Tooltip title="Thêm công việc con">
                             <IconButton size="small" onClick={() => onCreateSubTask(task.id)}>
                               <Plus size={15} color="#0284c7" />
                             </IconButton>
                           </Tooltip>
                         )}
-                        {canEditTask && (
+                        {allowEdit && (
                           <Tooltip title="Chỉnh sửa công việc">
                             <IconButton size="small" onClick={() => onEditTask(task)}>
                               <Edit size={15} color="#64748b" />
                             </IconButton>
                           </Tooltip>
                         )}
-                        {canEditTask && (
+                        {allowDelete && (
                           <Tooltip title="Xóa công việc">
                             <IconButton size="small" onClick={() => onDeleteTask(task.id)}>
                               <Trash2 size={15} color="#ef4444" />

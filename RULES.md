@@ -45,7 +45,7 @@ Tài liệu này quy định bộ quy chuẩn chung cho toàn bộ dự án **Co
    - Trước khi tạo bất kỳ phần tử UI nào (Status chip, Priority badge, Progress bar, Modal xác nhận, Date picker...), kiểm tra thư mục `src/components/common/` xem đã có component tương ứng hay chưa.
    - Không viết lại hoặc duplicate các thành phần giao diện đã có.
 4. **Thiết kế Responsive & Desktop-First:**
-   - Hệ thống quản lý công trình ưu tiên hiển thị tối ưu trên màn hình Desktop/Laptop của kỹ sư và chỉ huy trưởng, đồng thời hỗ trợ tốt Drawer / responsive layout trên thiết bị di động.
+   - Hệ thống quản lý công trình ưu tiên hiển thị tối ưu trên màn hình Desktop/Laptop của kỹ sư và quản lý (PM), đồng thời hỗ trợ tốt Drawer / responsive layout trên thiết bị di động.
 
 ---
 
@@ -128,7 +128,7 @@ Frontend bắt buộc phải xử lý đầy đủ 6 trạng thái giao diện:
 
 Hệ thống hỗ trợ 4 vai trò (Roles) chính:
 - **`SUPER_ADMIN`**: Toàn quyền cấu hình, quản trị tài khoản, xóa dự án/công việc.
-- **`PROJECT_MANAGER`**: Chỉ huy trưởng dự án, tạo/sửa dự án, phân công kỹ sư, quản lý tiến độ.
+- **`PROJECT_MANAGER`**: Quản lý (PM) dự án, tạo/sửa dự án, phân công kỹ sư, quản lý tiến độ.
 - **`SUPERVISOR`**: Giám sát thi công hiện trường, cập nhật % tiến độ, điều chỉnh ngày Gantt, bình luận.
 - **`EMPLOYEE`**: Kỹ sư/nhân viên, xem task được phân công, cập nhật trạng thái/tiến độ, trao đổi bình luận.
 

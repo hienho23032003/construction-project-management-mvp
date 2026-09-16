@@ -43,6 +43,8 @@ import {
   FileArchive,
   File,
 } from 'lucide-react';
+import { usePermission } from '../../hooks/usePermission';
+import { PERMISSIONS } from '../../constants/permissions';
 import { TaskItem, TaskComment, TaskCommentAttachment, TaskDependency, ActivityLog } from '../../types';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTaskActivitiesQuery } from '../../hooks/useTasks';
@@ -211,6 +213,8 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
   initialTab = 0,
 }) => {
   const { user } = useAuth();
+  const { can, isSuperAdmin } = usePermission();
+  const canComment = isSuperAdmin || can(PERMISSIONS.TASKS_COMMENT);
   const { getParam, setParam } = useAppSearchParams();
   const urlTab = getParam('taskTab') || getParam('tab');
 
@@ -852,158 +856,175 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
               </Box>
 
               {/* Add Comment Input */}
-              <Box
-                component="form"
-                onSubmit={handleSubmit(onSubmitComment)}
-                onPaste={handlePaste}
-                sx={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 1.25,
-                  p: 1.5,
-                  bgcolor: '#f8fafc',
-                  border: '1px solid #e2e8f0',
-                  borderRadius: '10px',
-                }}
-              >
-                {/* Hidden File Inputs */}
-                <input
-                  type="file"
-                  ref={imageInputRef}
-                  onChange={(e) => e.target.files && handleFilesAdded(e.target.files)}
-                  accept="image/*, .jfif, .pjpeg, .pjp, .bmp, .png, .jpg, .jpeg, .webp"
-                  multiple
-                  style={{ display: 'none' }}
-                />
-                <input
-                  type="file"
-                  ref={docInputRef}
-                  onChange={(e) => e.target.files && handleFilesAdded(e.target.files)}
-                  accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.zip,.rar,.7z,.dwg,.dxf,.txt"
-                  multiple
-                  style={{ display: 'none' }}
-                />
+              {canComment ? (
+                <Box
+                  component="form"
+                  onSubmit={handleSubmit(onSubmitComment)}
+                  onPaste={handlePaste}
+                  sx={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 1.25,
+                    p: 1.5,
+                    bgcolor: '#f8fafc',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '10px',
+                  }}
+                >
+                  {/* Hidden File Inputs */}
+                  <input
+                    type="file"
+                    ref={imageInputRef}
+                    onChange={(e) => e.target.files && handleFilesAdded(e.target.files)}
+                    accept="image/*, .jfif, .pjpeg, .pjp, .bmp, .png, .jpg, .jpeg, .webp"
+                    multiple
+                    style={{ display: 'none' }}
+                  />
+                  <input
+                    type="file"
+                    ref={docInputRef}
+                    onChange={(e) => e.target.files && handleFilesAdded(e.target.files)}
+                    accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.zip,.rar,.7z,.dwg,.dxf,.txt"
+                    multiple
+                    style={{ display: 'none' }}
+                  />
 
-                <Controller
-                  name="content"
-                  control={control}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      multiline
-                      rows={2}
-                      fullWidth
-                      placeholder="Nhập nội dung trao đổi, hoặc chọn tệp/dán ảnh (Ctrl+V) để gửi..."
-                      disabled={isSubmitting}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
-                          e.preventDefault();
-                          if (canSubmit) {
-                            handleSubmit(onSubmitComment)();
+                  <Controller
+                    name="content"
+                    control={control}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        multiline
+                        rows={2}
+                        fullWidth
+                        placeholder="Nhập nội dung trao đổi, hoặc chọn tệp/dán ảnh (Ctrl+V) để gửi..."
+                        disabled={isSubmitting}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                            e.preventDefault();
+                            if (canSubmit) {
+                              handleSubmit(onSubmitComment)();
+                            }
                           }
-                        }
-                      }}
-                      sx={{
-                        bgcolor: '#ffffff',
-                        '& .MuiOutlinedInput-root': {
-                          p: 1.25,
-                          borderRadius: '8px',
-                        },
-                      }}
-                    />
-                  )}
-                />
-
-                {/* Selected Files Preview Queue */}
-                {selectedFiles.length > 0 && (
-                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, p: 1, bgcolor: '#ffffff', borderRadius: '8px', border: '1px dashed #cbd5e1' }}>
-                    {selectedFiles.map((f, idx) => (
-                      <Chip
-                        key={idx}
-                        icon={isImageAttachment(undefined, f.name) ? <ImageIcon size={14} /> : <Paperclip size={14} />}
-                        label={`${f.name} (${formatFileSize(f.size)})`}
-                        onDelete={() => handleRemoveFile(idx)}
-                        deleteIcon={<X size={14} />}
-                        size="small"
+                        }}
                         sx={{
-                          bgcolor: '#f1f5f9',
-                          fontWeight: 600,
-                          fontSize: '0.75rem',
-                          maxWidth: 260,
-                          '& .MuiChip-label': { overflow: 'hidden', textOverflow: 'ellipsis' },
+                          bgcolor: '#ffffff',
+                          '& .MuiOutlinedInput-root': {
+                            p: 1.25,
+                            borderRadius: '8px',
+                          },
                         }}
                       />
-                    ))}
-                  </Box>
-                )}
+                    )}
+                  />
 
-                {/* Action Bar */}
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  {/* Selected Files Preview Queue */}
+                  {selectedFiles.length > 0 && (
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, p: 1, bgcolor: '#ffffff', borderRadius: '8px', border: '1px dashed #cbd5e1' }}>
+                      {selectedFiles.map((f, idx) => (
+                        <Chip
+                          key={idx}
+                          icon={isImageAttachment(undefined, f.name) ? <ImageIcon size={14} /> : <Paperclip size={14} />}
+                          label={`${f.name} (${formatFileSize(f.size)})`}
+                          onDelete={() => handleRemoveFile(idx)}
+                          deleteIcon={<X size={14} />}
+                          size="small"
+                          sx={{
+                            bgcolor: '#f1f5f9',
+                            fontWeight: 600,
+                            fontSize: '0.75rem',
+                            maxWidth: 260,
+                            '& .MuiChip-label': { overflow: 'hidden', textOverflow: 'ellipsis' },
+                          }}
+                        />
+                      ))}
+                    </Box>
+                  )}
+
+                  {/* Action Bar */}
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        startIcon={<ImageIcon size={15} color="#0284c7" />}
+                        onClick={() => imageInputRef.current?.click()}
+                        disabled={isSubmitting}
+                        sx={{
+                          textTransform: 'none',
+                          fontWeight: 600,
+                          fontSize: '0.75rem',
+                          py: 0.5,
+                          px: 1.25,
+                          borderColor: '#cbd5e1',
+                          color: '#334155',
+                          '&:hover': { borderColor: '#0284c7', bgcolor: '#f0f9ff' },
+                        }}
+                      >
+                        Thêm Ảnh
+                      </Button>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        startIcon={<Paperclip size={15} color="#059669" />}
+                        onClick={() => docInputRef.current?.click()}
+                        disabled={isSubmitting}
+                        sx={{
+                          textTransform: 'none',
+                          fontWeight: 600,
+                          fontSize: '0.75rem',
+                          py: 0.5,
+                          px: 1.25,
+                          borderColor: '#cbd5e1',
+                          color: '#334155',
+                          '&:hover': { borderColor: '#059669', bgcolor: '#ecfdf5' },
+                        }}
+                      >
+                        Đính Kèm Tệp
+                      </Button>
+                      <Typography variant="caption" sx={{ color: '#94a3b8', fontSize: '0.7rem', display: { xs: 'none', sm: 'block' } }}>
+                        (Hỗ trợ Ctrl+V dán ảnh)
+                      </Typography>
+                    </Box>
+
                     <Button
-                      size="small"
-                      variant="outlined"
-                      startIcon={<ImageIcon size={15} color="#0284c7" />}
-                      onClick={() => imageInputRef.current?.click()}
-                      disabled={isSubmitting}
+                      type="submit"
+                      variant="contained"
+                      disabled={isSubmitting || !canSubmit}
+                      startIcon={isSubmitting ? <CircularProgress size={16} color="inherit" /> : <SendHorizontal size={16} />}
                       sx={{
-                        textTransform: 'none',
-                        fontWeight: 600,
-                        fontSize: '0.75rem',
-                        py: 0.5,
-                        px: 1.25,
-                        borderColor: '#cbd5e1',
-                        color: '#334155',
-                        '&:hover': { borderColor: '#0284c7', bgcolor: '#f0f9ff' },
+                        bgcolor: canSubmit ? '#0284c7' : '#94a3b8',
+                        color: '#ffffff',
+                        fontWeight: 700,
+                        fontSize: '0.8rem',
+                        py: 0.75,
+                        px: 2,
+                        borderRadius: '8px',
+                        boxShadow: 'none',
+                        '&:hover': { bgcolor: canSubmit ? '#0369a1' : '#94a3b8', boxShadow: canSubmit ? '0 2px 6px rgba(2, 132, 199, 0.25)' : 'none' },
                       }}
                     >
-                      Thêm Ảnh
+                      Gửi Trao Đổi
                     </Button>
-                    <Button
-                      size="small"
-                      variant="outlined"
-                      startIcon={<Paperclip size={15} color="#059669" />}
-                      onClick={() => docInputRef.current?.click()}
-                      disabled={isSubmitting}
-                      sx={{
-                        textTransform: 'none',
-                        fontWeight: 600,
-                        fontSize: '0.75rem',
-                        py: 0.5,
-                        px: 1.25,
-                        borderColor: '#cbd5e1',
-                        color: '#334155',
-                        '&:hover': { borderColor: '#059669', bgcolor: '#ecfdf5' },
-                      }}
-                    >
-                      Đính Kèm Tệp
-                    </Button>
-                    <Typography variant="caption" sx={{ color: '#94a3b8', fontSize: '0.7rem', display: { xs: 'none', sm: 'block' } }}>
-                      (Hỗ trợ Ctrl+V dán ảnh)
-                    </Typography>
                   </Box>
-
-                  <Button
-                    type="submit"
-                    variant="contained"
-                    disabled={isSubmitting || !canSubmit}
-                    startIcon={isSubmitting ? <CircularProgress size={16} color="inherit" /> : <SendHorizontal size={16} />}
-                    sx={{
-                      bgcolor: canSubmit ? '#0284c7' : '#94a3b8',
-                      color: '#ffffff',
-                      fontWeight: 700,
-                      fontSize: '0.8rem',
-                      py: 0.75,
-                      px: 2,
-                      borderRadius: '8px',
-                      boxShadow: 'none',
-                      '&:hover': { bgcolor: canSubmit ? '#0369a1' : '#94a3b8', boxShadow: canSubmit ? '0 2px 6px rgba(2, 132, 199, 0.25)' : 'none' },
-                    }}
-                  >
-                    Gửi Trao Đổi
-                  </Button>
                 </Box>
-              </Box>
+              ) : (
+                <Paper
+                  variant="outlined"
+                  sx={{
+                    p: 2,
+                    textAlign: 'center',
+                    bgcolor: '#f8fafc',
+                    border: '1px dashed #cbd5e1',
+                    borderRadius: '10px',
+                  }}
+                >
+                  <Typography variant="body2" sx={{ color: '#64748b' }}>
+                    Bạn không có quyền gửi bình luận hoặc đính kèm tệp cho công việc này.
+                  </Typography>
+                </Paper>
+              )}
             </Box>
           )}
 

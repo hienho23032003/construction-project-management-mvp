@@ -43,6 +43,7 @@ import {
   usePermissionsMatrixQuery,
 } from '../hooks/useRoles';
 import { usePermission } from '../hooks/usePermission';
+import { PERMISSIONS } from '../constants/permissions';
 import { RoleModal, RoleFormData } from '../components/roles/RoleModal';
 import { RoleTable } from '../components/roles/RoleTable';
 import { useDebounce } from '../hooks/useDebounce';
@@ -65,7 +66,7 @@ export const RolesPage: React.FC = () => {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [roleToDelete, setRoleToDelete] = useState<RoleItem | null>(null);
 
-  const canManageRoles = isSuperAdmin || can('roles.manage');
+  const canManageRoles = isSuperAdmin || can(PERMISSIONS.ROLES_MANAGE);
 
   const filteredRoles = useMemo(() => {
     if (!debouncedSearch) return roles;

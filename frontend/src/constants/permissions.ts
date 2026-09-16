@@ -21,7 +21,7 @@ export const PERMISSIONS = {
 
   // Gantt
   GANTT_VIEW: 'gantt.view',
-  GANTT_EDIT_TIMELINE: 'gantt.edit_timeline',
+  GANTT_VIEW_ALL: 'gantt.view_all',
 
   // Employees
   EMPLOYEES_VIEW: 'employees.view',
@@ -60,8 +60,8 @@ export const PERMISSION_LABELS: Record<string, string> = {
   [PERMISSIONS.TASKS_COMMENT]: 'Bình luận & phản hồi kỹ thuật',
 
   // Gantt Chart
-  [PERMISSIONS.GANTT_VIEW]: 'Xem biểu đồ tiến độ Gantt',
-  [PERMISSIONS.GANTT_EDIT_TIMELINE]: 'Kéo giãn / điều chỉnh timeline Gantt',
+  [PERMISSIONS.GANTT_VIEW]: 'Xem tiến độ Gantt (Của tôi)',
+  [PERMISSIONS.GANTT_VIEW_ALL]: 'Xem toàn bộ tiến độ Gantt (Tất cả nhân sự)',
 
   // Employees & Workload
   [PERMISSIONS.EMPLOYEES_VIEW]: 'Xem danh sách nhân sự',
