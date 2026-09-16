@@ -14,11 +14,24 @@ public class RoleService : IRoleService
     {
         new PermissionModuleGroupDto
         {
+            ModuleKey = "dashboard",
+            ModuleName = "Tổng Quan Hệ Thống (Dashboard)",
+            Permissions = new List<PermissionItemDto>
+            {
+                new() { Code = "dashboard.view", Name = "Xem tổng quan cá nhân", Description = "Truy cập màn hình tổng quan và xem dữ liệu công việc cá nhân của mình" },
+                new() { Code = "dashboard.view_project", Name = "Xem tổng quan dự án tham gia", Description = "Xem KPI, tiến độ và công việc của các dự án tham gia" },
+                new() { Code = "dashboard.view_all", Name = "Xem toàn bộ tổng quan", Description = "Xem toàn bộ KPI, dự án, công việc và hoạt động của tất cả thành viên" }
+            }
+        },
+        new PermissionModuleGroupDto
+        {
             ModuleKey = "projects",
             ModuleName = "Quản Lý Dự Án & Công Trình",
             Permissions = new List<PermissionItemDto>
             {
-                new() { Code = "projects.view", Name = "Xem dự án", Description = "Xem danh sách và chi tiết thông tin dự án" },
+                new() { Code = "projects.view", Name = "Xem dự án cá nhân", Description = "Xem danh sách và chi tiết các dự án/công trình mà bản thân trực tiếp tạo hoặc làm PM" },
+                new() { Code = "projects.view_project", Name = "Xem dự án tham gia", Description = "Xem danh sách các dự án/công trình mà bản thân là thành viên, PM hoặc có công việc được phân công" },
+                new() { Code = "projects.view_all", Name = "Xem toàn bộ dự án hệ thống", Description = "Xem tất cả dự án/công trình của toàn bộ công ty" },
                 new() { Code = "projects.create", Name = "Tạo dự án", Description = "Khởi tạo công trình / dự án mới" },
                 new() { Code = "projects.edit", Name = "Sửa dự án", Description = "Cập nhật thông tin, ngân sách, tiến độ dự án" },
                 new() { Code = "projects.delete", Name = "Xóa dự án", Description = "Xóa công trình khỏi hệ thống" },
@@ -31,7 +44,9 @@ public class RoleService : IRoleService
             ModuleName = "Quản Lý Công Việc (WBS Tree)",
             Permissions = new List<PermissionItemDto>
             {
-                new() { Code = "tasks.view", Name = "Xem công việc", Description = "Xem danh sách công việc và cây phân rã WBS" },
+                new() { Code = "tasks.view", Name = "Xem công việc cá nhân", Description = "Xem danh sách công việc được phân công cho bản thân" },
+                new() { Code = "tasks.view_project", Name = "Xem công việc dự án tham gia", Description = "Xem tất cả công việc trong các dự án/công trình mà bản thân là thành viên hoặc quản lý" },
+                new() { Code = "tasks.view_all", Name = "Xem toàn bộ công việc hệ thống", Description = "Xem tất cả công việc của toàn bộ hệ thống" },
                 new() { Code = "tasks.create", Name = "Tạo công việc", Description = "Thêm mới hạng mục công việc / công việc con" },
                 new() { Code = "tasks.edit", Name = "Sửa công việc", Description = "Chỉnh sửa tên, mô tả, hạn ngày, người phụ trách" },
                 new() { Code = "tasks.delete", Name = "Xóa công việc", Description = "Xóa hạng mục công việc và các mục con" },
@@ -47,6 +62,7 @@ public class RoleService : IRoleService
             Permissions = new List<PermissionItemDto>
             {
                 new() { Code = "gantt.view", Name = "Xem biểu đồ Gantt cá nhân", Description = "Xem tiến độ Gantt các công việc được giao cho bản thân" },
+                new() { Code = "gantt.view_project", Name = "Xem biểu đồ Gantt dự án tham gia", Description = "Xem tiến độ Gantt toàn bộ công việc trong các dự án tham gia" },
                 new() { Code = "gantt.view_all", Name = "Xem toàn bộ biểu đồ Gantt", Description = "Xem toàn bộ tiến độ và công việc của tất cả thành viên trên Gantt" }
             }
         },
@@ -69,7 +85,9 @@ public class RoleService : IRoleService
             ModuleName = "Báo Cáo & Thống Kê",
             Permissions = new List<PermissionItemDto>
             {
-                new() { Code = "reports.view", Name = "Xem báo cáo", Description = "Xem báo cáo tiến độ, dự án trễ hạn, workload" },
+                new() { Code = "reports.view", Name = "Xem báo cáo cá nhân", Description = "Xem báo cáo tiến độ và công việc được phân công cho bản thân" },
+                new() { Code = "reports.view_project", Name = "Xem báo cáo dự án tham gia", Description = "Xem báo cáo và thống kê toàn bộ công việc trong các dự án được tham gia hoặc quản lý" },
+                new() { Code = "reports.view_all", Name = "Xem toàn bộ báo cáo hệ thống", Description = "Xem báo cáo tổng hợp tiến độ và hiệu suất của toàn công ty" },
                 new() { Code = "reports.export", Name = "Xuất dữ liệu", Description = "Xuất dữ liệu báo cáo sang Excel / CSV" }
             }
         },
@@ -167,18 +185,21 @@ public class RoleService : IRoleService
             CreatedAt = DateTime.UtcNow
         };
 
-        if (request.Permissions != null && request.Permissions.Count > 0)
+        var requestedPerms = (request.Permissions ?? new List<string>()).Distinct().ToList();
+        if (!requestedPerms.Contains("dashboard.view"))
         {
-            foreach (var perm in request.Permissions.Distinct())
+            requestedPerms.Add("dashboard.view");
+        }
+
+        foreach (var perm in requestedPerms)
+        {
+            role.Permissions.Add(new RolePermission
             {
-                role.Permissions.Add(new RolePermission
-                {
-                    Id = Guid.NewGuid(),
-                    RoleId = role.Id,
-                    PermissionCode = perm,
-                    CreatedAt = DateTime.UtcNow
-                });
-            }
+                Id = Guid.NewGuid(),
+                RoleId = role.Id,
+                PermissionCode = perm,
+                CreatedAt = DateTime.UtcNow
+            });
         }
 
         _context.Roles.Add(role);
@@ -229,6 +250,11 @@ public class RoleService : IRoleService
         if (request.Permissions != null)
         {
             var requestedPerms = request.Permissions.Distinct().ToList();
+            if (!requestedPerms.Contains("dashboard.view"))
+            {
+                requestedPerms.Add("dashboard.view");
+            }
+
             var existingPerms = await _context.RolePermissions
                 .Where(p => p.RoleId == id)
                 .ToListAsync();
@@ -313,45 +339,50 @@ public class RoleService : IRoleService
             return SystemPermissions.SelectMany(g => g.Permissions).Select(p => p.Code).Distinct().ToList();
         }
 
-        var perms = user.UserRoles
-            .Where(ur => ur.Role != null)
-            .SelectMany(ur => ur.Role!.Permissions)
-            .Select(p => p.PermissionCode)
-            .Distinct()
-            .ToList();
-
-        // Fallback based on legacy UserRole enum if no dynamic role mappings yet
-        if (perms.Count == 0)
+        // If user has dynamic roles assigned, return ONLY the permissions granted to those dynamic roles (even if empty)
+        if (user.UserRoles != null && user.UserRoles.Any())
         {
-            switch (user.Role)
-            {
-                case Domain.Enums.UserRole.ProjectManager:
-                    perms = new List<string>
-                    {
-                        "projects.view", "projects.create", "projects.edit", "projects.manage_members",
-                        "tasks.view", "tasks.create", "tasks.edit", "tasks.delete", "tasks.update_status", "tasks.update_progress", "tasks.comment",
-                        "gantt.view", "gantt.view_all",
-                        "employees.view", "reports.view", "reports.export", "audit.view_sessions"
-                    };
-                    break;
-                case Domain.Enums.UserRole.Supervisor:
-                    perms = new List<string>
-                    {
-                        "projects.view",
-                        "tasks.view", "tasks.create", "tasks.edit", "tasks.update_status", "tasks.update_progress", "tasks.comment",
-                        "gantt.view",
-                        "employees.view", "reports.view"
-                    };
-                    break;
-                default:
-                    perms = new List<string>
-                    {
-                        "projects.view",
-                        "tasks.view", "tasks.update_progress", "tasks.update_status", "tasks.comment",
-                        "gantt.view", "employees.view"
-                    };
-                    break;
-            }
+            return user.UserRoles
+                .Where(ur => ur.Role != null)
+                .SelectMany(ur => ur.Role!.Permissions)
+                .Select(p => p.PermissionCode)
+                .Distinct()
+                .ToList();
+        }
+
+        // Only fallback to legacy default permissions if user has NO dynamic role mappings at all
+        var perms = new List<string>();
+        switch (user.Role)
+        {
+            case Domain.Enums.UserRole.ProjectManager:
+                perms = new List<string>
+                {
+                    "dashboard.view", "dashboard.view_project", "dashboard.view_all",
+                    "projects.view", "projects.view_project", "projects.view_all", "projects.create", "projects.edit", "projects.manage_members",
+                    "tasks.view", "tasks.view_project", "tasks.view_all", "tasks.create", "tasks.edit", "tasks.delete", "tasks.update_status", "tasks.update_progress", "tasks.comment",
+                    "gantt.view", "gantt.view_project", "gantt.view_all",
+                    "employees.view", "reports.view", "reports.view_project", "reports.view_all", "reports.export", "audit.view_sessions"
+                };
+                break;
+            case Domain.Enums.UserRole.Supervisor:
+                perms = new List<string>
+                {
+                    "dashboard.view", "dashboard.view_project",
+                    "projects.view", "projects.view_project",
+                    "tasks.view", "tasks.view_project", "tasks.create", "tasks.edit", "tasks.update_status", "tasks.update_progress", "tasks.comment",
+                    "gantt.view", "gantt.view_project",
+                    "employees.view", "reports.view", "reports.view_project"
+                };
+                break;
+            default:
+                perms = new List<string>
+                {
+                    "dashboard.view",
+                    "projects.view",
+                    "tasks.view", "tasks.update_progress", "tasks.update_status", "tasks.comment",
+                    "gantt.view", "employees.view", "reports.view"
+                };
+                break;
         }
 
         return perms;

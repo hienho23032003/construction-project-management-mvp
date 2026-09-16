@@ -92,6 +92,13 @@ export interface LoginSessionStats {
   avgSessionMinutes: number;
 }
 
+export interface ProjectManagerUser {
+  id: string;
+  fullName: string;
+  avatarUrl?: string;
+  email?: string;
+}
+
 export interface Project {
   id: string;
   code: string;
@@ -100,6 +107,9 @@ export interface Project {
   location?: string;
   managerId?: string;
   managerName?: string;
+  managerIds?: string[];
+  managerNames?: string[];
+  managers?: ProjectManagerUser[];
   startDate: string;
   plannedEndDate: string;
   actualEndDate?: string;

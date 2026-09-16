@@ -65,8 +65,8 @@ public interface IUserService
 
 public interface IProjectService
 {
-    Task<ApiResponse<PagedResult<ProjectDto>>> GetAllProjectsAsync(PaginationParams pagination, ProjectStatus? status = null);
-    Task<ApiResponse<List<ProjectDto>>> GetAllProjectsListAsync(); // For dropdowns
+    Task<ApiResponse<PagedResult<ProjectDto>>> GetAllProjectsAsync(PaginationParams pagination, ProjectStatus? status = null, Guid? currentUserId = null, bool canViewAll = true, bool canViewProject = false);
+    Task<ApiResponse<List<ProjectDto>>> GetAllProjectsListAsync(Guid? currentUserId = null, bool canViewAll = true, bool canViewProject = false); // For dropdowns
     Task<ApiResponse<ProjectDetailDto>> GetProjectByIdAsync(Guid id);
     Task<ApiResponse<ProjectDto>> CreateProjectAsync(CreateProjectRequest request, Guid currentUserId);
     Task<ApiResponse<ProjectDto>> UpdateProjectAsync(Guid id, UpdateProjectRequest request, Guid currentUserId);
@@ -79,7 +79,7 @@ public interface IProjectService
 
 public interface ITaskService
 {
-    Task<ApiResponse<PagedResult<TaskDto>>> GetAllTasksAsync(PaginationParams pagination, Guid? projectId = null, Guid? assigneeId = null, TaskItemStatus? status = null, PriorityLevel? priority = null);
+    Task<ApiResponse<PagedResult<TaskDto>>> GetAllTasksAsync(PaginationParams pagination, Guid? projectId = null, Guid? assigneeId = null, TaskItemStatus? status = null, PriorityLevel? priority = null, Guid? currentUserId = null, bool canViewAll = true, bool canViewProject = false);
     Task<ApiResponse<List<TaskTreeDto>>> GetTaskTreeByProjectAsync(Guid projectId);
     Task<ApiResponse<TaskDto>> GetTaskByIdAsync(Guid id);
     Task<ApiResponse<TaskDto>> CreateTaskAsync(CreateTaskRequest request, Guid currentUserId);
@@ -103,7 +103,7 @@ public interface ITaskService
     Task<ApiResponse<bool>> DeleteDependencyAsync(Guid dependencyId, Guid currentUserId);
 
     // Gantt Data with server-side filtering
-    Task<ApiResponse<GanttDataResponse>> GetGanttDataAsync(Guid? projectId = null, TaskItemStatus? status = null, bool? activeOnly = null, DateTime? fromDate = null, DateTime? toDate = null, Guid? currentUserId = null, bool canViewAll = true);
+    Task<ApiResponse<GanttDataResponse>> GetGanttDataAsync(Guid? projectId = null, TaskItemStatus? status = null, bool? activeOnly = null, DateTime? fromDate = null, DateTime? toDate = null, Guid? currentUserId = null, bool canViewAll = true, bool canViewProject = false);
 
     // Hierarchy business calculation
     Task RecalculateParentTaskProgressAsync(Guid? parentTaskId);
@@ -111,16 +111,16 @@ public interface ITaskService
 
 public interface IDashboardService
 {
-    Task<ApiResponse<DashboardSummaryDto>> GetDashboardSummaryAsync(DateTime? fromDate = null, DateTime? toDate = null);
+    Task<ApiResponse<DashboardSummaryDto>> GetDashboardSummaryAsync(Guid userId, DateTime? fromDate = null, DateTime? toDate = null);
 }
 
 public interface IReportService
 {
-    Task<ApiResponse<List<ProjectProgressReportDto>>> GetProjectProgressReportAsync(ReportFilterRequest filter);
-    Task<ApiResponse<List<TaskReportDto>>> GetTaskReportAsync(ReportFilterRequest filter);
-    Task<ApiResponse<List<OverdueReportDto>>> GetOverdueReportAsync(ReportFilterRequest filter);
-    Task<ApiResponse<List<EmployeeWorkloadReportDto>>> GetEmployeeWorkloadReportAsync(ReportFilterRequest filter);
-    Task<byte[]> ExportReportCsvAsync(string reportType, ReportFilterRequest filter);
+    Task<ApiResponse<List<ProjectProgressReportDto>>> GetProjectProgressReportAsync(ReportFilterRequest filter, Guid? currentUserId = null, bool canViewAll = true, bool canViewProject = false);
+    Task<ApiResponse<List<TaskReportDto>>> GetTaskReportAsync(ReportFilterRequest filter, Guid? currentUserId = null, bool canViewAll = true, bool canViewProject = false);
+    Task<ApiResponse<List<OverdueReportDto>>> GetOverdueReportAsync(ReportFilterRequest filter, Guid? currentUserId = null, bool canViewAll = true, bool canViewProject = false);
+    Task<ApiResponse<List<EmployeeWorkloadReportDto>>> GetEmployeeWorkloadReportAsync(ReportFilterRequest filter, Guid? currentUserId = null, bool canViewAll = true, bool canViewProject = false);
+    Task<byte[]> ExportReportCsvAsync(string reportType, ReportFilterRequest filter, Guid? currentUserId = null, bool canViewAll = true, bool canViewProject = false);
 }
 
 public interface INotificationService

@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { useAppSearchParams } from '../../hooks/useAppSearchParams';
 import { usePermission } from '../../hooks/usePermission';
+import { useAuth } from '../../contexts/AuthContext';
 import { PERMISSIONS } from '../../constants/permissions';
 import { TaskItem, TaskComment, TaskDependency, ActivityLog } from '../../types';
 import { useTaskActivitiesQuery } from '../../hooks/useTasks';
@@ -47,8 +48,17 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
   activities: initialActivities,
   initialTab = 0,
 }) => {
+  const { user } = useAuth();
   const { can, isSuperAdmin } = usePermission();
-  const canComment = isSuperAdmin || can(PERMISSIONS.TASKS_COMMENT);
+  const isAssigned = Boolean(
+    user?.id &&
+      task?.assignees?.some(
+        (a) =>
+          a.userId?.toLowerCase() === user.id.toLowerCase() ||
+          a.id?.toLowerCase() === user.id.toLowerCase()
+      )
+  );
+  const canComment = isSuperAdmin || can(PERMISSIONS.TASKS_COMMENT) || isAssigned;
   const { getParam, setParam } = useAppSearchParams();
   const urlTab = getParam('taskTab') || getParam('tab');
 

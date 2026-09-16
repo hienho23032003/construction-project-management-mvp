@@ -9,19 +9,46 @@ namespace ConstructionManagement.Application.Services;
 public class DashboardService : IDashboardService
 {
     private readonly IAppDbContext _context;
+    private readonly IRoleService _roleService;
 
-    public DashboardService(IAppDbContext context)
+    public DashboardService(IAppDbContext context, IRoleService roleService)
     {
         _context = context;
+        _roleService = roleService;
     }
 
-    public async Task<ApiResponse<DashboardSummaryDto>> GetDashboardSummaryAsync(DateTime? fromDate = null, DateTime? toDate = null)
+    public async Task<ApiResponse<DashboardSummaryDto>> GetDashboardSummaryAsync(Guid userId, DateTime? fromDate = null, DateTime? toDate = null)
     {
         var now = DateTime.UtcNow.Date;
         var sevenDaysFromNow = now.AddDays(7);
 
+        var permissions = await _roleService.GetUserPermissionsAsync(userId);
+        var canViewAll = permissions.Contains("dashboard.view_all", StringComparer.OrdinalIgnoreCase);
+        var canViewProject = canViewAll || permissions.Contains("dashboard.view_project", StringComparer.OrdinalIgnoreCase);
+
         // 1. Projects Query Filter
         var projectsQuery = _context.Projects.AsNoTracking().AsQueryable();
+
+        if (!canViewAll)
+        {
+            if (canViewProject)
+            {
+                projectsQuery = projectsQuery.Where(p =>
+                    p.Members.Any(m => m.UserId == userId) ||
+                    p.ManagerId == userId ||
+                    p.CreatedById == userId ||
+                    p.Tasks.Any(t => t.Assignees.Any(a => a.UserId == userId)));
+            }
+            else
+            {
+                projectsQuery = projectsQuery.Where(p =>
+                    p.ManagerId == userId ||
+                    p.CreatedById == userId ||
+                    p.Members.Any(m => m.UserId == userId && (m.RoleInProject == "Quản lý công trình (PM)" || m.RoleInProject == "Quản lý dự án" || m.RoleInProject == "Chỉ huy trưởng")) ||
+                    p.Tasks.Any(t => t.Assignees.Any(a => a.UserId == userId) || t.CreatedById == userId));
+            }
+        }
+
         if (fromDate.HasValue)
         {
             var fDate = fromDate.Value.Date;
@@ -58,6 +85,26 @@ public class DashboardService : IDashboardService
 
         // 2. Tasks Query Filter
         var tasksQuery = _context.Tasks.AsNoTracking().AsQueryable();
+
+        if (!canViewAll)
+        {
+            if (canViewProject)
+            {
+                tasksQuery = tasksQuery.Where(t =>
+                    t.Assignees.Any(a => a.UserId == userId) ||
+                    t.CreatedById == userId ||
+                    t.Project.ManagerId == userId ||
+                    t.Project.CreatedById == userId ||
+                    t.Project.Members.Any(m => m.UserId == userId));
+            }
+            else
+            {
+                tasksQuery = tasksQuery.Where(t =>
+                    t.Assignees.Any(a => a.UserId == userId) ||
+                    t.CreatedById == userId);
+            }
+        }
+
         if (fromDate.HasValue)
         {
             var fDate = fromDate.Value.Date;
@@ -124,8 +171,13 @@ public class DashboardService : IDashboardService
             .ToListAsync();
 
         // 5. Employee Workload - Top 6 directly computed via SQL
-        var employeeWorkload = await _context.Users
-            .Where(u => u.IsActive)
+        var usersWorkloadQuery = _context.Users.AsNoTracking().Where(u => u.IsActive);
+        if (!canViewAll)
+        {
+            usersWorkloadQuery = usersWorkloadQuery.Where(u => u.Id == userId);
+        }
+
+        var employeeWorkload = await usersWorkloadQuery
             .Select(u => new EmployeeWorkloadSummaryDto
             {
                 UserId = u.Id,
@@ -141,6 +193,12 @@ public class DashboardService : IDashboardService
 
         // 6. Recent Activities - Take 10 directly from SQL
         var activitiesQuery = _context.ActivityLogs.AsNoTracking().AsQueryable();
+
+        if (!canViewAll)
+        {
+            activitiesQuery = activitiesQuery.Where(al => al.UserId == userId);
+        }
+
         if (fromDate.HasValue)
         {
             var fDate = fromDate.Value.Date;

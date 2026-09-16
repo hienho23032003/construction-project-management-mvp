@@ -13,6 +13,7 @@ import {
   MenuItem,
   Grid,
   Autocomplete,
+  Chip,
   IconButton,
   Typography,
 } from '@mui/material';
@@ -27,6 +28,7 @@ export interface ProjectFormData {
   description: string;
   location: string;
   managerId: string;
+  managerIds?: string[];
   startDate: string;
   plannedEndDate: string;
   priority: PriorityLevel;
@@ -64,6 +66,7 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
       description: '',
       location: '',
       managerId: '',
+      managerIds: [],
       startDate: new Date().toISOString().split('T')[0],
       plannedEndDate: new Date(Date.now() + 60 * 86400000).toISOString().split('T')[0],
       priority: 'Medium',
@@ -73,12 +76,20 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
 
   useEffect(() => {
     if (editingProject) {
+      const initialManagerIds =
+        editingProject.managerIds && editingProject.managerIds.length > 0
+          ? editingProject.managerIds
+          : editingProject.managerId
+          ? [editingProject.managerId]
+          : [];
+
       reset({
         code: editingProject.code,
         name: editingProject.name,
         description: editingProject.description || '',
         location: editingProject.location || '',
-        managerId: editingProject.managerId || '',
+        managerId: initialManagerIds[0] || '',
+        managerIds: initialManagerIds,
         startDate: editingProject.startDate.split('T')[0],
         plannedEndDate: editingProject.plannedEndDate.split('T')[0],
         priority: editingProject.priority,
@@ -91,6 +102,7 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
         description: '',
         location: '',
         managerId: '',
+        managerIds: [],
         startDate: new Date().toISOString().split('T')[0],
         plannedEndDate: new Date(Date.now() + 60 * 86400000).toISOString().split('T')[0],
         priority: 'Medium',
@@ -99,9 +111,19 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
     }
   }, [editingProject, open, reset]);
 
+  const handleFormSubmit = (data: ProjectFormData) => {
+    const managerIds = data.managerIds && data.managerIds.length > 0 ? data.managerIds : (data.managerId ? [data.managerId] : []);
+    const managerId = managerIds[0] || '';
+    return onSubmit({
+      ...data,
+      managerId,
+      managerIds,
+    });
+  };
+
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <form onSubmit={handleSubmit(onSubmit)}>
+      <form onSubmit={handleSubmit(handleFormSubmit)}>
         <DialogTitle
           sx={{
             fontWeight: 700,
@@ -179,28 +201,44 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
           />
 
           <Controller
-            name="managerId"
+            name="managerIds"
             control={control}
-            rules={{ required: 'Vui lòng chọn người quản lý dự án' }}
+            rules={{
+              validate: (val) => (val && val.length > 0) || 'Vui lòng chọn ít nhất 1 người quản lý dự án',
+            }}
             render={({ field }) => (
               <Autocomplete
+                multiple
                 options={users}
                 getOptionLabel={(option) =>
                   typeof option === 'string'
                     ? option
                     : `${option.fullName} (${option.roleName || option.role} - ${option.department || ''})`
                 }
-                value={users.find((u) => u.id === field.value) || null}
-                onChange={(_, newValue) => field.onChange(newValue ? newValue.id : '')}
+                value={users.filter((u) => (field.value || []).includes(u.id))}
+                onChange={(_, newValue) => {
+                  const ids = newValue.map((u) => (typeof u === 'string' ? u : u.id));
+                  field.onChange(ids);
+                }}
                 isOptionEqualToValue={(option, value) => option.id === value.id}
+                renderTags={(value, getTagProps) =>
+                  value.map((option, index) => (
+                    <Chip
+                      label={typeof option === 'string' ? option : option.fullName}
+                      size="small"
+                      sx={{ fontWeight: 600, bgcolor: '#e0f2fe', color: '#0369a1' }}
+                      {...getTagProps({ index })}
+                    />
+                  ))
+                }
                 renderInput={(params) => (
                   <TextField
                     {...params}
                     label="Người Quản Lý / Project Manager (PM)"
-                    placeholder="Tìm kiếm và chọn nhân sự..."
-                    required
-                    error={Boolean(errors.managerId)}
-                    helperText={errors.managerId?.message}
+                    placeholder={field.value && field.value.length > 0 ? '' : 'Tìm kiếm và chọn một hoặc nhiều quản lý...'}
+                    required={!field.value || field.value.length === 0}
+                    error={Boolean(errors.managerIds)}
+                    helperText={errors.managerIds?.message}
                   />
                 )}
               />

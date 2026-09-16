@@ -37,7 +37,7 @@ export const ProjectOverviewTab: React.FC<ProjectOverviewTabProps> = memo(({ pro
                 Quản Lý (PM)
               </Typography>
               <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                {project.managerName || 'Chưa phân công'}
+                {project.managerNames?.length ? project.managerNames.join(', ') : (project.managerName || 'Chưa phân công')}
               </Typography>
             </Grid>
             <Grid item xs={6}>

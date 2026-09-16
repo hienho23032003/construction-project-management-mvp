@@ -25,7 +25,7 @@ export const DashboardCharts: React.FC<DashboardChartsProps> = memo(({ data }) =
   return (
     <Grid container spacing={{ xs: 2, md: 2.5 }}>
       {/* Project Progress Chart */}
-      <Grid item xs={12} md={7}>
+      <Grid item xs={12} md={6}>
         <Paper sx={{ p: { xs: 1.75, sm: 2.5 }, border: '1px solid #e2e8f0', borderRadius: '8px', height: '100%', overflow: 'hidden' }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1 }}>
             <Typography variant="h4" sx={{ fontWeight: 700, fontSize: { xs: '0.9rem', sm: '1rem' }, color: '#0f172a' }}>
@@ -61,7 +61,7 @@ export const DashboardCharts: React.FC<DashboardChartsProps> = memo(({ data }) =
       </Grid>
 
       {/* Task Status Distribution Chart */}
-      <Grid item xs={12} md={5}>
+      <Grid item xs={12} md={6}>
         <Paper sx={{ p: { xs: 1.75, sm: 2.5 }, border: '1px solid #e2e8f0', borderRadius: '8px', height: '100%', overflow: 'hidden' }}>
           <Typography variant="h4" sx={{ fontWeight: 700, fontSize: { xs: '0.9rem', sm: '1rem' }, color: '#0f172a', mb: 2 }}>
             Phân Bổ Trạng Thái Công Việc

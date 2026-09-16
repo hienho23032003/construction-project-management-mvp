@@ -1,15 +1,22 @@
 import React, { memo, useMemo } from 'react';
-import { Chip, Box, Tooltip } from '@mui/material';
+import { Chip, Box, Tooltip, Avatar, Typography } from '@mui/material';
 import { CommonTable, ColumnDef } from '../common/CommonTable';
 import { ProgressBar } from '../common/ProgressBar';
 import { StatusChip } from '../common/StatusChip';
 import { formatDate } from '../../utils/dateUtils';
+import { getMediaUrl } from '../../utils/fileUtils';
 
 interface ProjectProgressReportItem {
   projectId: string;
   code: string;
   name: string;
   managerName?: string;
+  managerNames?: string[];
+  managers?: {
+    id: string;
+    fullName: string;
+    avatarUrl?: string;
+  }[];
   startDate: string;
   plannedEndDate: string;
   progress: number;
@@ -63,7 +70,61 @@ export const ProjectProgressReport: React.FC<ProjectProgressReportProps> = memo(
           id: 'managerName',
           header: 'Quản Lý (PM)',
           accessorKey: 'managerName',
-          minWidth: 140,
+          minWidth: 180,
+          cell: ({ value, row }) => {
+            const managers =
+              row.managers && row.managers.length > 0
+                ? row.managers
+                : row.managerNames && row.managerNames.length > 0
+                ? row.managerNames.map((name) => ({ id: name, fullName: name, avatarUrl: undefined }))
+                : value && value !== '-'
+                ? [{ id: value, fullName: value, avatarUrl: undefined }]
+                : [];
+
+            if (managers.length === 0) {
+              return (
+                <Typography variant="caption" sx={{ color: '#94a3b8' }}>
+                  Chưa gán
+                </Typography>
+              );
+            }
+
+            return (
+              <Box sx={{ display: 'flex', flexWrap: 'nowrap', gap: 0.5, alignItems: 'center' }}>
+                {managers.slice(0, 2).map((m: any) => (
+                  <Chip
+                    key={m.id || m.fullName}
+                    avatar={
+                      <Avatar
+                        src={getMediaUrl(m.avatarUrl)}
+                        sx={{ width: 20, height: 20, fontSize: '0.65rem', bgcolor: '#e0f2fe', color: '#0369a1' }}
+                      >
+                        {m.fullName.charAt(0)}
+                      </Avatar>
+                    }
+                    label={m.fullName}
+                    size="small"
+                    sx={{
+                      height: 24,
+                      fontSize: '0.72rem',
+                      whiteSpace: 'nowrap',
+                      bgcolor: '#f8fafc',
+                      border: '1px solid #e2e8f0',
+                    }}
+                  />
+                ))}
+                {managers.length > 2 && (
+                  <Tooltip title={managers.slice(2).map((m: any) => m.fullName).join(', ')}>
+                    <Chip
+                      label={`+${managers.length - 2}`}
+                      size="small"
+                      sx={{ height: 24, fontSize: '0.72rem', bgcolor: '#f1f5f9' }}
+                    />
+                  </Tooltip>
+                )}
+              </Box>
+            );
+          },
         },
         {
           id: 'startDate',

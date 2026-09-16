@@ -23,6 +23,9 @@ import { TaskItem, TaskStatus } from '../../types';
 import { StatusSelect } from '../common';
 import { formatDate } from '../../utils/dateUtils';
 import { getMediaUrl } from '../../utils/fileUtils';
+import { useAuth } from '../../contexts/AuthContext';
+import { usePermission } from '../../hooks/usePermission';
+import { PERMISSIONS } from '../../constants/permissions';
 
 interface TaskTableRowProps {
   task: TaskItem;
@@ -43,6 +46,13 @@ const TaskTableRow: React.FC<TaskTableRowProps> = memo(({
   onStatusChange,
   onProgressChange,
 }) => {
+  const { user } = useAuth();
+  const { isSuperAdmin, can } = usePermission();
+  const hasManagerRights = isSuperAdmin || can(PERMISSIONS.TASKS_EDIT);
+  const isAssigned = Boolean(user?.id && task.assignees?.some((a) => a.userId === user.id || a.id === user.id));
+  const allowStatus = hasManagerRights || (canUpdateStatus && isAssigned) || isAssigned;
+  const allowProgress = hasManagerRights || (canUpdateProgress && isAssigned) || isAssigned;
+
   const [localProgress, setLocalProgress] = useState(task.progress);
 
   useEffect(() => {
@@ -161,7 +171,7 @@ const TaskTableRow: React.FC<TaskTableRowProps> = memo(({
         <StatusSelect
           value={task.status}
           onChange={(status) => onStatusChange(task.id, status)}
-          disabled={!canUpdateStatus}
+          disabled={!allowStatus}
         />
       </TableCell>
       <TableCell onClick={(e) => e.stopPropagation()} sx={{ whiteSpace: 'nowrap', minWidth: 120 }}>
@@ -172,7 +182,7 @@ const TaskTableRow: React.FC<TaskTableRowProps> = memo(({
             min={0}
             max={100}
             step={5}
-            disabled={!canUpdateProgress}
+            disabled={!allowProgress}
             onChange={(_, val) => setLocalProgress(val as number)}
             onChangeCommitted={(_, val) => {
               const nextVal = val as number;

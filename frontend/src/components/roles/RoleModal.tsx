@@ -214,12 +214,13 @@ const PermissionMatrixSection: React.FC<PermissionMatrixProps> = memo(({
   const totalAvailablePerms = matrix.reduce((acc, g) => acc + g.permissions.length, 0);
 
   const handleTogglePermission = useCallback((code: string) => {
+    if (code === 'dashboard.view') return; // Mandatory, cannot be unchecked
     const current: string[] = getValues('permissions') || [];
-    setValue(
-      'permissions',
-      current.includes(code) ? current.filter((p) => p !== code) : [...current, code],
-      { shouldDirty: true }
-    );
+    const next = current.includes(code)
+      ? current.filter((p) => p !== code)
+      : [...current, code];
+    if (!next.includes('dashboard.view')) next.push('dashboard.view');
+    setValue('permissions', next, { shouldDirty: true });
   }, [getValues, setValue]);
 
   const handleToggleModule = useCallback((moduleGroup: PermissionModuleGroup) => {
@@ -227,23 +228,21 @@ const PermissionMatrixSection: React.FC<PermissionMatrixProps> = memo(({
     const moduleCodes = moduleGroup.permissions.map((p) => p.code);
     const allSelected = moduleCodes.every((code) => current.includes(code));
 
+    let newPerms: string[];
     if (allSelected) {
-      setValue(
-        'permissions',
-        current.filter((p) => !moduleCodes.includes(p)),
-        { shouldDirty: true }
-      );
+      newPerms = current.filter((p) => !moduleCodes.includes(p) || p === 'dashboard.view');
     } else {
-      const newPerms = Array.from(new Set([...current, ...moduleCodes]));
-      setValue('permissions', newPerms, { shouldDirty: true });
+      newPerms = Array.from(new Set([...current, ...moduleCodes]));
     }
+    if (!newPerms.includes('dashboard.view')) newPerms.push('dashboard.view');
+    setValue('permissions', newPerms, { shouldDirty: true });
   }, [getValues, setValue]);
 
   const handleSelectAll = useCallback(() => {
     const current: string[] = getValues('permissions') || [];
     const allCodes = matrix.flatMap((g) => g.permissions.map((p) => p.code));
     if (current.length === allCodes.length) {
-      setValue('permissions', [], { shouldDirty: true });
+      setValue('permissions', ['dashboard.view'], { shouldDirty: true });
     } else {
       setValue('permissions', allCodes, { shouldDirty: true });
     }
@@ -359,38 +358,62 @@ const PermissionMatrixSection: React.FC<PermissionMatrixProps> = memo(({
                 {/* Permissions Grid */}
                 <Grid container spacing={1}>
                   {moduleGroup.permissions.map((perm) => {
-                    const isChecked = selectedPermissions.includes(perm.code);
+                    const isLocked = perm.code === 'dashboard.view';
+                    const isChecked = isLocked || selectedPermissions.includes(perm.code);
                     return (
                       <Grid item xs={12} sm={6} key={perm.code}>
                         <Box
-                          onClick={() => handleTogglePermission(perm.code)}
+                          onClick={() => !isLocked && handleTogglePermission(perm.code)}
                           sx={{
                             display: 'flex',
                             alignItems: 'flex-start',
                             gap: 1,
                             p: 1,
                             borderRadius: '8px',
-                            cursor: 'pointer',
+                            cursor: isLocked ? 'default' : 'pointer',
                             bgcolor: isChecked ? '#e0f2fe' : '#f8fafc',
                             border: isChecked ? '1px solid #7dd3fc' : '1px solid #f1f5f9',
+                            opacity: isLocked ? 0.92 : 1,
                             transition: 'all 0.15s ease',
                             '&:hover': {
-                              bgcolor: isChecked ? '#bae6fd' : '#f1f5f9',
+                              bgcolor: isLocked ? '#e0f2fe' : isChecked ? '#bae6fd' : '#f1f5f9',
                             },
                           }}
                         >
                           <Checkbox
                             checked={isChecked}
+                            disabled={isLocked}
                             size="small"
-                            sx={{ p: 0.2, color: '#0284c7', '&.Mui-checked': { color: '#0284c7' } }}
+                            sx={{
+                              p: 0.2,
+                              color: '#0284c7',
+                              '&.Mui-checked': { color: '#0284c7' },
+                              '&.Mui-disabled': { color: '#0284c7' },
+                            }}
                           />
                           <Box sx={{ minWidth: 0, flexGrow: 1 }}>
-                            <Typography
-                              variant="body2"
-                              sx={{ fontWeight: isChecked ? 600 : 500, fontSize: '0.8125rem', color: '#0f172a' }}
-                            >
-                              {perm.name}
-                            </Typography>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, flexWrap: 'wrap' }}>
+                              <Typography
+                                variant="body2"
+                                sx={{ fontWeight: isChecked ? 600 : 500, fontSize: '0.8125rem', color: '#0f172a' }}
+                              >
+                                {perm.name}
+                              </Typography>
+                              {isLocked && (
+                                <Chip
+                                  label="Mặc định bắt buộc"
+                                  size="small"
+                                  sx={{
+                                    height: 18,
+                                    fontSize: '0.65rem',
+                                    fontWeight: 700,
+                                    bgcolor: '#0284c7',
+                                    color: '#ffffff',
+                                    borderRadius: '4px',
+                                  }}
+                                />
+                              )}
+                            </Box>
                             <Typography
                               variant="caption"
                               sx={{ color: '#64748b', fontSize: '0.7rem', display: 'block' }}
@@ -437,19 +460,20 @@ export const RoleModal: React.FC<RoleModalProps> = ({
       code: '',
       description: '',
       color: '#0284c7',
-      permissions: [],
+      permissions: ['dashboard.view'],
     },
   });
 
   useEffect(() => {
     if (open) {
       if (initialData) {
+        const perms = initialData.permissions || [];
         reset({
           name: initialData.name,
           code: initialData.code,
           description: initialData.description || '',
           color: initialData.color || '#0284c7',
-          permissions: initialData.permissions || [],
+          permissions: perms.includes('dashboard.view') ? perms : [...perms, 'dashboard.view'],
         });
       } else {
         reset({
@@ -457,7 +481,7 @@ export const RoleModal: React.FC<RoleModalProps> = ({
           code: '',
           description: '',
           color: '#0284c7',
-          permissions: [],
+          permissions: ['dashboard.view'],
         });
       }
     }

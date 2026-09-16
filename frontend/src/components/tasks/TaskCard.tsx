@@ -12,6 +12,9 @@ import { TaskItem, TaskStatus } from '../../types';
 import { formatDate } from '../../utils/dateUtils';
 import { getMediaUrl } from '../../utils/fileUtils';
 import { PriorityBadge, StatusSelect } from '../common';
+import { useAuth } from '../../contexts/AuthContext';
+import { usePermission } from '../../hooks/usePermission';
+import { PERMISSIONS } from '../../constants/permissions';
 
 interface TaskCardProps {
   task: TaskItem;
@@ -30,6 +33,13 @@ export const TaskCard: React.FC<TaskCardProps> = memo(({
   onStatusChange,
   onProgressChange,
 }) => {
+  const { user } = useAuth();
+  const { isSuperAdmin, can } = usePermission();
+  const hasManagerRights = isSuperAdmin || can(PERMISSIONS.TASKS_EDIT);
+  const isAssigned = Boolean(user?.id && task.assignees?.some((a) => a.userId === user.id || a.id === user.id));
+  const allowStatus = hasManagerRights || (canUpdateStatus && isAssigned) || isAssigned;
+  const allowProgress = hasManagerRights || (canUpdateProgress && isAssigned) || isAssigned;
+
   const [localProgress, setLocalProgress] = useState(task.progress);
 
   useEffect(() => {
@@ -50,6 +60,14 @@ export const TaskCard: React.FC<TaskCardProps> = memo(({
       : 0
   );
 
+  const statusBorderColor = useMemo(() => {
+    if (task.status === 'Completed') return '#10b981';
+    if (task.isOverdue) return '#ef4444';
+    if (task.status === 'InProgress') return '#0284c7';
+    if (task.status === 'OnHold') return '#f59e0b';
+    return '#94a3b8';
+  }, [task.status, task.isOverdue]);
+
   return (
     <Card
       variant="outlined"
@@ -59,29 +77,41 @@ export const TaskCard: React.FC<TaskCardProps> = memo(({
         height: '100%',
         display: 'flex',
         flexDirection: 'column',
-        borderRadius: '8px',
+        borderRadius: '10px',
         border: '1px solid #e2e8f0',
-        bgcolor: task.isOverdue || isCompletedLate ? '#fff5f5' : '#ffffff',
-        transition: 'all 0.2s ease',
+        borderLeft: `4px solid ${statusBorderColor} !important`,
+        bgcolor: task.isOverdue || isCompletedLate ? '#fffbfb' : '#ffffff',
+        boxShadow: '0 1px 3px 0 rgba(15, 23, 42, 0.04), 0 1px 2px -1px rgba(15, 23, 42, 0.02)',
+        transition: 'all 0.22s cubic-bezier(0.4, 0, 0.2, 1)',
+        boxSizing: 'border-box',
+        overflow: 'hidden',
         '&:hover': {
-          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-          borderColor: '#94a3b8',
+          transform: 'translateY(-3px)',
+          boxShadow: '0 12px 24px -4px rgba(15, 23, 42, 0.09), 0 4px 8px -2px rgba(15, 23, 42, 0.04)',
         },
       }}
     >
-      <CardContent sx={{ p: 2, flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+      <CardContent sx={{ p: 2.25, flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
         {/* Header: Project Code & Status */}
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1.5 }}>
           <Chip
             label={task.projectCode || 'N/A'}
             size="small"
-            sx={{ bgcolor: '#e0f2fe', color: '#0369a1', fontWeight: 800, fontSize: '0.75rem' }}
+            sx={{
+              bgcolor: '#f0f9ff',
+              color: '#0284c7',
+              fontWeight: 800,
+              fontSize: '0.72rem',
+              border: '1px solid #e0f2fe',
+              borderRadius: '6px',
+              height: 24,
+            }}
           />
           <Box onClick={(e) => e.stopPropagation()}>
             <StatusSelect
               value={task.status}
               onChange={(status) => onStatusChange(task.id, status)}
-              disabled={!canUpdateStatus}
+              disabled={!allowStatus}
             />
           </Box>
         </Box>
@@ -176,7 +206,7 @@ export const TaskCard: React.FC<TaskCardProps> = memo(({
             min={0}
             max={100}
             step={5}
-            disabled={!canUpdateProgress}
+            disabled={!allowProgress}
             onChange={(_, val) => setLocalProgress(val as number)}
             onChangeCommitted={(_, val) => {
               const nextVal = val as number;

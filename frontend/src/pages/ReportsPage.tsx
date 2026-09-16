@@ -15,6 +15,7 @@ import {
   TablePagination,
   Autocomplete,
   TextField,
+  Chip,
 } from '@mui/material';
 import {
   Download,
@@ -39,6 +40,8 @@ import {
   useAddCommentMutation,
 } from '../hooks/useTasks';
 import { useAppSearchParams } from '../hooks/useAppSearchParams';
+import { format, startOfYear, endOfYear, startOfMonth, endOfMonth } from 'date-fns';
+import { CommonDateRangePicker } from '../components/common/CommonDateRangePicker';
 import { ProjectProgressReport } from '../components/reports/ProjectProgressReport';
 import { TaskDetailReport } from '../components/reports/TaskDetailReport';
 import { OverdueReport } from '../components/reports/OverdueReport';
@@ -46,6 +49,7 @@ import { WorkloadReport } from '../components/reports/WorkloadReport';
 import { TableSkeleton } from '../components/common/TableSkeleton';
 import { CommonPagination } from '../components/common/CommonPagination';
 import { TaskDetailDrawer } from '../components/tasks/TaskDetailDrawer';
+import { ScopeChip } from '../components/common/ScopeChip';
 import { useToast } from '../contexts/ToastContext';
 
 import { usePermission } from '../hooks/usePermission';
@@ -75,11 +79,15 @@ export const ReportsPage: React.FC = () => {
   const navigate = useNavigate();
   const { can, isSuperAdmin } = usePermission();
   const canExport = isSuperAdmin || can(PERMISSIONS.REPORTS_EXPORT);
+  const canViewAll = isSuperAdmin || can(PERMISSIONS.REPORTS_VIEW_ALL);
+  const canViewProject = canViewAll || can(PERMISSIONS.REPORTS_VIEW_PROJECT);
   const { getParam, getNumberParam, setParam, setParams, removeParams } = useAppSearchParams();
 
   const tabParam = getParam('tab');
   const projectIdParam = getParam('projectId');
   const userIdParam = getParam('userId');
+  const fromDateParam = getParam('fromDate');
+  const toDateParam = getParam('toDate');
   const taskIdParam = getParam('taskId');
   const pageParam = Math.max(0, getNumberParam('page', 1) - 1);
 
@@ -92,6 +100,16 @@ export const ReportsPage: React.FC = () => {
   // Filters
   const [selectedProjectId, setSelectedProjectId] = useState<string>(projectIdParam);
   const [selectedUserId, setSelectedUserId] = useState<string>(userIdParam);
+  const [fromDate, setFromDate] = useState<Date | null>(() => {
+    if (fromDateParam === 'ALL') return null;
+    if (fromDateParam) return new Date(fromDateParam);
+    return startOfYear(new Date());
+  });
+  const [toDate, setToDate] = useState<Date | null>(() => {
+    if (toDateParam === 'ALL') return null;
+    if (toDateParam) return new Date(toDateParam);
+    return endOfYear(new Date());
+  });
 
   // Selected task for detail drawer
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(taskIdParam || null);
@@ -127,8 +145,10 @@ export const ReportsPage: React.FC = () => {
     () => ({
       projectId: selectedProjectId || undefined,
       userId: selectedUserId || undefined,
+      fromDate: fromDate ? format(fromDate, 'yyyy-MM-dd') : undefined,
+      toDate: toDate ? format(toDate, 'yyyy-MM-dd') : undefined,
     }),
-    [selectedProjectId, selectedUserId]
+    [selectedProjectId, selectedUserId, fromDate, toDate]
   );
 
   // Queries for each tab
@@ -169,14 +189,14 @@ export const ReportsPage: React.FC = () => {
   const handleExportCsv = async () => {
     try {
       setExporting(true);
-      const type =
-        activeTab === 0 ? 'projects' : activeTab === 1 ? 'tasks' : activeTab === 2 ? 'overdue' : 'workload';
-      const exportFilter: any = {};
-      if (selectedProjectId) exportFilter.projectId = selectedProjectId;
-      if (selectedUserId) exportFilter.userId = selectedUserId;
-
-      await reportApi.downloadReportCsv(type, exportFilter);
-      showSuccess('Xuất file báo cáo Excel/CSV thành công!');
+      const tabName = TAB_INDEX_MAP[activeTab] || 'tasks';
+      await reportApi.downloadReportCsv(tabName, {
+        projectId: selectedProjectId || undefined,
+        userId: selectedUserId || undefined,
+        fromDate: fromDate ? format(fromDate, 'yyyy-MM-dd') : undefined,
+        toDate: toDate ? format(toDate, 'yyyy-MM-dd') : undefined,
+      });
+      showSuccess('Xuất báo cáo thành công.');
     } catch (err) {
       console.error('Export error:', err);
       showError('Có lỗi xảy ra khi xuất báo cáo. Vui lòng thử lại.');
@@ -225,11 +245,18 @@ export const ReportsPage: React.FC = () => {
       {/* Header */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1.5, width: '100%' }}>
         <Box>
-          <Typography variant="h2" sx={{ fontWeight: 800, fontSize: { xs: '1.15rem', sm: '1.35rem' }, color: '#0f172a' }}>
-            Trung Tâm Báo Cáo & Xuất Dữ Liệu
-          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+            <Typography variant="h2" sx={{ fontWeight: 800, fontSize: { xs: '1.15rem', sm: '1.35rem' }, color: '#0f172a' }}>
+              Trung Tâm Báo Cáo & Xuất Dữ Liệu
+            </Typography>
+            <ScopeChip canViewAll={canViewAll} canViewProject={canViewProject} />
+          </Box>
           <Typography variant="body2" sx={{ color: '#64748b', mt: 0.25, fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
-            Báo cáo tổng hợp tiến độ, phân tích trễ hạn và khối lượng thực hiện
+            {canViewAll
+              ? 'Báo cáo tổng hợp tiến độ, phân tích trễ hạn và khối lượng thực hiện toàn công ty'
+              : canViewProject
+              ? 'Báo cáo tổng hợp tiến độ và các công việc trong các dự án bạn tham gia hoặc quản lý'
+              : 'Báo cáo tổng hợp tiến độ và các công việc do bạn quản lý hoặc được phân công'}
           </Typography>
         </Box>
 
@@ -247,7 +274,26 @@ export const ReportsPage: React.FC = () => {
       </Box>
 
       {/* Filter Toolbar */}
-      <Paper sx={{ p: { xs: 1.5, sm: 2 }, border: '1px solid #e2e8f0', borderRadius: '8px', display: 'flex', gap: 1.5, flexWrap: 'wrap', width: '100%', maxWidth: '100%' }}>
+      <Paper sx={{ p: { xs: 1.5, sm: 2 }, border: '1px solid #e2e8f0', borderRadius: '8px', display: 'flex', gap: 1.5, flexWrap: 'wrap', alignItems: 'center', width: '100%', maxWidth: '100%' }}>
+        <Box sx={{ width: { xs: '100%', sm: 340 } }}>
+          <CommonDateRangePicker
+            fromDate={fromDate}
+            toDate={toDate}
+            onChange={(from, to) => {
+              setFromDate(from);
+              setToDate(to);
+              setPage(0);
+              setParams({
+                fromDate: from ? format(from, 'yyyy-MM-dd') : 'ALL',
+                toDate: to ? format(to, 'yyyy-MM-dd') : 'ALL',
+                page: null,
+              });
+            }}
+            placeholder="Lọc theo khoảng ngày..."
+            fullWidth
+          />
+        </Box>
+
         <Autocomplete
           size="small"
           sx={{ width: { xs: '100%', sm: 260 } }}
@@ -263,20 +309,22 @@ export const ReportsPage: React.FC = () => {
           renderInput={(params) => <TextField {...params} label="Lọc Theo Dự Án" />}
         />
 
-        <Autocomplete
-          size="small"
-          sx={{ width: { xs: '100%', sm: 260 } }}
-          options={[{ id: '', fullName: 'Tất cả nhân sự', department: '' }, ...users]}
-          getOptionLabel={(u) => (u.id ? `${u.fullName} (${u.department || 'Chưa phân ban'})` : u.fullName)}
-          value={users.find((u) => u.id === selectedUserId) || { id: '', fullName: 'Tất cả nhân sự', department: '' }}
-          onChange={(_, val) => {
-            const nextUser = val?.id || '';
-            setSelectedUserId(nextUser);
-            setPage(0);
-            setParams({ userId: nextUser || null, page: null });
-          }}
-          renderInput={(params) => <TextField {...params} label="Lọc Theo Nhân Sự" />}
-        />
+        {(canViewAll || canViewProject) && (
+          <Autocomplete
+            size="small"
+            sx={{ width: { xs: '100%', sm: 260 } }}
+            options={[{ id: '', fullName: 'Tất cả nhân sự', department: '' }, ...users]}
+            getOptionLabel={(u) => (u.id ? `${u.fullName} (${u.department || 'Chưa phân ban'})` : u.fullName)}
+            value={users.find((u) => u.id === selectedUserId) || { id: '', fullName: 'Tất cả nhân sự', department: '' }}
+            onChange={(_, val) => {
+              const nextUser = val?.id || '';
+              setSelectedUserId(nextUser);
+              setPage(0);
+              setParams({ userId: nextUser || null, page: null });
+            }}
+            renderInput={(params) => <TextField {...params} label="Lọc Theo Nhân Sự" />}
+          />
+        )}
       </Paper>
 
       {/* Tab Navigation & Report Table */}

@@ -14,10 +14,12 @@ import { getMediaUrl } from '../../utils/fileUtils';
 
 interface DashboardActivitiesProps {
   data: DashboardSummary;
+  canViewAll?: boolean;
+  canViewProject?: boolean;
   onSelectTask?: (taskId: string) => void;
 }
 
-export const DashboardActivities: React.FC<DashboardActivitiesProps> = memo(({ data, onSelectTask }) => {
+export const DashboardActivities: React.FC<DashboardActivitiesProps> = memo(({ data, canViewAll = false, canViewProject = false, onSelectTask }) => {
   const [page, setPage] = useState<number>(0);
   const [rowsPerPage, setRowsPerPage] = useState<number>(5);
 
@@ -185,7 +187,7 @@ export const DashboardActivities: React.FC<DashboardActivitiesProps> = memo(({ d
           gap: 1,
         }}
       >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
           <Box
             sx={{
               width: 32,
@@ -201,20 +203,38 @@ export const DashboardActivities: React.FC<DashboardActivitiesProps> = memo(({ d
             <Activity size={18} />
           </Box>
           <Typography variant="h4" sx={{ fontWeight: 700, fontSize: '1rem', color: '#0f172a' }}>
-            Nhật Ký Hoạt Động & Biến Động Công Trường Gần Đây
+            {canViewAll
+              ? 'Nhật Ký Hoạt Động & Biến Động Toàn Hệ Thống'
+              : canViewProject
+              ? 'Nhật Ký Hoạt Động Các Dự Án Tham Gia'
+              : 'Nhật Ký Hoạt Động Của Bạn Gần Đây'}
           </Typography>
         </Box>
-        <Chip
-          label={`${activities.length} hoạt động`}
-          size="small"
-          sx={{
-            fontWeight: 700,
-            bgcolor: '#f0f9ff',
-            color: '#0284c7',
-            border: '1px solid #bae6fd',
-            fontSize: '0.75rem',
-          }}
-        />
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Chip
+            label={canViewAll ? 'Toàn hệ thống' : 'Cá nhân'}
+            size="small"
+            sx={{
+              fontWeight: 600,
+              bgcolor: canViewAll ? '#eff6ff' : '#f8fafc',
+              color: canViewAll ? '#1d4ed8' : '#475569',
+              border: '1px solid',
+              borderColor: canViewAll ? '#bfdbfe' : '#e2e8f0',
+              fontSize: '0.72rem',
+            }}
+          />
+          <Chip
+            label={`${activities.length} hoạt động`}
+            size="small"
+            sx={{
+              fontWeight: 700,
+              bgcolor: '#f0f9ff',
+              color: '#0284c7',
+              border: '1px solid #bae6fd',
+              fontSize: '0.75rem',
+            }}
+          />
+        </Box>
       </Box>
 
       {/* CommonTable */}

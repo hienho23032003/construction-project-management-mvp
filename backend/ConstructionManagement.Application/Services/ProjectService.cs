@@ -18,13 +18,38 @@ public class ProjectService : IProjectService
         _activityLogService = activityLogService;
     }
 
-    public async Task<ApiResponse<PagedResult<ProjectDto>>> GetAllProjectsAsync(PaginationParams pagination, ProjectStatus? status = null)
+    public async Task<ApiResponse<PagedResult<ProjectDto>>> GetAllProjectsAsync(
+        PaginationParams pagination,
+        ProjectStatus? status = null,
+        Guid? currentUserId = null,
+        bool canViewAll = true,
+        bool canViewProject = false)
     {
         var query = _context.Projects
             .Include(p => p.Manager)
             .Include(p => p.Tasks)
             .Include(p => p.Members)
             .AsNoTracking();
+
+        if (!canViewAll && currentUserId.HasValue)
+        {
+            if (canViewProject)
+            {
+                query = query.Where(p =>
+                    p.ManagerId == currentUserId.Value ||
+                    p.CreatedById == currentUserId.Value ||
+                    p.Members.Any(m => m.UserId == currentUserId.Value) ||
+                    p.Tasks.Any(t => t.Assignees.Any(a => a.UserId == currentUserId.Value)));
+            }
+            else
+            {
+                query = query.Where(p =>
+                    p.ManagerId == currentUserId.Value ||
+                    p.CreatedById == currentUserId.Value ||
+                    p.Members.Any(m => m.UserId == currentUserId.Value && (m.RoleInProject == "Quản lý công trình (PM)" || m.RoleInProject == "Quản lý dự án" || m.RoleInProject == "Chỉ huy trưởng")) ||
+                    p.Tasks.Any(t => t.Assignees.Any(a => a.UserId == currentUserId.Value) || t.CreatedById == currentUserId.Value));
+            }
+        }
 
         if (!string.IsNullOrWhiteSpace(pagination.Search))
         {
@@ -52,10 +77,19 @@ public class ProjectService : IProjectService
         };
 
         var now = DateTime.UtcNow.Date;
-        var pagedProjects = await query
+        var pagedEntities = await query
+            .Include(p => p.Manager)
+            .Include(p => p.Tasks)
+            .Include(p => p.Members)
+                .ThenInclude(m => m.User)
             .Skip((pagination.PageIndex - 1) * pagination.PageSize)
             .Take(pagination.PageSize)
-            .Select(p => new ProjectDto
+            .ToListAsync();
+
+        var pagedProjects = pagedEntities.Select(p =>
+        {
+            var managers = GetProjectManagers(p);
+            return new ProjectDto
             {
                 Id = p.Id,
                 Code = p.Code,
@@ -63,7 +97,10 @@ public class ProjectService : IProjectService
                 Description = p.Description,
                 Location = p.Location,
                 ManagerId = p.ManagerId,
-                ManagerName = p.Manager != null ? p.Manager.FullName : null,
+                ManagerName = string.Join(", ", managers.Select(m => m.FullName)),
+                ManagerIds = managers.Select(m => m.Id).ToList(),
+                ManagerNames = managers.Select(m => m.FullName).ToList(),
+                Managers = managers,
                 StartDate = p.StartDate,
                 PlannedEndDate = p.PlannedEndDate,
                 ActualEndDate = p.ActualEndDate,
@@ -75,8 +112,8 @@ public class ProjectService : IProjectService
                 OverdueTaskCount = p.Tasks.Count(t => t.Status != TaskItemStatus.Completed && t.PlannedEndDate.Date < now),
                 MemberCount = p.Members.Count,
                 CreatedAt = p.CreatedAt
-            })
-            .ToListAsync();
+            };
+        }).ToList();
 
         var result = new PagedResult<ProjectDto>
         {
@@ -89,16 +126,44 @@ public class ProjectService : IProjectService
         return ApiResponse<PagedResult<ProjectDto>>.Ok(result);
     }
 
-    public async Task<ApiResponse<List<ProjectDto>>> GetAllProjectsListAsync()
+    public async Task<ApiResponse<List<ProjectDto>>> GetAllProjectsListAsync(Guid? currentUserId = null, bool canViewAll = true, bool canViewProject = false)
     {
         var now = DateTime.UtcNow.Date;
-        var projects = await _context.Projects
+        var query = _context.Projects
             .Include(p => p.Manager)
             .Include(p => p.Tasks)
             .Include(p => p.Members)
-            .AsNoTracking()
+                .ThenInclude(m => m.User)
+            .AsNoTracking();
+
+        if (!canViewAll && currentUserId.HasValue)
+        {
+            if (canViewProject)
+            {
+                query = query.Where(p =>
+                    p.ManagerId == currentUserId.Value ||
+                    p.CreatedById == currentUserId.Value ||
+                    p.Members.Any(m => m.UserId == currentUserId.Value) ||
+                    p.Tasks.Any(t => t.Assignees.Any(a => a.UserId == currentUserId.Value)));
+            }
+            else
+            {
+                query = query.Where(p =>
+                    p.ManagerId == currentUserId.Value ||
+                    p.CreatedById == currentUserId.Value ||
+                    p.Members.Any(m => m.UserId == currentUserId.Value && (m.RoleInProject == "Quản lý công trình (PM)" || m.RoleInProject == "Quản lý dự án" || m.RoleInProject == "Chỉ huy trưởng")) ||
+                    p.Tasks.Any(t => t.Assignees.Any(a => a.UserId == currentUserId.Value) || t.CreatedById == currentUserId.Value));
+            }
+        }
+
+        var entities = await query
             .OrderByDescending(p => p.CreatedAt)
-            .Select(p => new ProjectDto
+            .ToListAsync();
+
+        var projects = entities.Select(p =>
+        {
+            var managers = GetProjectManagers(p);
+            return new ProjectDto
             {
                 Id = p.Id,
                 Code = p.Code,
@@ -106,7 +171,10 @@ public class ProjectService : IProjectService
                 Description = p.Description,
                 Location = p.Location,
                 ManagerId = p.ManagerId,
-                ManagerName = p.Manager != null ? p.Manager.FullName : null,
+                ManagerName = string.Join(", ", managers.Select(m => m.FullName)),
+                ManagerIds = managers.Select(m => m.Id).ToList(),
+                ManagerNames = managers.Select(m => m.FullName).ToList(),
+                Managers = managers,
                 StartDate = p.StartDate,
                 PlannedEndDate = p.PlannedEndDate,
                 ActualEndDate = p.ActualEndDate,
@@ -118,8 +186,8 @@ public class ProjectService : IProjectService
                 OverdueTaskCount = p.Tasks.Count(t => t.Status != TaskItemStatus.Completed && t.PlannedEndDate.Date < now),
                 MemberCount = p.Members.Count,
                 CreatedAt = p.CreatedAt
-            })
-            .ToListAsync();
+            };
+        }).ToList();
 
         return ApiResponse<List<ProjectDto>>.Ok(projects);
     }
@@ -216,6 +284,7 @@ public class ProjectService : IProjectService
                 CreatedAt = al.CreatedAt
             }).ToList();
 
+        var managers = GetProjectManagers(p);
         var detail = new ProjectDetailDto
         {
             Id = p.Id,
@@ -224,7 +293,10 @@ public class ProjectService : IProjectService
             Description = p.Description,
             Location = p.Location,
             ManagerId = p.ManagerId,
-            ManagerName = p.Manager?.FullName,
+            ManagerName = string.Join(", ", managers.Select(m => m.FullName)),
+            ManagerIds = managers.Select(m => m.Id).ToList(),
+            ManagerNames = managers.Select(m => m.FullName).ToList(),
+            Managers = managers,
             StartDate = p.StartDate,
             PlannedEndDate = p.PlannedEndDate,
             ActualEndDate = p.ActualEndDate,
@@ -252,13 +324,26 @@ public class ProjectService : IProjectService
             return ApiResponse<ProjectDto>.Fail($"Mã công trình/dự án '{request.Code}' đã tồn tại.");
         }
 
+        var managerIds = new List<Guid>();
+        if (request.ManagerIds != null && request.ManagerIds.Any())
+        {
+            managerIds.AddRange(request.ManagerIds);
+        }
+        else if (request.ManagerId.HasValue)
+        {
+            managerIds.Add(request.ManagerId.Value);
+        }
+        managerIds = managerIds.Distinct().ToList();
+
+        var primaryManagerId = managerIds.Count > 0 ? (Guid?)managerIds[0] : null;
+
         var project = new Project
         {
             Code = request.Code.Trim().ToUpper(),
             Name = request.Name.Trim(),
             Description = request.Description,
             Location = request.Location,
-            ManagerId = request.ManagerId,
+            ManagerId = primaryManagerId,
             StartDate = request.StartDate,
             PlannedEndDate = request.PlannedEndDate,
             Status = ProjectStatus.NotStarted,
@@ -268,12 +353,12 @@ public class ProjectService : IProjectService
             CreatedAt = DateTime.UtcNow
         };
 
-        // Add manager as member if specified
-        if (request.ManagerId.HasValue)
+        // Add managers as members with PM role
+        foreach (var mgrId in managerIds)
         {
             project.Members.Add(new ProjectMember
             {
-                UserId = request.ManagerId.Value,
+                UserId = mgrId,
                 RoleInProject = "Quản lý công trình (PM)",
                 JoinedAt = DateTime.UtcNow
             });
@@ -283,7 +368,7 @@ public class ProjectService : IProjectService
         {
             foreach (var memberId in request.MemberUserIds.Distinct())
             {
-                if (memberId != request.ManagerId)
+                if (!managerIds.Contains(memberId))
                 {
                     project.Members.Add(new ProjectMember
                     {
@@ -310,7 +395,9 @@ public class ProjectService : IProjectService
 
     public async Task<ApiResponse<ProjectDto>> UpdateProjectAsync(Guid id, UpdateProjectRequest request, Guid currentUserId)
     {
-        var project = await _context.Projects.FindAsync(id);
+        var project = await _context.Projects
+            .Include(p => p.Members)
+            .FirstOrDefaultAsync(p => p.Id == id);
         if (project == null)
         {
             return ApiResponse<ProjectDto>.Fail("Không tìm thấy dự án.");
@@ -320,7 +407,53 @@ public class ProjectService : IProjectService
         project.Name = request.Name.Trim();
         project.Description = request.Description;
         project.Location = request.Location;
-        project.ManagerId = request.ManagerId;
+
+        if (request.ManagerIds != null || request.ManagerId.HasValue)
+        {
+            var managerIds = new List<Guid>();
+            if (request.ManagerIds != null && request.ManagerIds.Any())
+            {
+                managerIds.AddRange(request.ManagerIds);
+            }
+            else if (request.ManagerId.HasValue)
+            {
+                managerIds.Add(request.ManagerId.Value);
+            }
+            managerIds = managerIds.Distinct().ToList();
+
+            project.ManagerId = managerIds.Count > 0 ? (Guid?)managerIds[0] : null;
+
+            var existingPmMembers = project.Members.Where(m => m.RoleInProject == "Quản lý công trình (PM)").ToList();
+            foreach (var pm in existingPmMembers)
+            {
+                if (!managerIds.Contains(pm.UserId))
+                {
+                    pm.RoleInProject = "Thành viên dự án";
+                }
+            }
+
+            foreach (var mgrId in managerIds)
+            {
+                var existingMember = project.Members.FirstOrDefault(m => m.UserId == mgrId);
+                if (existingMember != null)
+                {
+                    existingMember.RoleInProject = "Quản lý công trình (PM)";
+                }
+                else
+                {
+                    var newMember = new ProjectMember
+                    {
+                        Id = Guid.NewGuid(),
+                        ProjectId = project.Id,
+                        UserId = mgrId,
+                        RoleInProject = "Quản lý công trình (PM)",
+                        JoinedAt = DateTime.UtcNow
+                    };
+                    _context.ProjectMembers.Add(newMember);
+                }
+            }
+        }
+
         project.StartDate = request.StartDate;
         project.PlannedEndDate = request.PlannedEndDate;
         project.ActualEndDate = request.ActualEndDate;
@@ -533,11 +666,13 @@ public class ProjectService : IProjectService
             .Include(p => p.Manager)
             .Include(p => p.Tasks)
             .Include(p => p.Members)
+                .ThenInclude(m => m.User)
             .FirstOrDefaultAsync(p => p.Id == id);
 
         if (p == null) return ApiResponse<ProjectDto>.Fail("Không tìm thấy dự án.");
 
         var now = DateTime.UtcNow.Date;
+        var managers = GetProjectManagers(p);
         return ApiResponse<ProjectDto>.Ok(new ProjectDto
         {
             Id = p.Id,
@@ -546,7 +681,10 @@ public class ProjectService : IProjectService
             Description = p.Description,
             Location = p.Location,
             ManagerId = p.ManagerId,
-            ManagerName = p.Manager?.FullName,
+            ManagerName = string.Join(", ", managers.Select(m => m.FullName)),
+            ManagerIds = managers.Select(m => m.Id).ToList(),
+            ManagerNames = managers.Select(m => m.FullName).ToList(),
+            Managers = managers,
             StartDate = p.StartDate,
             PlannedEndDate = p.PlannedEndDate,
             ActualEndDate = p.ActualEndDate,
@@ -559,5 +697,34 @@ public class ProjectService : IProjectService
             MemberCount = p.Members.Count,
             CreatedAt = p.CreatedAt
         });
+    }
+
+    private static List<ProjectManagerUserDto> GetProjectManagers(Domain.Entities.Project p)
+    {
+        var managers = p.Members
+            .Where(m => m.RoleInProject == "Quản lý công trình (PM)" || m.RoleInProject == "Quản lý dự án" || m.RoleInProject == "Chỉ huy trưởng" || m.UserId == p.ManagerId)
+            .Select(m => new ProjectManagerUserDto
+            {
+                Id = m.UserId,
+                FullName = m.User.FullName,
+                AvatarUrl = m.User.AvatarUrl,
+                Email = m.User.Email
+            })
+            .GroupBy(m => m.Id)
+            .Select(g => g.First())
+            .ToList();
+
+        if (!managers.Any() && p.Manager != null)
+        {
+            managers.Add(new ProjectManagerUserDto
+            {
+                Id = p.Manager.Id,
+                FullName = p.Manager.FullName,
+                AvatarUrl = p.Manager.AvatarUrl,
+                Email = p.Manager.Email
+            });
+        }
+
+        return managers;
     }
 }

@@ -13,17 +13,20 @@ public class TaskService : ITaskService
     private readonly IActivityLogService _activityLogService;
     private readonly INotificationService _notificationService;
     private readonly IFileStorageService _fileStorageService;
+    private readonly IRoleService _roleService;
 
     public TaskService(
         IAppDbContext context,
         IActivityLogService activityLogService,
         INotificationService notificationService,
-        IFileStorageService fileStorageService)
+        IFileStorageService fileStorageService,
+        IRoleService roleService)
     {
         _context = context;
         _activityLogService = activityLogService;
         _notificationService = notificationService;
         _fileStorageService = fileStorageService;
+        _roleService = roleService;
     }
 
     public async Task<ApiResponse<PagedResult<TaskDto>>> GetAllTasksAsync(
@@ -31,13 +34,38 @@ public class TaskService : ITaskService
         Guid? projectId = null,
         Guid? assigneeId = null,
         TaskItemStatus? status = null,
-        PriorityLevel? priority = null)
+        PriorityLevel? priority = null,
+        Guid? currentUserId = null,
+        bool canViewAll = true,
+        bool canViewProject = false)
     {
         var query = _context.Tasks
             .Include(t => t.Project)
             .Include(t => t.Assignees).ThenInclude(a => a.User)
             .Include(t => t.Parent)
             .AsNoTracking();
+
+        if (!canViewAll && currentUserId.HasValue)
+        {
+            if (canViewProject)
+            {
+                query = query.Where(t =>
+                    t.Assignees.Any(a => a.UserId == currentUserId.Value) ||
+                    t.CreatedById == currentUserId.Value ||
+                    t.Project.ManagerId == currentUserId.Value ||
+                    t.Project.CreatedById == currentUserId.Value ||
+                    t.Project.Members.Any(m => m.UserId == currentUserId.Value));
+            }
+            else
+            {
+                query = query.Where(t =>
+                    t.Assignees.Any(a => a.UserId == currentUserId.Value) ||
+                    t.CreatedById == currentUserId.Value ||
+                    t.Project.ManagerId == currentUserId.Value ||
+                    t.Project.CreatedById == currentUserId.Value ||
+                    t.Project.Members.Any(m => m.UserId == currentUserId.Value && (m.RoleInProject == "Quản lý công trình (PM)" || m.RoleInProject == "Quản lý dự án" || m.RoleInProject == "Chỉ huy trưởng")));
+            }
+        }
 
         if (projectId.HasValue)
         {
@@ -536,8 +564,27 @@ public class TaskService : ITaskService
 
     public async Task<ApiResponse<TaskDto>> UpdateStatusAsync(Guid id, UpdateTaskStatusRequest request, Guid currentUserId)
     {
-        var task = await _context.Tasks.FindAsync(id);
+        var task = await _context.Tasks
+            .Include(t => t.Assignees)
+            .Include(t => t.Project)
+            .FirstOrDefaultAsync(t => t.Id == id);
         if (task == null) return ApiResponse<TaskDto>.Fail("Không tìm thấy công việc.");
+
+        // Check if current user is assigned, project manager, superadmin, or has role permission
+        var isAssigned = task.Assignees.Any(a => a.UserId == currentUserId);
+        if (!isAssigned)
+        {
+            var user = await _context.Users.FindAsync(currentUserId);
+            var isSuperAdmin = user?.Role == UserRole.SuperAdmin;
+            var isProjectManager = task.Project?.ManagerId == currentUserId || task.Project?.CreatedById == currentUserId || task.CreatedById == currentUserId;
+            var permissions = await _roleService.GetUserPermissionsAsync(currentUserId);
+            var hasPermission = permissions.Contains("tasks.update_status") || permissions.Contains("tasks.edit");
+
+            if (!isSuperAdmin && !isProjectManager && !hasPermission)
+            {
+                return ApiResponse<TaskDto>.Fail("Bạn không được phân công công việc này nên không có quyền thay đổi trạng thái.");
+            }
+        }
 
         var oldStatus = task.Status;
         task.Status = request.Status;
@@ -587,6 +634,32 @@ public class TaskService : ITaskService
             newValue: task.Status.ToString()
         );
 
+        // Notify PM and assignees
+        var statusRecipientUserIds = new HashSet<Guid>(task.Assignees.Select(a => a.UserId));
+        if (task.CreatedById.HasValue && task.CreatedById.Value != Guid.Empty) statusRecipientUserIds.Add(task.CreatedById.Value);
+        if (task.Project != null && task.Project.ManagerId.HasValue && task.Project.ManagerId.Value != Guid.Empty)
+        {
+            statusRecipientUserIds.Add(task.Project.ManagerId.Value);
+        }
+        statusRecipientUserIds.Remove(currentUserId);
+
+        var statusUpdater = await _context.Users.FindAsync(currentUserId);
+        foreach (var recipientId in statusRecipientUserIds)
+        {
+            try
+            {
+                await _notificationService.CreateNotificationAsync(
+                    recipientId,
+                    "Thay đổi trạng thái công việc",
+                    $"{statusUpdater?.FullName ?? "Thành viên"} đã đổi trạng thái '{task.Name}' sang {task.Status}.",
+                    NotificationType.TaskStatusChanged,
+                    "Task",
+                    task.Id
+                );
+            }
+            catch { }
+        }
+
         if (task.ParentId.HasValue)
         {
             await RecalculateParentTaskProgressAsync(task.ParentId.Value);
@@ -598,8 +671,27 @@ public class TaskService : ITaskService
 
     public async Task<ApiResponse<TaskDto>> UpdateProgressAsync(Guid id, UpdateTaskProgressRequest request, Guid currentUserId)
     {
-        var task = await _context.Tasks.FindAsync(id);
+        var task = await _context.Tasks
+            .Include(t => t.Assignees)
+            .Include(t => t.Project)
+            .FirstOrDefaultAsync(t => t.Id == id);
         if (task == null) return ApiResponse<TaskDto>.Fail("Không tìm thấy công việc.");
+
+        // Check if current user is assigned, project manager, superadmin, or has role permission
+        var isAssigned = task.Assignees.Any(a => a.UserId == currentUserId);
+        if (!isAssigned)
+        {
+            var user = await _context.Users.FindAsync(currentUserId);
+            var isSuperAdmin = user?.Role == UserRole.SuperAdmin;
+            var isProjectManager = task.Project?.ManagerId == currentUserId || task.Project?.CreatedById == currentUserId || task.CreatedById == currentUserId;
+            var permissions = await _roleService.GetUserPermissionsAsync(currentUserId);
+            var hasPermission = permissions.Contains("tasks.update_progress") || permissions.Contains("tasks.edit");
+
+            if (!isSuperAdmin && !isProjectManager && !hasPermission)
+            {
+                return ApiResponse<TaskDto>.Fail("Bạn không được phân công công việc này nên không có quyền thay đổi tiến độ.");
+            }
+        }
 
         var oldProgress = task.Progress;
         task.Progress = Math.Min(100.0, Math.Max(0.0, request.Progress));
@@ -636,6 +728,32 @@ public class TaskService : ITaskService
             oldValue: $"{oldProgress}%",
             newValue: $"{task.Progress}%"
         );
+
+        // Notify PM and assignees
+        var progressRecipientUserIds = new HashSet<Guid>(task.Assignees.Select(a => a.UserId));
+        if (task.CreatedById.HasValue && task.CreatedById.Value != Guid.Empty) progressRecipientUserIds.Add(task.CreatedById.Value);
+        if (task.Project != null && task.Project.ManagerId.HasValue && task.Project.ManagerId.Value != Guid.Empty)
+        {
+            progressRecipientUserIds.Add(task.Project.ManagerId.Value);
+        }
+        progressRecipientUserIds.Remove(currentUserId);
+
+        var progressUpdater = await _context.Users.FindAsync(currentUserId);
+        foreach (var recipientId in progressRecipientUserIds)
+        {
+            try
+            {
+                await _notificationService.CreateNotificationAsync(
+                    recipientId,
+                    "Cập nhật tiến độ công việc",
+                    $"{progressUpdater?.FullName ?? "Thành viên"} đã cập nhật tiến độ '{task.Name}' lên {task.Progress}%.",
+                    NotificationType.TaskProgressChanged,
+                    "Task",
+                    task.Id
+                );
+            }
+            catch { }
+        }
 
         if (task.ParentId.HasValue)
         {
@@ -716,8 +834,27 @@ public class TaskService : ITaskService
 
     public async Task<ApiResponse<TaskCommentDto>> AddCommentWithAttachmentsAsync(Guid taskId, CreateCommentWithFilesRequest request, Guid currentUserId)
     {
-        var task = await _context.Tasks.Include(t => t.Assignees).FirstOrDefaultAsync(t => t.Id == taskId);
+        var task = await _context.Tasks
+            .Include(t => t.Assignees)
+            .Include(t => t.Project)
+            .FirstOrDefaultAsync(t => t.Id == taskId);
         if (task == null) return ApiResponse<TaskCommentDto>.Fail("Không tìm thấy công việc.");
+
+        // Check permission: Assigned user, SuperAdmin, Project Manager, Task Creator, or user with tasks.comment / tasks.edit permission
+        var isAssigned = task.Assignees.Any(a => a.UserId == currentUserId);
+        if (!isAssigned)
+        {
+            var userEntity = await _context.Users.FindAsync(currentUserId);
+            var isSuperAdmin = userEntity?.Role == UserRole.SuperAdmin;
+            var isProjectManager = task.Project?.ManagerId == currentUserId || task.Project?.CreatedById == currentUserId || task.CreatedById == currentUserId;
+            var permissions = await _roleService.GetUserPermissionsAsync(currentUserId);
+            var hasPermission = permissions.Contains("tasks.comment") || permissions.Contains("tasks.edit");
+
+            if (!isSuperAdmin && !isProjectManager && !hasPermission)
+            {
+                return ApiResponse<TaskCommentDto>.Fail("Bạn không có quyền trao đổi, bình luận trong công việc này.");
+            }
+        }
 
         if (string.IsNullOrWhiteSpace(request.Content) && (request.Files == null || !request.Files.Any()))
         {
@@ -753,17 +890,29 @@ public class TaskService : ITaskService
 
         var user = await _context.Users.FindAsync(currentUserId);
 
-        // Notify other assignees
-        foreach (var assignee in task.Assignees.Where(a => a.UserId != currentUserId))
+        // Notify other assignees, creator, and project manager
+        var recipientUserIds = new HashSet<Guid>(task.Assignees.Select(a => a.UserId));
+        if (task.CreatedById.HasValue && task.CreatedById.Value != Guid.Empty) recipientUserIds.Add(task.CreatedById.Value);
+        if (task.Project != null && task.Project.ManagerId.HasValue && task.Project.ManagerId.Value != Guid.Empty)
         {
-            await _notificationService.CreateNotificationAsync(
-                assignee.UserId,
-                "Bình luận mới trong công việc",
-                $"{user?.FullName ?? "Một thành viên"} đã bình luận trong công việc '{task.Name}'.",
-                NotificationType.CommentAdded,
-                "Task",
-                task.Id
-            );
+            recipientUserIds.Add(task.Project.ManagerId.Value);
+        }
+        recipientUserIds.Remove(currentUserId);
+
+        foreach (var recipientId in recipientUserIds)
+        {
+            try
+            {
+                await _notificationService.CreateNotificationAsync(
+                    recipientId,
+                    "Bình luận mới trong công việc",
+                    $"{user?.FullName ?? "Một thành viên"} đã bình luận trong công việc '{task.Name}'.",
+                    NotificationType.CommentAdded,
+                    "Task",
+                    task.Id
+                );
+            }
+            catch { }
         }
 
         await _activityLogService.LogAsync(
@@ -801,11 +950,17 @@ public class TaskService : ITaskService
     {
         var comment = await _context.TaskComments
             .Include(c => c.Attachments)
+            .Include(c => c.Task)
+                .ThenInclude(t => t.Project)
             .FirstOrDefaultAsync(c => c.Id == commentId);
 
         if (comment == null) return ApiResponse<bool>.Fail("Không tìm thấy bình luận.");
 
-        if (comment.UserId != currentUserId)
+        var userEntity = await _context.Users.FindAsync(currentUserId);
+        var isSuperAdmin = userEntity?.Role == UserRole.SuperAdmin;
+        var isProjectManager = comment.Task?.Project?.ManagerId == currentUserId || comment.Task?.Project?.CreatedById == currentUserId || comment.Task?.CreatedById == currentUserId;
+
+        if (comment.UserId != currentUserId && !isSuperAdmin && !isProjectManager)
         {
             return ApiResponse<bool>.Fail("Bạn chỉ có thể xóa bình luận của chính mình.");
         }
@@ -900,7 +1055,8 @@ public class TaskService : ITaskService
         DateTime? fromDate = null,
         DateTime? toDate = null,
         Guid? currentUserId = null,
-        bool canViewAll = true)
+        bool canViewAll = true,
+        bool canViewProject = false)
     {
         var now = DateTime.UtcNow.Date;
         var hasFilters = projectId.HasValue || status.HasValue || (activeOnly == true) || fromDate.HasValue || toDate.HasValue || (!canViewAll && currentUserId.HasValue);
@@ -914,9 +1070,24 @@ public class TaskService : ITaskService
         if (!canViewAll && currentUserId.HasValue)
         {
             var uid = currentUserId.Value;
-            tasksQuery = tasksQuery.Where(t =>
-                t.Assignees.Any(a => a.UserId == uid) ||
-                t.CreatedById == uid);
+            if (canViewProject)
+            {
+                tasksQuery = tasksQuery.Where(t =>
+                    t.Assignees.Any(a => a.UserId == uid) ||
+                    t.CreatedById == uid ||
+                    t.Project.ManagerId == uid ||
+                    t.Project.CreatedById == uid ||
+                    t.Project.Members.Any(m => m.UserId == uid));
+            }
+            else
+            {
+                tasksQuery = tasksQuery.Where(t =>
+                    t.Assignees.Any(a => a.UserId == uid) ||
+                    t.CreatedById == uid ||
+                    t.Project.ManagerId == uid ||
+                    t.Project.CreatedById == uid ||
+                    t.Project.Members.Any(m => m.UserId == uid && (m.RoleInProject == "Quản lý công trình (PM)" || m.RoleInProject == "Quản lý dự án" || m.RoleInProject == "Chỉ huy trưởng")));
+            }
         }
 
         if (projectId.HasValue)

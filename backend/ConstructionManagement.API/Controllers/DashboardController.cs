@@ -1,3 +1,4 @@
+using ConstructionManagement.API.Filters;
 using ConstructionManagement.Application.DTOs;
 using ConstructionManagement.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -16,9 +17,10 @@ public class DashboardController : BaseApiController
     }
 
     [HttpGet("summary")]
+    [RequirePermission("dashboard.view")]
     public async Task<IActionResult> GetSummary([FromQuery] DateTime? fromDate = null, [FromQuery] DateTime? toDate = null)
     {
-        var result = await _dashboardService.GetDashboardSummaryAsync(fromDate, toDate);
+        var result = await _dashboardService.GetDashboardSummaryAsync(CurrentUserId, fromDate, toDate);
         return Ok(result);
     }
 }

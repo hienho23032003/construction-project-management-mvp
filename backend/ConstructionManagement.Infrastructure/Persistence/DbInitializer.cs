@@ -79,22 +79,62 @@ public static class DbInitializer
                 await context.SaveChangesAsync();
             }
 
-            // Auto update default colors for existing roles if missing
-            var rolesWithNoColor = await context.Roles.Where(r => string.IsNullOrEmpty(r.Color)).ToListAsync();
-            if (rolesWithNoColor.Any())
+            // Ensure all existing roles have dashboard.view
+            var allDbRoles = await context.Roles.ToListAsync();
+            foreach (var r in allDbRoles)
             {
-                foreach (var r in rolesWithNoColor)
+                var hasDashboardView = await context.RolePermissions.AnyAsync(p => p.RoleId == r.Id && p.PermissionCode == "dashboard.view");
+                if (!hasDashboardView)
                 {
-                    var upper = (r.Code ?? "").ToUpper();
-                    if (upper.Contains("ADMIN") || upper == "SUPER_ADMIN" || upper == "SUPERADMIN") r.Color = "#b91c1c";
-                    else if (upper.Contains("PROJECT") || upper.Contains("PM")) r.Color = "#0369a1";
-                    else if (upper.Contains("SUPERVISOR")) r.Color = "#b45309";
-                    else if (upper.Contains("ENGINEER")) r.Color = "#047857";
-                    else if (upper.Contains("ACCOUNTANT")) r.Color = "#0f766e";
-                    else r.Color = "#0284c7";
+                    context.RolePermissions.Add(new RolePermission
+                    {
+                        Id = Guid.NewGuid(),
+                        RoleId = r.Id,
+                        PermissionCode = "dashboard.view",
+                        CreatedAt = DateTime.UtcNow
+                    });
                 }
-                await context.SaveChangesAsync();
+
+                // PM & Admin also get dashboard.view_all, projects.view_all, tasks.view_project, tasks.view_all, reports.view_all by default
+                var upper = (r.Code ?? "").ToUpper();
+                if (upper.Contains("ADMIN") || upper.Contains("PROJECT_MANAGER") || upper == "PM")
+                {
+                    var extraCodes = new[] { "dashboard.view_all", "projects.view_all", "tasks.view_project", "tasks.view_all", "reports.view_all", "gantt.view_all" };
+                    foreach (var code in extraCodes)
+                    {
+                        var hasPerm = await context.RolePermissions.AnyAsync(p => p.RoleId == r.Id && p.PermissionCode == code);
+                        if (!hasPerm)
+                        {
+                            context.RolePermissions.Add(new RolePermission
+                            {
+                                Id = Guid.NewGuid(),
+                                RoleId = r.Id,
+                                PermissionCode = code,
+                                CreatedAt = DateTime.UtcNow
+                            });
+                        }
+                    }
+                }
+                else if (upper.Contains("SUPERVISOR"))
+                {
+                    var supCodes = new[] { "tasks.view_project" };
+                    foreach (var code in supCodes)
+                    {
+                        var hasPerm = await context.RolePermissions.AnyAsync(p => p.RoleId == r.Id && p.PermissionCode == code);
+                        if (!hasPerm)
+                        {
+                            context.RolePermissions.Add(new RolePermission
+                            {
+                                Id = Guid.NewGuid(),
+                                RoleId = r.Id,
+                                PermissionCode = code,
+                                CreatedAt = DateTime.UtcNow
+                            });
+                        }
+                    }
+                }
             }
+            await context.SaveChangesAsync();
 
             return; // DB already seeded
         }
@@ -252,10 +292,11 @@ public static class DbInitializer
         // PM Permissions
         var pmPerms = new[]
         {
-            "projects.view", "projects.create", "projects.edit", "projects.manage_members",
-            "tasks.view", "tasks.create", "tasks.edit", "tasks.delete", "tasks.update_status", "tasks.update_progress", "tasks.comment",
-            "gantt.view", "gantt.view_all",
-            "employees.view", "reports.view", "reports.export", "audit.view_sessions"
+            "dashboard.view", "dashboard.view_project", "dashboard.view_all",
+            "projects.view", "projects.view_project", "projects.view_all", "projects.create", "projects.edit", "projects.manage_members",
+            "tasks.view", "tasks.view_project", "tasks.view_all", "tasks.create", "tasks.edit", "tasks.delete", "tasks.update_status", "tasks.update_progress", "tasks.comment",
+            "gantt.view", "gantt.view_project", "gantt.view_all",
+            "employees.view", "reports.view", "reports.view_project", "reports.view_all", "reports.export", "audit.view_sessions"
         };
         foreach (var p in pmPerms)
         {
@@ -265,10 +306,11 @@ public static class DbInitializer
         // Supervisor Permissions
         var supPerms = new[]
         {
-            "projects.view",
-            "tasks.view", "tasks.create", "tasks.edit", "tasks.update_status", "tasks.update_progress", "tasks.comment",
-            "gantt.view",
-            "employees.view", "reports.view"
+            "dashboard.view", "dashboard.view_project",
+            "projects.view", "projects.view_project",
+            "tasks.view", "tasks.view_project", "tasks.create", "tasks.edit", "tasks.update_status", "tasks.update_progress", "tasks.comment",
+            "gantt.view", "gantt.view_project",
+            "employees.view", "reports.view", "reports.view_project"
         };
         foreach (var p in supPerms)
         {
@@ -278,9 +320,9 @@ public static class DbInitializer
         // Engineer Permissions
         var engPerms = new[]
         {
-            "projects.view",
+            "dashboard.view", "projects.view",
             "tasks.view", "tasks.update_status", "tasks.update_progress", "tasks.comment",
-            "gantt.view", "employees.view"
+            "gantt.view", "reports.view", "employees.view"
         };
         foreach (var p in engPerms)
         {

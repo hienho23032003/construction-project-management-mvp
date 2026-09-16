@@ -12,9 +12,9 @@ import {
   TextField,
   Chip,
 } from '@mui/material';
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { CommonDateRangePicker } from '../components/common/CommonDateRangePicker';
 import { Plus } from 'lucide-react';
-import { format, addDays } from 'date-fns';
+import { format, addDays, startOfMonth, endOfMonth } from 'date-fns';
 import { useAuth } from '../contexts/AuthContext';
 import { useProjectsListQuery } from '../hooks/useProjects';
 import {
@@ -31,6 +31,7 @@ import { EmptyStateIllustration } from '../components/common/EmptyStateIllustrat
 import { TaskFormModal, TaskFormData } from '../components/tasks/TaskFormModal';
 import { usePresenceHeartbeat } from '../hooks/usePresence';
 import { ProjectPresenceAvatars } from '../components/presence/ProjectPresenceAvatars';
+import { ScopeChip } from '../components/common/ScopeChip';
 import { GanttTask } from '../types';
 
 const getInitialMonthRange = () => {
@@ -50,23 +51,30 @@ export const GanttPage: React.FC = () => {
   const { user } = useAuth();
   const { can, isSuperAdmin } = usePermission();
   const canViewAll = isSuperAdmin || can(PERMISSIONS.GANTT_VIEW_ALL);
+  const canViewProject = canViewAll || can(PERMISSIONS.GANTT_VIEW_PROJECT);
   const canCreateTask = isSuperAdmin || can(PERMISSIONS.TASKS_CREATE);
   const { getParam, getBooleanParam, setParams, removeParams } = useAppSearchParams();
   const initialMonth = useMemo(() => getInitialMonthRange(), []);
 
   const projectParam = getParam('projectId', 'ALL');
   const statusParam = getParam('status', 'ALL');
-  const datePresetParam = getParam('datePreset', 'THIS_MONTH');
-  const fromDateParam = getParam('fromDate') || (datePresetParam === 'THIS_MONTH' ? initialMonth.start : '');
-  const toDateParam = getParam('toDate') || (datePresetParam === 'THIS_MONTH' ? initialMonth.end : '');
+  const fromDateParam = getParam('fromDate');
+  const toDateParam = getParam('toDate');
   const editTaskIdParam = getParam('editTaskId') || getParam('taskId');
   const createTaskParam = getBooleanParam('createTask');
 
   const [selectedProjectId, setSelectedProjectId] = useState<string>(projectParam);
   const [selectedStatus, setSelectedStatus] = useState<string>(statusParam);
-  const [selectedDatePreset, setSelectedDatePreset] = useState<string>(datePresetParam);
-  const [customStartDate, setCustomStartDate] = useState<string>(fromDateParam);
-  const [customEndDate, setCustomEndDate] = useState<string>(toDateParam);
+  const [fromDate, setFromDate] = useState<Date | null>(() => {
+    if (fromDateParam === 'ALL') return null;
+    if (fromDateParam) return new Date(fromDateParam);
+    return startOfMonth(new Date());
+  });
+  const [toDate, setToDate] = useState<Date | null>(() => {
+    if (toDateParam === 'ALL') return null;
+    if (toDateParam) return new Date(toDateParam);
+    return endOfMonth(new Date());
+  });
 
   const [modalState, setModalState] = useState<{
     open: boolean;
@@ -126,15 +134,15 @@ export const GanttPage: React.FC = () => {
       params.status = selectedStatus;
     }
 
-    if (customStartDate) {
-      params.fromDate = customStartDate;
+    if (fromDate) {
+      params.fromDate = format(fromDate, 'yyyy-MM-dd');
     }
-    if (customEndDate) {
-      params.toDate = customEndDate;
+    if (toDate) {
+      params.toDate = format(toDate, 'yyyy-MM-dd');
     }
 
     return params;
-  }, [selectedProjectId, selectedStatus, customStartDate, customEndDate]);
+  }, [selectedProjectId, selectedStatus, fromDate, toDate]);
 
   const {
     data: ganttData,
@@ -151,56 +159,6 @@ export const GanttPage: React.FC = () => {
   const updateTaskMutation = useUpdateTaskMutation();
 
   const showLoading = (isGanttLoading || isProjectsLoading) || (!ganttData && isGanttFetching);
-
-  const handlePresetChange = (preset: string) => {
-    setSelectedDatePreset(preset);
-    const now = new Date();
-    let startStr = '';
-    let endStr = '';
-    if (preset === 'ALL') {
-      startStr = '';
-      endStr = '';
-    } else if (preset === 'THIS_MONTH') {
-      const start = new Date(now.getFullYear(), now.getMonth(), 1);
-      const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-      startStr = format(start, 'yyyy-MM-dd');
-      endStr = format(end, 'yyyy-MM-dd');
-    } else if (preset === 'THIS_QUARTER') {
-      const q = Math.floor(now.getMonth() / 3);
-      const start = new Date(now.getFullYear(), q * 3, 1);
-      const end = new Date(now.getFullYear(), q * 3 + 3, 0);
-      startStr = format(start, 'yyyy-MM-dd');
-      endStr = format(end, 'yyyy-MM-dd');
-    } else if (preset === 'NEXT_6_MONTHS') {
-      const start = new Date(now.getFullYear(), now.getMonth(), 1);
-      const end = addDays(start, 180);
-      startStr = format(start, 'yyyy-MM-dd');
-      endStr = format(end, 'yyyy-MM-dd');
-    } else if (preset === 'THIS_YEAR') {
-      const start = new Date(now.getFullYear(), 0, 1);
-      const end = new Date(now.getFullYear(), 11, 31);
-      startStr = format(start, 'yyyy-MM-dd');
-      endStr = format(end, 'yyyy-MM-dd');
-    }
-    setCustomStartDate(startStr);
-    setCustomEndDate(endStr);
-    setParams({
-      datePreset: preset !== 'THIS_MONTH' ? preset : null,
-      fromDate: preset === 'CUSTOM' ? (startStr || null) : null,
-      toDate: preset === 'CUSTOM' ? (endStr || null) : null,
-    });
-  };
-
-  const handleCustomDateChange = (from?: string, to?: string) => {
-    if (from !== undefined) {
-      setCustomStartDate(from);
-      setParams({ fromDate: from || null });
-    }
-    if (to !== undefined) {
-      setCustomEndDate(to);
-      setParams({ toDate: to || null });
-    }
-  };
 
   const handleStatusChange = (status: string) => {
     setSelectedStatus(status);
@@ -315,87 +273,43 @@ export const GanttPage: React.FC = () => {
         sx={{ width: { xs: '100%', sm: 240, md: 280 } }}
       />
 
-      <Box sx={{ display: 'flex', gap: 1, width: { xs: '100%', sm: 'auto' }, flexWrap: 'nowrap' }}>
-        <FormControl size="small" sx={{ width: { xs: '50%', sm: 145 }, minWidth: { xs: '50%', sm: 145 } }}>
-          <Select
-            value={selectedStatus}
-            onChange={(e) => handleStatusChange(e.target.value)}
-            displayEmpty
-            sx={{
-              height: 32,
-              bgcolor: '#ffffff',
-              fontSize: '0.8rem',
-            }}
-          >
-            <MenuItem value="ALL">Tất cả trạng thái</MenuItem>
-            <MenuItem value="ACTIVE_ONLY">Chưa xong (Đang & Chưa làm)</MenuItem>
-            <MenuItem value="InProgress">Đang thực hiện</MenuItem>
-            <MenuItem value="NotStarted">Chưa bắt đầu</MenuItem>
-            <MenuItem value="Completed">Hoàn thành</MenuItem>
-            <MenuItem value="OnHold">Tạm dừng</MenuItem>
-            <MenuItem value="Overdue">Trễ tiến độ</MenuItem>
-          </Select>
-        </FormControl>
+      <FormControl size="small" sx={{ width: { xs: '100%', sm: 160 }, minWidth: { xs: '100%', sm: 160 } }}>
+        <Select
+          value={selectedStatus}
+          onChange={(e) => handleStatusChange(e.target.value)}
+          displayEmpty
+          sx={{
+            height: 32,
+            bgcolor: '#ffffff',
+            fontSize: '0.8rem',
+          }}
+        >
+          <MenuItem value="ALL">Tất cả trạng thái</MenuItem>
+          <MenuItem value="ACTIVE_ONLY">Chưa xong (Đang & Chưa làm)</MenuItem>
+          <MenuItem value="InProgress">Đang thực hiện</MenuItem>
+          <MenuItem value="NotStarted">Chưa bắt đầu</MenuItem>
+          <MenuItem value="Completed">Hoàn thành</MenuItem>
+          <MenuItem value="OnHold">Tạm dừng</MenuItem>
+          <MenuItem value="Overdue">Trễ tiến độ</MenuItem>
+        </Select>
+      </FormControl>
 
-        <FormControl size="small" sx={{ width: { xs: '50%', sm: 135 }, minWidth: { xs: '50%', sm: 135 } }}>
-          <Select
-            value={selectedDatePreset}
-            onChange={(e) => handlePresetChange(e.target.value)}
-            sx={{
-              height: 32,
-              bgcolor: '#ffffff',
-              fontSize: '0.8rem',
-            }}
-          >
-            <MenuItem value="ALL">Tất cả thời gian</MenuItem>
-            <MenuItem value="THIS_MONTH">Tháng này</MenuItem>
-            <MenuItem value="THIS_QUARTER">Quý này</MenuItem>
-            <MenuItem value="NEXT_6_MONTHS">6 tháng tới</MenuItem>
-            <MenuItem value="THIS_YEAR">Năm nay</MenuItem>
-            <MenuItem value="CUSTOM">Tùy chỉnh...</MenuItem>
-          </Select>
-        </FormControl>
+      <Box sx={{ width: { xs: '100%', sm: 240 } }}>
+        <CommonDateRangePicker
+          fromDate={fromDate}
+          toDate={toDate}
+          onChange={(from, to) => {
+            setFromDate(from);
+            setToDate(to);
+            setParams({
+              fromDate: from ? format(from, 'yyyy-MM-dd') : 'ALL',
+              toDate: to ? format(to, 'yyyy-MM-dd') : 'ALL',
+            });
+          }}
+          placeholder="Chọn khoảng ngày..."
+          fullWidth
+        />
       </Box>
-
-      {selectedDatePreset === 'CUSTOM' && (
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, width: { xs: '100%', sm: 'auto' } }}>
-          <DatePicker
-            label="Từ ngày"
-            value={customStartDate ? new Date(customStartDate) : null}
-            onChange={(newVal) =>
-              handleCustomDateChange(newVal && !isNaN(newVal.getTime()) ? format(newVal, 'yyyy-MM-dd') : '', undefined)
-            }
-            slotProps={{
-              textField: {
-                size: 'small',
-                sx: {
-                  width: { xs: 'calc(50% - 10px)', sm: 135 },
-                  bgcolor: '#ffffff',
-                  '& .MuiOutlinedInput-root': { height: 32, fontSize: '0.78rem' },
-                },
-              },
-            }}
-          />
-          <Typography variant="caption" sx={{ color: '#64748b' }}>-</Typography>
-          <DatePicker
-            label="Đến ngày"
-            value={customEndDate ? new Date(customEndDate) : null}
-            onChange={(newVal) =>
-              handleCustomDateChange(undefined, newVal && !isNaN(newVal.getTime()) ? format(newVal, 'yyyy-MM-dd') : '')
-            }
-            slotProps={{
-              textField: {
-                size: 'small',
-                sx: {
-                  width: { xs: 'calc(50% - 10px)', sm: 135 },
-                  bgcolor: '#ffffff',
-                  '& .MuiOutlinedInput-root': { height: 32, fontSize: '0.78rem' },
-                },
-              },
-            }}
-          />
-        </Box>
-      )}
 
       {tasksList.length > 0 && (
         <Chip
@@ -447,17 +361,7 @@ export const GanttPage: React.FC = () => {
             <Typography variant="h2" sx={{ fontWeight: 800, fontSize: { xs: '1.15rem', sm: '1.35rem' }, color: '#0f172a' }}>
               Biểu Đồ Tiến Độ Gantt
             </Typography>
-            <Chip
-              size="small"
-              label={canViewAll ? 'Chế độ: Toàn bộ tiến độ' : 'Chế độ: Công việc của tôi'}
-              sx={{
-                bgcolor: canViewAll ? '#eff6ff' : '#f0fdf4',
-                color: canViewAll ? '#1d4ed8' : '#15803d',
-                fontWeight: 700,
-                fontSize: '0.75rem',
-                border: `1px solid ${canViewAll ? '#bfdbfe' : '#bbf7d0'}`,
-              }}
-            />
+            <ScopeChip canViewAll={canViewAll} canViewProject={canViewProject} />
           </Box>
           <Typography variant="body2" sx={{ color: '#64748b', fontSize: { xs: '0.78rem', sm: '0.875rem' } }}>
             Theo dõi dòng thời gian thi công, phân rã cây công việc (WBS) và giám sát tiến độ thực tế
@@ -530,7 +434,11 @@ export const GanttPage: React.FC = () => {
             <Button
               variant="outlined"
               size="small"
-              onClick={() => handlePresetChange('ALL')}
+              onClick={() => {
+                setFromDate(null);
+                setToDate(null);
+                setParams({ fromDate: null, toDate: null });
+              }}
               sx={{ mt: 1, textTransform: 'none', borderRadius: '6px', fontWeight: 600 }}
             >
               Xem Tất Cả Thời Gian

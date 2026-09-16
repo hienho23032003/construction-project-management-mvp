@@ -31,13 +31,13 @@ export const DashboardSkeleton: React.FC = () => {
 
       {/* Charts Skeleton */}
       <Grid container spacing={2.5}>
-        <Grid item xs={12} md={7}>
+        <Grid item xs={12} md={6}>
           <Paper sx={{ p: 2.5, border: '1px solid #e2e8f0', borderRadius: '8px', height: 320 }}>
             <Skeleton variant="text" width="45%" height={28} sx={{ mb: 2 }} />
             <Skeleton variant="rounded" width="100%" height={240} sx={{ borderRadius: '8px' }} />
           </Paper>
         </Grid>
-        <Grid item xs={12} md={5}>
+        <Grid item xs={12} md={6}>
           <Paper sx={{ p: 2.5, border: '1px solid #e2e8f0', borderRadius: '8px', height: 320 }}>
             <Skeleton variant="text" width="55%" height={28} sx={{ mb: 2 }} />
             <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 220 }}>

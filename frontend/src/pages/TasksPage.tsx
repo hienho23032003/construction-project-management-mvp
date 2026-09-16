@@ -13,6 +13,7 @@ import {
   ToggleButton,
   Grid,
   Autocomplete,
+  Chip,
 } from '@mui/material';
 import {
   Search,
@@ -25,6 +26,7 @@ import { TaskCard } from '../components/tasks/TaskCard';
 import { TaskDetailDrawer } from '../components/tasks/TaskDetailDrawer';
 import { CardGridSkeleton } from '../components/common/CardGridSkeleton';
 import { CommonPagination } from '../components/common/CommonPagination';
+import { ScopeChip } from '../components/common/ScopeChip';
 import {
   useTasksQuery,
   useTaskDetailQuery,
@@ -45,6 +47,8 @@ import { PERMISSIONS } from '../constants/permissions';
 
 export const TasksPage: React.FC = () => {
   const { can, isSuperAdmin } = usePermission();
+  const canViewAll = isSuperAdmin || can(PERMISSIONS.TASKS_VIEW_ALL);
+  const canViewProject = canViewAll || can(PERMISSIONS.TASKS_VIEW_PROJECT);
   const canUpdateStatus = isSuperAdmin || can(PERMISSIONS.TASKS_UPDATE_STATUS);
   const canUpdateProgress = isSuperAdmin || can(PERMISSIONS.TASKS_UPDATE_PROGRESS);
   const canComment = isSuperAdmin || can(PERMISSIONS.TASKS_COMMENT);
@@ -63,7 +67,7 @@ export const TasksPage: React.FC = () => {
 
   // Pagination & Filtering & Sorting
   const [page, setPage] = useState(pageParam);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [rowsPerPage, setRowsPerPage] = useState(viewParam === 'grid' ? 9 : 10);
   const [sortBy, setSortBy] = useState('sortOrder');
   const [isDescending, setIsDescending] = useState(false);
   const [search, setSearch] = useState(searchParam);
@@ -131,6 +135,17 @@ export const TasksPage: React.FC = () => {
   const handleViewModeChange = (val: 'table' | 'grid') => {
     setViewMode(val);
     setParam('view', val === 'grid' ? 'grid' : null);
+    if (val === 'grid') {
+      if (rowsPerPage === 10 || rowsPerPage === 20) {
+        setRowsPerPage(9);
+        setPage(0);
+      }
+    } else {
+      if (rowsPerPage === 9 || rowsPerPage === 18) {
+        setRowsPerPage(10);
+        setPage(0);
+      }
+    }
   };
 
   const handlePageChange = useCallback((newPage: number) => {
@@ -210,15 +225,22 @@ export const TasksPage: React.FC = () => {
   });
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 2, sm: 3 }, width: '100%', maxWidth: '100%', minWidth: 0, overflowX: 'hidden' }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 2, sm: 3 }, width: '100%', maxWidth: '100%', minWidth: 0 }}>
       {/* Header */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', flexWrap: 'wrap', gap: 1.5 }}>
         <Box>
-          <Typography variant="h2" sx={{ fontWeight: 800, fontSize: { xs: '1.15rem', sm: '1.35rem' }, color: '#0f172a' }}>
-            Quản Lý Công Việc & Tiến Độ Thi Công
-          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+            <Typography variant="h2" sx={{ fontWeight: 800, fontSize: { xs: '1.15rem', sm: '1.35rem' }, color: '#0f172a' }}>
+              Quản Lý Công Việc & Tiến Độ Thi Công
+            </Typography>
+            <ScopeChip canViewAll={canViewAll} canViewProject={canViewProject} />
+          </Box>
           <Typography variant="body2" sx={{ color: '#64748b', mt: 0.25, fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
-            Tra cứu, cập nhật tiến độ, bình luận và theo dõi deadline toàn hệ thống
+            {canViewAll
+              ? 'Tra cứu, cập nhật tiến độ, bình luận và theo dõi deadline toàn hệ thống'
+              : canViewProject
+              ? 'Tra cứu, cập nhật tiến độ và theo dõi các công việc trong toàn bộ các dự án bạn tham gia'
+              : 'Danh sách các công việc được phân công hoặc phụ trách bởi bạn'}
           </Typography>
         </Box>
         {selectedProjectId !== 'ALL' && (
@@ -331,20 +353,31 @@ export const TasksPage: React.FC = () => {
               </Typography>
             </Paper>
           ) : (
-            <Grid container spacing={{ xs: 2, sm: 2.5 }} sx={{ width: '100%', m: 0 }}>
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: {
+                  xs: '1fr',
+                  sm: 'repeat(2, 1fr)',
+                  md: 'repeat(3, 1fr)',
+                },
+                gap: { xs: 2, sm: 2.5 },
+                width: '100%',
+                p: '2px',
+              }}
+            >
               {tasks.map((t) => (
-                <Grid item xs={12} sm={6} md={4} key={t.id} sx={{ minWidth: 0, width: '100%', pl: { xs: '0 !important', sm: '16px !important' }, pt: { xs: '16px !important', sm: '16px !important' } }}>
-                  <TaskCard
-                    task={t}
-                    canUpdateStatus={canUpdateStatus}
-                    canUpdateProgress={canUpdateProgress}
-                    onCardClick={handleRowClick}
-                    onStatusChange={handleStatusChange}
-                    onProgressChange={handleProgressChange}
-                  />
-                </Grid>
+                <TaskCard
+                  key={t.id}
+                  task={t}
+                  canUpdateStatus={canUpdateStatus}
+                  canUpdateProgress={canUpdateProgress}
+                  onCardClick={handleRowClick}
+                  onStatusChange={handleStatusChange}
+                  onProgressChange={handleProgressChange}
+                />
               ))}
-            </Grid>
+            </Box>
           )}
           <Paper sx={{ border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden', mt: 1 }}>
             <CommonPagination
@@ -353,7 +386,7 @@ export const TasksPage: React.FC = () => {
               totalCount={totalCount}
               onPageChange={handlePageChange}
               onRowsPerPageChange={handleRowsPerPageChange}
-              rowsPerPageOptions={[10, 20, 50, 100]}
+              rowsPerPageOptions={[9, 18, 27, 45, 90]}
             />
           </Paper>
         </>

@@ -19,7 +19,7 @@ import {
   Button,
 } from '@mui/material';
 import { CommonTable, ColumnDef } from '../components/common/CommonTable';
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { CommonDateRangePicker } from '../components/common/CommonDateRangePicker';
 import {
   History,
   Search,
@@ -33,7 +33,7 @@ import {
   Globe,
   X,
 } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, startOfMonth, endOfMonth } from 'date-fns';
 import { formatDateTime as formatLocalDateTime } from '../utils/dateUtils';
 import { getMediaUrl } from '../utils/fileUtils';
 import { useLoginHistoryQuery, useSessionStatsQuery } from '../hooks/useUserSessions';
@@ -47,8 +47,8 @@ export const LoginHistoryPage: React.FC = () => {
   const [search, setSearch] = useState('');
   const [selectedUser, setSelectedUser] = useState('');
   const [status, setStatus] = useState('');
-  const [fromDate, setFromDate] = useState<Date | null>(null);
-  const [toDate, setToDate] = useState<Date | null>(null);
+  const [fromDate, setFromDate] = useState<Date | null>(() => startOfMonth(new Date()));
+  const [toDate, setToDate] = useState<Date | null>(() => endOfMonth(new Date()));
 
   const debouncedSearch = useDebounce(search, 300);
 
@@ -510,132 +510,110 @@ export const LoginHistoryPage: React.FC = () => {
 
         {/* Filter Controls */}
         <Paper
-          variant="outlined"
           sx={{
-            p: { xs: 2, sm: 2.5 },
+            p: { xs: 1.5, sm: 2 },
             borderRadius: '8px',
-            bgcolor: '#ffffff',
             border: '1px solid #e2e8f0',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
             width: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1.5,
+            flexWrap: 'wrap',
           }}
         >
-          <Grid container spacing={2} alignItems="center">
-            <Grid item xs={12} sm={6} md={3}>
-              <TextField
-                fullWidth
-                size="small"
-                placeholder="Tìm kiếm nhân sự, email, IP..."
-                value={search}
-                onChange={(e) => {
-                  setSearch(e.target.value);
-                  setPageIndex(1);
-                }}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <Search size={18} color="#94a3b8" />
-                    </InputAdornment>
-                  ),
-                }}
-              />
-            </Grid>
+          <TextField
+            size="small"
+            placeholder="Tìm kiếm nhân sự, email, IP..."
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPageIndex(1);
+            }}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Search size={18} color="#94a3b8" />
+                </InputAdornment>
+              ),
+            }}
+            sx={{ width: { xs: '100%', sm: 220, md: 320 } }}
+          />
 
-            <Grid item xs={12} sm={6} md={2.5}>
-              <FormControl fullWidth size="small">
-                <InputLabel>Nhân Viên</InputLabel>
-                <Select
-                  value={selectedUser}
-                  label="Nhân Viên"
-                  onChange={(e) => {
-                    setSelectedUser(e.target.value);
-                    setPageIndex(1);
-                  }}
-                >
-                  <MenuItem value="">Tất cả nhân viên</MenuItem>
-                  {userList.map((u) => (
-                    <MenuItem key={u.id} value={u.id}>
-                      {u.fullName} ({u.roleName || u.role})
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
+          <FormControl size="small" sx={{ width: { xs: '100%', sm: 170, md: 260 } }}>
+            <InputLabel>Nhân Viên</InputLabel>
+            <Select
+              value={selectedUser}
+              label="Nhân Viên"
+              onChange={(e) => {
+                setSelectedUser(e.target.value);
+                setPageIndex(1);
+              }}
+            >
+              <MenuItem value="">Tất cả nhân viên</MenuItem>
+              {userList.map((u) => (
+                <MenuItem key={u.id} value={u.id}>
+                  {u.fullName} ({u.roleName || u.role})
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
 
-            <Grid item xs={12} sm={6} md={2}>
-              <FormControl fullWidth size="small">
-                <InputLabel>Trạng Thái</InputLabel>
-                <Select
-                  value={status}
-                  label="Trạng Thái"
-                  onChange={(e) => {
-                    setStatus(e.target.value);
-                    setPageIndex(1);
-                  }}
-                >
-                  <MenuItem value="">Tất cả trạng thái</MenuItem>
-                  <MenuItem value="Active">Đang hoạt động</MenuItem>
-                  <MenuItem value="LoggedOut">Đã đăng xuất</MenuItem>
-                  <MenuItem value="Expired">Hết hạn phiên</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
+          <FormControl size="small" sx={{ width: { xs: '100%', sm: 140, md: 160 } }}>
+            <InputLabel>Trạng Thái</InputLabel>
+            <Select
+              value={status}
+              label="Trạng Thái"
+              onChange={(e) => {
+                setStatus(e.target.value);
+                setPageIndex(1);
+              }}
+            >
+              <MenuItem value="">Tất cả trạng thái</MenuItem>
+              <MenuItem value="Active">Đang hoạt động</MenuItem>
+              <MenuItem value="LoggedOut">Đã đăng xuất</MenuItem>
+              <MenuItem value="Expired">Hết hạn phiên</MenuItem>
+            </Select>
+          </FormControl>
 
-            <Grid item xs={12} sm={6} md={2.25}>
-              <DatePicker
-                label="Từ Ngày"
-                value={fromDate}
-                onChange={(newVal) => {
-                  setFromDate(newVal);
-                  setPageIndex(1);
-                }}
-                slotProps={{
-                  textField: {
-                    size: 'small',
-                    fullWidth: true,
-                  },
-                }}
-              />
-            </Grid>
-
-            <Grid item xs={12} sm={6} md={2.25}>
-              <DatePicker
-                label="Đến Ngày"
-                value={toDate}
-                onChange={(newVal) => {
-                  setToDate(newVal);
-                  setPageIndex(1);
-                }}
-                slotProps={{
-                  textField: {
-                    size: 'small',
-                    fullWidth: true,
-                  },
-                }}
-              />
-            </Grid>
-          </Grid>
+          <Box sx={{ width: { xs: '100%', sm: 250, md: 350 } }}>
+            <CommonDateRangePicker
+              fromDate={fromDate}
+              toDate={toDate}
+              onChange={(from, to) => {
+                setFromDate(from);
+                setToDate(to);
+                setPageIndex(1);
+              }}
+              placeholder="Lọc theo khoảng ngày..."
+              fullWidth
+            />
+          </Box>
 
           {(search || selectedUser || status || fromDate || toDate) && (
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1.5, pt: 1.5, borderTop: '1px dashed #e2e8f0' }}>
-              <Button
-                variant="text"
-                size="small"
-                color="inherit"
-                startIcon={<X size={15} />}
-                onClick={() => {
-                  setSearch('');
-                  setSelectedUser('');
-                  setStatus('');
-                  setFromDate(null);
-                  setToDate(null);
-                  setPageIndex(1);
-                }}
-                sx={{ textTransform: 'none', color: '#64748b', fontSize: '0.8125rem' }}
-              >
-                Xóa tất cả bộ lọc
-              </Button>
-            </Box>
+            <Button
+              variant="text"
+              size="small"
+              color="inherit"
+              startIcon={<X size={15} />}
+              onClick={() => {
+                setSearch('');
+                setSelectedUser('');
+                setStatus('');
+                setFromDate(null);
+                setToDate(null);
+                setPageIndex(1);
+              }}
+              sx={{
+                textTransform: 'none',
+                color: '#64748b',
+                fontSize: '0.8125rem',
+                fontWeight: 600,
+                whiteSpace: 'nowrap',
+                ml: { xs: 0, sm: 'auto', md: 0 },
+              }}
+            >
+              Xóa tất cả bộ lọc
+            </Button>
           )}
         </Paper>
 

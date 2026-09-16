@@ -22,6 +22,9 @@ import { TaskTreeItem, TaskStatus } from '../../types';
 import { StatusSelect } from '../common';
 import { formatDate } from '../../utils/dateUtils';
 import { getMediaUrl } from '../../utils/fileUtils';
+import { useAuth } from '../../contexts/AuthContext';
+import { usePermission } from '../../hooks/usePermission';
+import { PERMISSIONS } from '../../constants/permissions';
 
 interface ProjectTaskTreeTabProps {
   tasks: TaskTreeItem[];
@@ -58,11 +61,14 @@ export const ProjectTaskTreeTab: React.FC<ProjectTaskTreeTabProps> = memo(({
   onDeleteTask,
   onOpenCreateModal,
 }) => {
-  const allowCreate = canCreateTask || canEditTask;
-  const allowEdit = canEditTask;
-  const allowDelete = canDeleteTask;
-  const allowStatus = canUpdateStatus || canEditTask;
-  const allowProgress = canUpdateProgress || canEditTask;
+  const { user } = useAuth();
+  const { isSuperAdmin, can } = usePermission();
+  const hasManagerRights = isSuperAdmin || can(PERMISSIONS.TASKS_EDIT) || canEditTask;
+  const allowCreate = canCreateTask || canEditTask || hasManagerRights;
+  const allowEdit = hasManagerRights;
+  const allowDelete = canDeleteTask || isSuperAdmin || can(PERMISSIONS.TASKS_DELETE);
+  const hasAnyAction = allowCreate || allowEdit || allowDelete;
+  const totalCols = hasAnyAction ? 7 : 6;
   const tableContainerRef = useRef<HTMLDivElement>(null);
 
   // Flatten the recursive tree into a flat list with depth levels for virtualization
@@ -85,22 +91,23 @@ export const ProjectTaskTreeTab: React.FC<ProjectTaskTreeTabProps> = memo(({
   const rowVirtualizer = useVirtualizer({
     count: flattenedTasks.length,
     getScrollElement: () => tableContainerRef.current,
-    estimateSize: () => 52, // Estimated row height in px
+    estimateSize: () => 48, // Estimated row height in px
     overscan: 10,
   });
 
   const virtualItems = rowVirtualizer.getVirtualItems();
-  const totalSize = rowVirtualizer.getTotalSize();
+  const totalHeight = rowVirtualizer.getTotalSize();
 
   const paddingTop = virtualItems.length > 0 ? virtualItems[0].start : 0;
   const paddingBottom =
-    virtualItems.length > 0 ? totalSize - virtualItems[virtualItems.length - 1].end : 0;
+    virtualItems.length > 0
+      ? totalHeight - virtualItems[virtualItems.length - 1].end
+      : 0;
 
   return (
     <TableContainer
       ref={tableContainerRef}
       component={Paper}
-      elevation={0}
       sx={{
         border: '1px solid #e2e8f0',
         borderRadius: '8px',
@@ -118,13 +125,15 @@ export const ProjectTaskTreeTab: React.FC<ProjectTaskTreeTabProps> = memo(({
             <TableCell sx={{ width: '15%', whiteSpace: 'nowrap', py: 1.5 }}>Thời Gian</TableCell>
             <TableCell sx={{ width: '14%', whiteSpace: 'nowrap', py: 1.5 }}>Trạng Thái</TableCell>
             <TableCell sx={{ width: '15%', whiteSpace: 'nowrap', py: 1.5 }}>Tiến Độ</TableCell>
-            <TableCell align="right" sx={{ whiteSpace: 'nowrap', py: 1.5 }}>Thao Tác</TableCell>
+            {hasAnyAction && (
+              <TableCell align="right" sx={{ whiteSpace: 'nowrap', py: 1.5 }}>Thao Tác</TableCell>
+            )}
           </TableRow>
         </TableHead>
         <TableBody>
           {flattenedTasks.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={7} align="center" sx={{ py: 6, whiteSpace: 'nowrap' }}>
+              <TableCell colSpan={totalCols} align="center" sx={{ py: 6, whiteSpace: 'nowrap' }}>
                 <Typography variant="body2" sx={{ color: '#94a3b8', mb: 1, whiteSpace: 'nowrap' }}>
                   Chưa có hạng mục công việc nào trong dự án này.
                 </Typography>
@@ -144,11 +153,15 @@ export const ProjectTaskTreeTab: React.FC<ProjectTaskTreeTabProps> = memo(({
             <>
               {paddingTop > 0 && (
                 <TableRow>
-                  <TableCell colSpan={7} sx={{ height: `${paddingTop}px`, p: 0, border: 'none' }} />
+                  <TableCell colSpan={totalCols} sx={{ height: `${paddingTop}px`, p: 0, border: 'none' }} />
                 </TableRow>
               )}
               {virtualItems.map((virtualRow) => {
                 const { task, level, stt } = flattenedTasks[virtualRow.index];
+                const isAssigned = Boolean(user?.id && task.assignees?.some((a) => a.userId === user.id || a.id === user.id));
+                const rowAllowStatus = hasManagerRights || (canUpdateStatus && isAssigned) || isAssigned;
+                const rowAllowProgress = hasManagerRights || (canUpdateProgress && isAssigned) || isAssigned;
+
                 return (
                   <TableRow
                     key={task.id}
@@ -244,7 +257,7 @@ export const ProjectTaskTreeTab: React.FC<ProjectTaskTreeTabProps> = memo(({
                       <StatusSelect
                         value={task.status}
                         onChange={(status) => onStatusChange(task.id, status)}
-                        disabled={!allowStatus}
+                        disabled={!rowAllowStatus}
                       />
                     </TableCell>
 
@@ -257,7 +270,7 @@ export const ProjectTaskTreeTab: React.FC<ProjectTaskTreeTabProps> = memo(({
                           min={0}
                           max={100}
                           step={5}
-                          disabled={!allowProgress}
+                          disabled={!rowAllowProgress}
                           onChange={(_, val) => onProgressChange(task.id, val as number)}
                           sx={{ color: task.progress >= 100 ? '#10b981' : '#0284c7', width: 70 }}
                         />
@@ -268,37 +281,39 @@ export const ProjectTaskTreeTab: React.FC<ProjectTaskTreeTabProps> = memo(({
                     </TableCell>
 
                     {/* Actions */}
-                    <TableCell align="right" sx={{ whiteSpace: 'nowrap', py: 1 }}>
-                      <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 0.5 }}>
-                        {allowCreate && (
-                          <Tooltip title="Thêm công việc con">
-                            <IconButton size="small" onClick={() => onCreateSubTask(task.id)}>
-                              <Plus size={15} color="#0284c7" />
-                            </IconButton>
-                          </Tooltip>
-                        )}
-                        {allowEdit && (
-                          <Tooltip title="Chỉnh sửa công việc">
-                            <IconButton size="small" onClick={() => onEditTask(task)}>
-                              <Edit size={15} color="#64748b" />
-                            </IconButton>
-                          </Tooltip>
-                        )}
-                        {allowDelete && (
-                          <Tooltip title="Xóa công việc">
-                            <IconButton size="small" onClick={() => onDeleteTask(task.id)}>
-                              <Trash2 size={15} color="#ef4444" />
-                            </IconButton>
-                          </Tooltip>
-                        )}
-                      </Box>
-                    </TableCell>
+                    {hasAnyAction && (
+                      <TableCell align="right" sx={{ whiteSpace: 'nowrap', py: 1 }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 0.5 }}>
+                          {allowCreate && (
+                            <Tooltip title="Thêm công việc con">
+                              <IconButton size="small" onClick={() => onCreateSubTask(task.id)}>
+                                <Plus size={15} color="#0284c7" />
+                              </IconButton>
+                            </Tooltip>
+                          )}
+                          {allowEdit && (
+                            <Tooltip title="Chỉnh sửa công việc">
+                              <IconButton size="small" onClick={() => onEditTask(task)}>
+                                <Edit size={15} color="#64748b" />
+                              </IconButton>
+                            </Tooltip>
+                          )}
+                          {allowDelete && (
+                            <Tooltip title="Xóa công việc">
+                              <IconButton size="small" onClick={() => onDeleteTask(task.id)}>
+                                <Trash2 size={15} color="#ef4444" />
+                              </IconButton>
+                            </Tooltip>
+                          )}
+                        </Box>
+                      </TableCell>
+                    )}
                   </TableRow>
                 );
               })}
               {paddingBottom > 0 && (
                 <TableRow>
-                  <TableCell colSpan={7} sx={{ height: `${paddingBottom}px`, p: 0, border: 'none' }} />
+                  <TableCell colSpan={totalCols} sx={{ height: `${paddingBottom}px`, p: 0, border: 'none' }} />
                 </TableRow>
               )}
             </>

@@ -37,7 +37,7 @@ interface MenuItemDef {
 }
 
 const allMenuItems: MenuItemDef[] = [
-  { text: 'Tổng Quan', icon: LayoutDashboard, path: '/' },
+  { text: 'Tổng Quan', icon: LayoutDashboard, path: '/', permission: 'dashboard.view' },
   { text: 'Công Trình & Dự Án', icon: FolderKanban, path: '/projects', permission: 'projects.view' },
   { text: 'Công Việc', icon: CheckSquare, path: '/tasks', permission: 'tasks.view' },
   { text: 'Tiến Độ Gantt', icon: BarChart3, path: '/gantt', permission: 'gantt.view' },

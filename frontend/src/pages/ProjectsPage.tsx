@@ -10,6 +10,7 @@ import {
   Grid,
   ToggleButtonGroup,
   ToggleButton,
+  Chip,
 } from '@mui/material';
 import { CommonSelect } from '../components/common/CommonSelect';
 import {
@@ -37,6 +38,7 @@ import { ProjectTable } from '../components/projects/ProjectTable';
 import { ProjectFormModal, ProjectFormData } from '../components/projects/ProjectFormModal';
 import { ConfirmDialog } from '../components/common/ConfirmDialog';
 import { CardGridSkeleton } from '../components/common/CardGridSkeleton';
+import { ScopeChip } from '../components/common/ScopeChip';
 import { TableSkeleton } from '../components/common/TableSkeleton';
 import { CommonPagination } from '../components/common/CommonPagination';
 import { useDebounce } from '../hooks/useDebounce';
@@ -46,6 +48,8 @@ export const ProjectsPage: React.FC = () => {
   const { getParam, getNumberParam, getBooleanParam, setParam, setParams, removeParams } = useAppSearchParams();
   const { can, isSuperAdmin } = usePermission();
 
+  const canViewAllProjects = isSuperAdmin || can(PERMISSIONS.PROJECTS_VIEW_ALL);
+  const canViewProjectScope = canViewAllProjects || can(PERMISSIONS.PROJECTS_VIEW_PROJECT);
   const canCreateProject = isSuperAdmin || can(PERMISSIONS.PROJECTS_CREATE);
   const canEditProject = isSuperAdmin || can(PERMISSIONS.PROJECTS_EDIT);
   const canDeleteProject = isSuperAdmin || can(PERMISSIONS.PROJECTS_DELETE);
@@ -59,7 +63,7 @@ export const ProjectsPage: React.FC = () => {
 
   // Filters & Pagination
   const [page, setPage] = useState(pageParam);
-  const [rowsPerPage, setRowsPerPage] = useState(12);
+  const [rowsPerPage, setRowsPerPage] = useState(viewParam === 'grid' ? 9 : 12);
   const [search, setSearch] = useState(searchParam);
   const [statusFilter, setStatusFilter] = useState(statusParam);
   const [viewMode, setViewMode] = useState<'grid' | 'table'>(viewParam);
@@ -96,6 +100,17 @@ export const ProjectsPage: React.FC = () => {
   const handleViewModeChange = (val: 'grid' | 'table') => {
     setViewMode(val);
     setParam('view', val === 'grid' ? 'grid' : null);
+    if (val === 'grid') {
+      if (rowsPerPage === 12 || rowsPerPage === 6) {
+        setRowsPerPage(9);
+        setPage(0);
+      }
+    } else {
+      if (rowsPerPage === 9) {
+        setRowsPerPage(12);
+        setPage(0);
+      }
+    }
   };
 
   const handlePageChange = (newPage: number) => {
@@ -191,7 +206,7 @@ export const ProjectsPage: React.FC = () => {
   };
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 2, sm: 3 }, width: '100%', maxWidth: '100%', minWidth: 0, overflowX: 'hidden' }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 2, sm: 3 }, width: '100%', maxWidth: '100%', minWidth: 0 }}>
       {/* Header */}
       <Box
         sx={{
@@ -204,11 +219,18 @@ export const ProjectsPage: React.FC = () => {
         }}
       >
         <Box>
-          <Typography variant="h2" sx={{ fontWeight: 800, fontSize: { xs: '1.15rem', sm: '1.35rem' }, color: '#0f172a' }}>
-            Quản Lý Công Trình & Dự Án
-          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap' }}>
+            <Typography variant="h2" sx={{ fontWeight: 800, fontSize: { xs: '1.15rem', sm: '1.35rem' }, color: '#0f172a' }}>
+              Quản Lý Công Trình & Dự Án
+            </Typography>
+            <ScopeChip canViewAll={canViewAllProjects} canViewProject={canViewProjectScope} />
+          </Box>
           <Typography variant="body2" sx={{ color: '#64748b', mt: 0.25, fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
-            Theo dõi tiến độ, phân bổ nguồn lực và trạng thái các dự án xây dựng
+            {canViewAllProjects
+              ? 'Theo dõi tiến độ, phân bổ nguồn lực và trạng thái các dự án xây dựng toàn hệ thống'
+              : canViewProjectScope
+              ? 'Theo dõi các dự án công trình mà bạn được phân công hoặc tham gia quản lý'
+              : 'Theo dõi các dự án công trình do bạn quản lý hoặc được phân công công việc'}
           </Typography>
         </Box>
 
@@ -310,23 +332,34 @@ export const ProjectsPage: React.FC = () => {
           </Paper>
         ) : (
           <>
-            <Grid container spacing={{ xs: 2, sm: 2.5 }} sx={{ width: '100%', m: 0 }}>
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: {
+                  xs: '1fr',
+                  sm: 'repeat(2, 1fr)',
+                  lg: 'repeat(3, 1fr)',
+                },
+                gap: { xs: 2, sm: 2.5 },
+                width: '100%',
+                p: '2px',
+              }}
+            >
               {projects.map((p) => (
-                <Grid item xs={12} md={6} lg={4} key={p.id} sx={{ minWidth: 0, width: '100%', pl: { xs: '0 !important', sm: '20px !important' }, pt: { xs: '16px !important', sm: '20px !important' } }}>
-                  <ProjectCard
-                    project={p}
-                    onCardClick={(id) => navigate(`/projects/${id}`)}
-                    onEditClick={handleOpenEdit}
-                    onDeleteClick={(id, e) => {
-                      e.stopPropagation();
-                      setDeleteId(id);
-                    }}
-                    canEdit={canEditProject}
-                    canDelete={canDeleteProject}
-                  />
-                </Grid>
+                <ProjectCard
+                  key={p.id}
+                  project={p}
+                  onCardClick={(id) => navigate(`/projects/${id}`)}
+                  onEditClick={handleOpenEdit}
+                  onDeleteClick={(id, e) => {
+                    e.stopPropagation();
+                    setDeleteId(id);
+                  }}
+                  canEdit={canEditProject}
+                  canDelete={canDeleteProject}
+                />
               ))}
-            </Grid>
+            </Box>
             <Paper sx={{ border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden', mt: 1 }}>
               <CommonPagination
                 page={page}
@@ -337,7 +370,7 @@ export const ProjectsPage: React.FC = () => {
                   setRowsPerPage(newRowsPerPage);
                   setPage(0);
                 }}
-                rowsPerPageOptions={[6, 12, 24, 48]}
+                rowsPerPageOptions={[9, 18, 27, 45, 90]}
               />
             </Paper>
           </>

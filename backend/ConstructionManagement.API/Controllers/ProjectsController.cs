@@ -13,18 +13,29 @@ public class ProjectsController : BaseApiController
 {
     private readonly IProjectService _projectService;
     private readonly ITaskService _taskService;
+    private readonly IRoleService _roleService;
 
-    public ProjectsController(IProjectService projectService, ITaskService taskService)
+    public ProjectsController(IProjectService projectService, ITaskService taskService, IRoleService roleService)
     {
         _projectService = projectService;
         _taskService = taskService;
+        _roleService = roleService;
     }
 
     [HttpGet]
     [RequirePermission("projects.view")]
     public async Task<IActionResult> GetAll([FromQuery] PaginationParams pagination, [FromQuery] ProjectStatus? status)
     {
-        var result = await _projectService.GetAllProjectsAsync(pagination, status);
+        var canViewAll = User.IsInRole("SuperAdmin");
+        var canViewProject = canViewAll;
+        if (!canViewAll && CurrentUserId != Guid.Empty)
+        {
+            var permissions = await _roleService.GetUserPermissionsAsync(CurrentUserId);
+            canViewAll = permissions.Contains("projects.view_all");
+            canViewProject = canViewAll || permissions.Contains("projects.view_project");
+        }
+
+        var result = await _projectService.GetAllProjectsAsync(pagination, status, CurrentUserId, canViewAll, canViewProject);
         return Ok(result);
     }
 
@@ -32,7 +43,16 @@ public class ProjectsController : BaseApiController
     [RequirePermission("projects.view")]
     public async Task<IActionResult> GetAllList()
     {
-        var result = await _projectService.GetAllProjectsListAsync();
+        var canViewAll = User.IsInRole("SuperAdmin");
+        var canViewProject = canViewAll;
+        if (!canViewAll && CurrentUserId != Guid.Empty)
+        {
+            var permissions = await _roleService.GetUserPermissionsAsync(CurrentUserId);
+            canViewAll = permissions.Contains("projects.view_all");
+            canViewProject = canViewAll || permissions.Contains("projects.view_project");
+        }
+
+        var result = await _projectService.GetAllProjectsListAsync(CurrentUserId, canViewAll, canViewProject);
         return Ok(result);
     }
 

@@ -1,10 +1,13 @@
 import React, { memo, useMemo } from 'react';
+import { Box, Avatar, Typography } from '@mui/material';
 import { CommonTable, ColumnDef } from '../common/CommonTable';
 import { ProgressBar } from '../common/ProgressBar';
+import { getMediaUrl } from '../../utils/fileUtils';
 
 interface WorkloadReportItem {
   userId: string;
   fullName: string;
+  avatarUrl?: string;
   department?: string;
   email: string;
   totalTasks: number;
@@ -34,8 +37,20 @@ export const WorkloadReport: React.FC<WorkloadReportProps> = memo(
           id: 'fullName',
           header: 'Họ Và Tên',
           accessorKey: 'fullName',
-          minWidth: 170,
-          cellSx: { fontWeight: 700, color: '#0f172a' },
+          minWidth: 190,
+          cell: ({ row }) => (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Avatar
+                src={getMediaUrl(row.avatarUrl)}
+                sx={{ width: 26, height: 26, fontSize: '0.72rem', bgcolor: '#e0f2fe', color: '#0369a1', fontWeight: 700 }}
+              >
+                {row.fullName.charAt(0)}
+              </Avatar>
+              <Typography variant="body2" sx={{ fontWeight: 700, color: '#0f172a' }}>
+                {row.fullName}
+              </Typography>
+            </Box>
+          ),
         },
         {
           id: 'department',

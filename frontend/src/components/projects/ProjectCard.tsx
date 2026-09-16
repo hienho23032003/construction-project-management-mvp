@@ -26,6 +26,15 @@ export const ProjectCard: React.FC<ProjectCardProps> = memo(({
   isAdmin = false,
 }) => {
   const showDelete = canDelete || isAdmin;
+  const statusBorderColor = p.status === 'Completed'
+    ? '#10b981'
+    : p.isOverdue
+    ? '#ef4444'
+    : p.status === 'InProgress'
+    ? '#0284c7'
+    : p.status === 'OnHold'
+    ? '#f59e0b'
+    : '#94a3b8';
 
   return (
     <Card
@@ -36,12 +45,17 @@ export const ProjectCard: React.FC<ProjectCardProps> = memo(({
         height: '100%',
         display: 'flex',
         flexDirection: 'column',
+        borderRadius: '10px',
         bgcolor: '#ffffff',
-        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+        border: '1px solid #e2e8f0',
+        borderLeft: `4px solid ${statusBorderColor} !important`,
+        boxShadow: '0 1px 3px 0 rgba(15, 23, 42, 0.04), 0 1px 2px -1px rgba(15, 23, 42, 0.02)',
+        transition: 'all 0.22s cubic-bezier(0.4, 0, 0.2, 1)',
+        boxSizing: 'border-box',
+        overflow: 'hidden',
         '&:hover': {
           transform: 'translateY(-3px)',
-          boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.03)',
-          borderColor: '#bae6fd',
+          boxShadow: '0 12px 24px -4px rgba(15, 23, 42, 0.09), 0 4px 8px -2px rgba(15, 23, 42, 0.04)',
         },
       }}
     >
@@ -51,7 +65,15 @@ export const ProjectCard: React.FC<ProjectCardProps> = memo(({
           <Chip
             label={p.code}
             size="small"
-            sx={{ fontWeight: 800, bgcolor: '#0284c7', color: '#ffffff', fontSize: '0.75rem' }}
+            sx={{
+              fontWeight: 800,
+              bgcolor: '#f0f9ff',
+              color: '#0284c7',
+              border: '1px solid #e0f2fe',
+              borderRadius: '6px',
+              fontSize: '0.72rem',
+              height: 24,
+            }}
           />
           <Box sx={{ display: 'flex', gap: 0.5 }}>
             {canEdit && onEditClick && (
@@ -85,7 +107,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = memo(({
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <User size={15} color="#94a3b8" />
             <Typography variant="caption" sx={{ color: '#475569', fontWeight: 500 }}>
-              Quản lý (PM): <strong>{p.managerName || 'Chưa gán'}</strong>
+              Quản lý (PM): <strong>{p.managerNames?.length ? p.managerNames.join(', ') : (p.managerName || 'Chưa gán')}</strong>
             </Typography>
           </Box>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>

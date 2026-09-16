@@ -3,6 +3,9 @@ import {
   Chip,
   IconButton,
   Typography,
+  Avatar,
+  Box,
+  Tooltip,
 } from '@mui/material';
 import { Edit, Trash2 } from 'lucide-react';
 import { Project } from '../../types';
@@ -10,6 +13,7 @@ import { StatusChip } from '../common/StatusChip';
 import { ProgressBar } from '../common/ProgressBar';
 import { CommonTable, ColumnDef } from '../common/CommonTable';
 import { formatDate } from '../../utils/dateUtils';
+import { getMediaUrl } from '../../utils/fileUtils';
 
 interface ProjectTableProps {
   projects: Project[];
@@ -95,12 +99,61 @@ export const ProjectTable: React.FC<ProjectTableProps> = memo(({
         header: 'Quản Lý (PM)',
         accessorKey: 'managerName',
         sortable: true,
-        minWidth: 150,
-        cell: ({ value }) => (
-          <Typography variant="body2" sx={{ color: '#334155' }}>
-            {value || '—'}
-          </Typography>
-        ),
+        minWidth: 180,
+        cell: ({ value, row }) => {
+          const managers =
+            row.managers && row.managers.length > 0
+              ? row.managers
+              : row.managerNames && row.managerNames.length > 0
+              ? row.managerNames.map((name) => ({ id: name, fullName: name, avatarUrl: undefined }))
+              : value
+              ? [{ id: value, fullName: value, avatarUrl: undefined }]
+              : [];
+
+          if (managers.length === 0) {
+            return (
+              <Typography variant="caption" sx={{ color: '#94a3b8' }}>
+                Chưa gán
+              </Typography>
+            );
+          }
+
+          return (
+            <Box sx={{ display: 'flex', flexWrap: 'nowrap', gap: 0.5, alignItems: 'center' }}>
+              {managers.slice(0, 2).map((m: any) => (
+                <Chip
+                  key={m.id || m.fullName}
+                  avatar={
+                    <Avatar
+                      src={getMediaUrl(m.avatarUrl)}
+                      sx={{ width: 20, height: 20, fontSize: '0.65rem', bgcolor: '#e0f2fe', color: '#0369a1' }}
+                    >
+                      {m.fullName.charAt(0)}
+                    </Avatar>
+                  }
+                  label={m.fullName}
+                  size="small"
+                  sx={{
+                    height: 24,
+                    fontSize: '0.72rem',
+                    whiteSpace: 'nowrap',
+                    bgcolor: '#f8fafc',
+                    border: '1px solid #e2e8f0',
+                  }}
+                />
+              ))}
+              {managers.length > 2 && (
+                <Tooltip title={managers.slice(2).map((m: any) => m.fullName).join(', ')}>
+                  <Chip
+                    label={`+${managers.length - 2}`}
+                    size="small"
+                    sx={{ height: 24, fontSize: '0.72rem', bgcolor: '#f1f5f9' }}
+                  />
+                </Tooltip>
+              )}
+            </Box>
+          );
+        },
       },
       {
         id: 'startDate',
@@ -139,27 +192,31 @@ export const ProjectTable: React.FC<ProjectTableProps> = memo(({
           <ProgressBar value={value} showText={true} height={8} />
         ),
       },
-      {
-        id: 'actions',
-        header: 'Thao Tác',
-        width: 90,
-        minWidth: 90,
-        align: 'right',
-        cell: ({ row }) => (
-          <span onClick={(e) => e.stopPropagation()}>
-            {canEdit && onEditClick && (
-              <IconButton size="small" onClick={(e) => onEditClick(row, e)}>
-                <Edit size={16} color="#64748b" />
-              </IconButton>
-            )}
-            {showDelete && onDeleteClick && (
-              <IconButton size="small" onClick={(e) => onDeleteClick(row.id, e)}>
-                <Trash2 size={16} color="#ef4444" />
-              </IconButton>
-            )}
-          </span>
-        ),
-      },
+      ...((canEdit && onEditClick) || (showDelete && onDeleteClick)
+        ? [
+            {
+              id: 'actions',
+              header: 'Thao Tác',
+              width: 90,
+              minWidth: 90,
+              align: 'right' as const,
+              cell: ({ row }: { row: Project }) => (
+                <span onClick={(e) => e.stopPropagation()}>
+                  {canEdit && onEditClick && (
+                    <IconButton size="small" onClick={(e) => onEditClick(row, e)}>
+                      <Edit size={16} color="#64748b" />
+                    </IconButton>
+                  )}
+                  {showDelete && onDeleteClick && (
+                    <IconButton size="small" onClick={(e) => onDeleteClick(row.id, e)}>
+                      <Trash2 size={16} color="#ef4444" />
+                    </IconButton>
+                  )}
+                </span>
+              ),
+            },
+          ]
+        : []),
     ],
     [canEdit, showDelete, onDeleteClick, onEditClick]
   );

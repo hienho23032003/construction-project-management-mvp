@@ -31,6 +31,7 @@ import { TaskComment } from '../../../types';
 import { useAuth } from '../../../contexts/AuthContext';
 import { formatDateTime } from '../../../utils/dateUtils';
 import { getMediaUrl } from '../../../utils/fileUtils';
+import { ImagePreviewModal } from '../../common/ImagePreviewModal';
 
 interface TaskCommentsTabProps {
   comments: TaskComment[];
@@ -92,7 +93,7 @@ export const TaskCommentsTab: React.FC<TaskCommentsTabProps> = ({
 }) => {
   const { user } = useAuth();
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
+  const [previewImage, setPreviewImage] = useState<{ url: string; fileName?: string } | null>(null);
 
   const imageInputRef = useRef<HTMLInputElement>(null);
   const docInputRef = useRef<HTMLInputElement>(null);
@@ -264,7 +265,12 @@ export const TaskCommentsTab: React.FC<TaskCommentsTabProps> = ({
                         {imageAttachments.map((img) => (
                           <Box
                             key={img.id}
-                            onClick={() => setPreviewImageUrl(getMediaUrl(img.filePath) || '')}
+                            onClick={() =>
+                              setPreviewImage({
+                                url: getMediaUrl(img.filePath) || '',
+                                fileName: img.fileName,
+                              })
+                            }
                             sx={{
                               position: 'relative',
                               width: imageAttachments.length === 1 ? '100%' : 110,
@@ -579,53 +585,13 @@ export const TaskCommentsTab: React.FC<TaskCommentsTabProps> = ({
         </Paper>
       )}
 
-      {/* Image Lightbox Preview Dialog */}
-      <Dialog
-        open={Boolean(previewImageUrl)}
-        onClose={() => setPreviewImageUrl(null)}
-        maxWidth="lg"
-        PaperProps={{
-          sx: {
-            bgcolor: 'transparent',
-            boxShadow: 'none',
-            overflow: 'hidden',
-            p: 0,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-          },
-        }}
-      >
-        <Box sx={{ position: 'relative', maxWidth: '90vw', maxHeight: '90vh' }}>
-          <IconButton
-            onClick={() => setPreviewImageUrl(null)}
-            sx={{
-              position: 'absolute',
-              top: 8,
-              right: 8,
-              bgcolor: 'rgba(0, 0, 0, 0.65)',
-              color: '#ffffff',
-              zIndex: 10,
-              '&:hover': { bgcolor: 'rgba(0, 0, 0, 0.85)' },
-            }}
-          >
-            <X size={20} />
-          </IconButton>
-          {previewImageUrl && (
-            <img
-              src={previewImageUrl}
-              alt="Preview"
-              style={{
-                maxWidth: '100%',
-                maxHeight: '85vh',
-                objectFit: 'contain',
-                borderRadius: '8px',
-                boxShadow: '0 20px 40px rgba(0,0,0,0.5)',
-              }}
-            />
-          )}
-        </Box>
-      </Dialog>
+      {/* Image Lightbox Preview Modal with Zoom, Rotate, Download */}
+      <ImagePreviewModal
+        open={Boolean(previewImage)}
+        imageUrl={previewImage?.url || null}
+        fileName={previewImage?.fileName}
+        onClose={() => setPreviewImage(null)}
+      />
     </Box>
   );
 };

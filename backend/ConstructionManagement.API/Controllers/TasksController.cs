@@ -29,7 +29,18 @@ public class TasksController : BaseApiController
         [FromQuery] TaskItemStatus? status,
         [FromQuery] PriorityLevel? priority)
     {
-        var result = await _taskService.GetAllTasksAsync(pagination, projectId, assigneeId, status, priority);
+        var isSuperAdmin = User.IsInRole("SuperAdmin");
+        var canViewAll = isSuperAdmin;
+        var canViewProject = isSuperAdmin;
+
+        if (!isSuperAdmin && CurrentUserId != Guid.Empty)
+        {
+            var permissions = await _roleService.GetUserPermissionsAsync(CurrentUserId);
+            canViewAll = permissions.Contains("tasks.view_all");
+            canViewProject = canViewAll || permissions.Contains("tasks.view_project");
+        }
+
+        var result = await _taskService.GetAllTasksAsync(pagination, projectId, assigneeId, status, priority, CurrentUserId, canViewAll, canViewProject);
         return Ok(result);
     }
 
@@ -69,9 +80,8 @@ public class TasksController : BaseApiController
         return Ok(result);
     }
 
-    // Direct Status Update (Employee / Supervisor / Manager)
+    // Direct Status Update (Assigned employee or Manager/Admin)
     [HttpPatch("{id}/status")]
-    [RequirePermission("tasks.update_status")]
     public async Task<IActionResult> UpdateStatus(Guid id, [FromBody] UpdateTaskStatusRequest request)
     {
         var result = await _taskService.UpdateStatusAsync(id, request, CurrentUserId);
@@ -79,9 +89,8 @@ public class TasksController : BaseApiController
         return Ok(result);
     }
 
-    // Direct Progress Update (Employee / Supervisor / Manager)
+    // Direct Progress Update (Assigned employee or Manager/Admin)
     [HttpPatch("{id}/progress")]
-    [RequirePermission("tasks.update_progress")]
     public async Task<IActionResult> UpdateProgress(Guid id, [FromBody] UpdateTaskProgressRequest request)
     {
         var result = await _taskService.UpdateProgressAsync(id, request, CurrentUserId);
@@ -109,20 +118,23 @@ public class TasksController : BaseApiController
         [FromQuery] DateTime? fromDate,
         [FromQuery] DateTime? toDate)
     {
-        var canViewAll = User.IsInRole("SuperAdmin");
-        if (!canViewAll && CurrentUserId != Guid.Empty)
+        var isSuperAdmin = User.IsInRole("SuperAdmin");
+        var canViewAll = isSuperAdmin;
+        var canViewProject = isSuperAdmin;
+
+        if (!isSuperAdmin && CurrentUserId != Guid.Empty)
         {
             var permissions = await _roleService.GetUserPermissionsAsync(CurrentUserId);
             canViewAll = permissions.Contains("gantt.view_all");
+            canViewProject = canViewAll || permissions.Contains("gantt.view_project");
         }
 
-        var result = await _taskService.GetGanttDataAsync(projectId, status, activeOnly, fromDate, toDate, CurrentUserId, canViewAll);
+        var result = await _taskService.GetGanttDataAsync(projectId, status, activeOnly, fromDate, toDate, CurrentUserId, canViewAll, canViewProject);
         return Ok(result);
     }
 
     // Comments
     [HttpGet("{id}/comments")]
-    [RequirePermission("tasks.view")]
     public async Task<IActionResult> GetComments(Guid id)
     {
         var result = await _taskService.GetTaskCommentsAsync(id);
@@ -130,7 +142,6 @@ public class TasksController : BaseApiController
     }
 
     [HttpPost("{id}/comments")]
-    [RequirePermission("tasks.comment")]
     public async Task<IActionResult> AddComment(Guid id, [FromBody] CreateCommentRequest request)
     {
         var result = await _taskService.AddCommentAsync(id, request, CurrentUserId);
@@ -139,7 +150,6 @@ public class TasksController : BaseApiController
     }
 
     [HttpPost("{id}/comments-with-attachments")]
-    [RequirePermission("tasks.comment")]
     public async Task<IActionResult> AddCommentWithAttachments(Guid id, [FromForm] CreateCommentWithFilesRequest request)
     {
         var result = await _taskService.AddCommentWithAttachmentsAsync(id, request, CurrentUserId);
@@ -148,7 +158,6 @@ public class TasksController : BaseApiController
     }
 
     [HttpDelete("comments/{commentId}")]
-    [RequirePermission("tasks.comment")]
     public async Task<IActionResult> DeleteComment(Guid commentId)
     {
         var result = await _taskService.DeleteCommentAsync(commentId, CurrentUserId);

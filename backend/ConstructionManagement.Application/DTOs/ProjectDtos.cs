@@ -2,6 +2,14 @@ using ConstructionManagement.Domain.Enums;
 
 namespace ConstructionManagement.Application.DTOs;
 
+public class ProjectManagerUserDto
+{
+    public Guid Id { get; set; }
+    public string FullName { get; set; } = string.Empty;
+    public string? AvatarUrl { get; set; }
+    public string? Email { get; set; }
+}
+
 public class ProjectDto
 {
     public Guid Id { get; set; }
@@ -11,6 +19,9 @@ public class ProjectDto
     public string? Location { get; set; }
     public Guid? ManagerId { get; set; }
     public string? ManagerName { get; set; }
+    public List<Guid> ManagerIds { get; set; } = new();
+    public List<string> ManagerNames { get; set; } = new();
+    public List<ProjectManagerUserDto> Managers { get; set; } = new();
     public DateTime StartDate { get; set; }
     public DateTime PlannedEndDate { get; set; }
     public DateTime? ActualEndDate { get; set; }
@@ -41,6 +52,7 @@ public class CreateProjectRequest
     public string? Description { get; set; }
     public string? Location { get; set; }
     public Guid? ManagerId { get; set; }
+    public List<Guid>? ManagerIds { get; set; }
     public DateTime StartDate { get; set; }
     public DateTime PlannedEndDate { get; set; }
     public PriorityLevel Priority { get; set; } = PriorityLevel.Medium;
@@ -53,6 +65,7 @@ public class UpdateProjectRequest
     public string? Description { get; set; }
     public string? Location { get; set; }
     public Guid? ManagerId { get; set; }
+    public List<Guid>? ManagerIds { get; set; }
     public DateTime StartDate { get; set; }
     public DateTime PlannedEndDate { get; set; }
     public DateTime? ActualEndDate { get; set; }
