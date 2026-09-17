@@ -5,28 +5,23 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Button,
-  TextField,
   FormControl,
   InputLabel,
   Select,
   MenuItem,
   Grid,
-  Chip,
-  Autocomplete,
   IconButton,
   Typography,
-  Box,
 } from '@mui/material';
 import { X } from 'lucide-react';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { format } from 'date-fns';
 import { PriorityLevel, TaskItem, TaskStatus, User } from '../../types';
 import { useProjectMembersQuery, useProjectsListQuery } from '../../hooks/useProjects';
+import { useUsersListQuery } from '../../hooks/useEmployees';
 import { usePresenceHeartbeat } from '../../hooks/usePresence';
 import { CoEditingWarningBanner } from '../presence/ProjectPresenceAvatars';
-import { CommonButton, CommonInput } from '../common';
-
+import { CommonButton, CommonInput, UserMultiSelect } from '../common';
 import { useAuth } from '../../contexts/AuthContext';
 
 export interface TaskFormData {
@@ -79,19 +74,32 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
     }
   }, [projectId, editingTask, allProjects, selectedProjId]);
 
+  const { data: allUsers = [] } = useUsersListQuery();
   const targetProjectId = projectId || editingTask?.projectId || selectedProjId;
   const { data: projectMembers = [] } = useProjectMembersQuery(targetProjectId || undefined);
 
-  // Filter selectable assignees: Only show members belonging to the current project, or restrict to self if onlySelfAssign
+  // Filter selectable assignees: Only show members belonging to the current project, with exact dynamic roles from API
   const selectableUsers = useMemo(() => {
+    const userPool = allUsers.length > 0 ? allUsers : users;
+
     if (onlySelfAssign && currentUser) {
+      const u = userPool.find((usr) => usr.id === currentUser.id);
+      const roleName = (u?.roles && u.roles.length > 0 ? u.roles[0] : null)
+        || u?.roleName
+        || (currentUser.roles && currentUser.roles.length > 0 ? currentUser.roles[0] : null)
+        || currentUser.roleName
+        || currentUser.role
+        || 'Nhân viên';
+
       return [{
         id: currentUser.id,
         fullName: currentUser.fullName,
         email: currentUser.email,
-        department: currentUser.department || '',
-        role: currentUser.role || 'Employee',
-        roleName: 'Bản thân',
+        department: currentUser.department || u?.department || '',
+        avatarUrl: currentUser.avatarUrl || u?.avatarUrl,
+        role: currentUser.role || u?.role || 'Employee',
+        roleName,
+        roles: u?.roles || currentUser.roles || (roleName ? [roleName] : []),
         isActive: true,
         createdAt: '',
       }];
@@ -104,13 +112,24 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
       // 1. Add members from projectMembers query
       if (projectMembers && projectMembers.length > 0) {
         projectMembers.forEach((m) => {
+          const u = userPool.find((usr) => usr.id === m.userId);
+          const resolvedRole = (u?.roles && u.roles.length > 0 ? u.roles[0] : null)
+            || u?.roleName
+            || (m.roles && m.roles.length > 0 ? m.roles[0] : null)
+            || m.roleName
+            || u?.role
+            || m.roleInProject
+            || 'Nhân viên';
+
           memberMap.set(m.userId, {
             id: m.userId,
-            fullName: m.fullName,
-            email: m.email,
-            department: m.department || '',
-            role: 'Employee',
-            roleName: m.roleInProject || 'Thành viên dự án',
+            fullName: m.fullName || u?.fullName || 'Nhân sự',
+            email: m.email || u?.email || '',
+            department: m.department || u?.department || '',
+            avatarUrl: m.avatarUrl || u?.avatarUrl,
+            role: u?.role || 'Employee',
+            roleName: resolvedRole,
+            roles: u?.roles || m.roles || (resolvedRole ? [resolvedRole] : []),
             isActive: true,
             createdAt: m.joinedAt,
           });
@@ -122,14 +141,21 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
         editingTask.assignees.forEach((a) => {
           const uId = a.userId || a.id;
           if (uId && !memberMap.has(uId)) {
-            const u = users.find((user) => user.id === uId);
+            const u = userPool.find((user) => user.id === uId);
+            const resolvedRole = (u?.roles && u.roles.length > 0 ? u.roles[0] : null)
+              || u?.roleName
+              || u?.role
+              || 'Nhân viên';
+
             memberMap.set(uId, {
               id: uId,
               fullName: a.fullName || u?.fullName || '',
               email: a.email || u?.email || '',
               department: a.department || u?.department || '',
+              avatarUrl: u?.avatarUrl,
               role: u?.role || 'Employee',
-              roleName: 'Đã phân công',
+              roleName: resolvedRole,
+              roles: u?.roles || (resolvedRole ? [resolvedRole] : []),
               isActive: true,
               createdAt: a.assignedAt || '',
             });
@@ -141,8 +167,8 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
     }
 
     // Only if no project was specified at all do we fall back to all users
-    return users;
-  }, [targetProjectId, projectMembers, users, editingTask, onlySelfAssign, currentUser]);
+    return userPool.length > 0 ? userPool : users;
+  }, [targetProjectId, projectMembers, users, allUsers, editingTask, onlySelfAssign, currentUser]);
 
   const {
     control,
@@ -462,55 +488,15 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
             name="assigneeIds"
             control={control}
             render={({ field }) => (
-              <Autocomplete
-                multiple
+              <UserMultiSelect
+                users={selectableUsers}
+                value={field.value || []}
+                onChange={field.onChange}
+                label="Người Thực Hiện"
+                placeholder="Chọn nhân sự trong dự án..."
                 disabled={onlySelfAssign}
-                options={selectableUsers}
-                getOptionLabel={(option) =>
-                  typeof option === 'string'
-                    ? option
-                    : `${option.fullName} (${option.roleName || option.role}${option.department ? ` - ${option.department}` : ''})`
-                }
-                value={selectableUsers.filter((u) => field.value?.includes(u.id))}
-                onChange={(_, newValue) => field.onChange(newValue.map((u) => (typeof u === 'string' ? u : u.id)))}
-                isOptionEqualToValue={(option, value) => option.id === value.id}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="Người Thực Hiện"
-                    placeholder={field.value?.length ? '' : 'Chọn nhân sự trong dự án...'}
-                    helperText={onlySelfAssign ? 'Chỉ được tạo công việc cho chính bạn (Do không có quyền Xem toàn bộ)' : undefined}
-                  />
-                )}
-                renderTags={(value, getTagProps) =>
-                  value.map((option, index) => (
-                    <Chip
-                      {...getTagProps({ index })}
-                      key={option.id}
-                      label={option.fullName}
-                      size="small"
-                      sx={{
-                        m: '2px',
-                        height: 26,
-                        fontSize: '0.75rem',
-                        fontWeight: 600,
-                        bgcolor: '#e0f2fe',
-                        color: '#0369a1',
-                        '& .MuiChip-deleteIcon': {
-                          color: '#0284c7',
-                          '&:hover': { color: '#0369a1' },
-                        },
-                      }}
-                    />
-                  ))
-                }
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    flexWrap: 'wrap',
-                    gap: '4px',
-                    p: '6px 10px',
-                  },
-                }}
+                helperText={onlySelfAssign ? 'Chỉ được tạo công việc cho chính bạn (Do không có quyền Xem toàn bộ)' : undefined}
+                defaultRoleFallback="Thành viên"
               />
             )}
           />

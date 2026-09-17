@@ -37,6 +37,9 @@ public class TaskDto
 
     public List<TaskAssigneeDto> Assignees { get; set; } = new List<TaskAssigneeDto>();
     public List<TaskDependencyDto> Dependencies { get; set; } = new List<TaskDependencyDto>();
+    public List<TaskChecklistItemDto> ChecklistItems { get; set; } = new List<TaskChecklistItemDto>();
+    public int ChecklistTotalCount { get; set; }
+    public int ChecklistCompletedCount { get; set; }
     public int SubTaskCount { get; set; }
     public int CommentCount { get; set; }
     public DateTime CreatedAt { get; set; }
@@ -67,16 +70,16 @@ public class CreateTaskRequest
 
 public class UpdateTaskRequest
 {
-    public string Name { get; set; } = string.Empty;
+    public string? Name { get; set; }
     public string? Description { get; set; }
-    public TaskItemStatus Status { get; set; }
-    public PriorityLevel Priority { get; set; }
-    public DateTime StartDate { get; set; }
-    public DateTime PlannedEndDate { get; set; }
+    public TaskItemStatus? Status { get; set; }
+    public PriorityLevel? Priority { get; set; }
+    public DateTime? StartDate { get; set; }
+    public DateTime? PlannedEndDate { get; set; }
     public DateTime? ActualEndDate { get; set; }
-    public double Progress { get; set; }
-    public double Weight { get; set; } = 1.0;
-    public int SortOrder { get; set; }
+    public double? Progress { get; set; }
+    public double? Weight { get; set; }
+    public int? SortOrder { get; set; }
     public Guid? ParentId { get; set; }
     public List<Guid>? AssigneeUserIds { get; set; }
     public List<Guid>? AssigneeIds { get; set; }
@@ -167,3 +170,34 @@ public class CreateDependencyRequest
     public Guid SuccessorTaskId { get; set; }
     public DependencyType DependencyType { get; set; } = DependencyType.FinishToStart;
 }
+
+public class TaskChecklistItemDto
+{
+    public Guid Id { get; set; }
+    public Guid TaskId { get; set; }
+    public string Title { get; set; } = string.Empty;
+    public bool IsCompleted { get; set; }
+    public int SortOrder { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime? CompletedAt { get; set; }
+}
+
+public class CreateChecklistItemRequest
+{
+    public string Title { get; set; } = string.Empty;
+    public bool IsCompleted { get; set; } = false;
+    public int SortOrder { get; set; } = 0;
+}
+
+public class UpdateChecklistItemRequest
+{
+    public string? Title { get; set; }
+    public bool? IsCompleted { get; set; }
+    public int? SortOrder { get; set; }
+}
+
+public class BatchChecklistRequest
+{
+    public List<CreateChecklistItemRequest> Items { get; set; } = new();
+}
+

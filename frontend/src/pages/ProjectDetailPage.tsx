@@ -46,6 +46,7 @@ import {
   useUpdateTaskStatusMutation,
   useUpdateTaskProgressMutation,
   useUpdateTaskPriorityMutation,
+  useUpdateTaskDatesMutation,
   useDeleteTaskMutation,
   useGanttDataQuery,
   useTaskDetailQuery,
@@ -168,6 +169,7 @@ export const ProjectDetailPage: React.FC = () => {
   const updateStatusMutation = useUpdateTaskStatusMutation();
   const updateProgressMutation = useUpdateTaskProgressMutation();
   const updatePriorityMutation = useUpdateTaskPriorityMutation();
+  const updateDatesMutation = useUpdateTaskDatesMutation();
   const deleteTaskMutation = useDeleteTaskMutation();
   const addMemberMutation = useAddProjectMemberMutation(id);
   const removeMemberMutation = useRemoveProjectMemberMutation(id);
@@ -361,9 +363,12 @@ export const ProjectDetailPage: React.FC = () => {
             canUpdateStatus={canUpdateStatus}
             canUpdateProgress={canUpdateProgress}
             canUpdatePriority={canEditTask || canUpdateStatus}
+            onTaskNameChange={(taskId, name) => updateTaskMutation.mutate({ id: taskId, data: { name } })}
             onStatusChange={(taskId, status) => updateStatusMutation.mutate({ id: taskId, status })}
             onProgressChange={(taskId, progress) => updateProgressMutation.mutate({ id: taskId, progress })}
             onPriorityChange={(taskId, priority) => updatePriorityMutation.mutate({ id: taskId, priority })}
+            onAssigneesChange={(taskId, assigneeUserIds) => updateTaskMutation.mutate({ id: taskId, data: { assigneeUserIds } })}
+            onDatesChange={(taskId, startDate, plannedEndDate) => updateDatesMutation.mutate({ id: taskId, startDate, plannedEndDate })}
             onCreateSubTask={handleOpenCreateTask}
             onEditTask={handleOpenEditTask}
             onDeleteTask={(taskId) => setDeleteTaskId(taskId)}

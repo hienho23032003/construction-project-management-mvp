@@ -254,6 +254,7 @@ public class TaskService : ITaskService
             .Include(t => t.Comments).ThenInclude(c => c.User)
             .Include(t => t.Predecessors).ThenInclude(p => p.PredecessorTask)
             .Include(t => t.Successors).ThenInclude(s => s.SuccessorTask)
+            .Include(t => t.ChecklistItems)
             .AsNoTracking()
             .FirstOrDefaultAsync(t => t.Id == id);
 
@@ -263,6 +264,19 @@ public class TaskService : ITaskService
         }
 
         var subtaskCount = await _context.Tasks.CountAsync(st => st.ParentId == t.Id);
+        var checklistDtos = t.ChecklistItems
+            .OrderBy(c => c.SortOrder)
+            .ThenBy(c => c.CreatedAt)
+            .Select(c => new TaskChecklistItemDto
+            {
+                Id = c.Id,
+                TaskId = c.TaskId,
+                Title = c.Title,
+                IsCompleted = c.IsCompleted,
+                SortOrder = c.SortOrder,
+                CreatedAt = c.CreatedAt,
+                CompletedAt = c.CompletedAt
+            }).ToList();
 
         var dto = new TaskDto
         {
@@ -301,6 +315,9 @@ public class TaskService : ITaskService
                 SuccessorTaskName = t.Name,
                 DependencyType = p.DependencyType
             }).ToList(),
+            ChecklistItems = checklistDtos,
+            ChecklistTotalCount = checklistDtos.Count,
+            ChecklistCompletedCount = checklistDtos.Count(c => c.IsCompleted),
             SubTaskCount = subtaskCount,
             CommentCount = t.Comments.Count,
             CreatedAt = t.CreatedAt
@@ -399,87 +416,158 @@ public class TaskService : ITaskService
             return ApiResponse<TaskDto>.Fail("Không tìm thấy công việc.");
         }
 
+        var oldName = task.Name;
+        var oldDescription = task.Description;
+        var oldPriority = task.Priority;
+        var oldStartDate = task.StartDate;
+        var oldPlannedEndDate = task.PlannedEndDate;
         var oldStatus = task.Status;
         var oldProgress = task.Progress;
         var oldParentId = task.ParentId;
+        var oldWeight = task.Weight;
 
-        task.Name = request.Name.Trim();
-        task.Description = request.Description;
-        task.Status = request.Status;
-        task.Priority = request.Priority;
-        task.StartDate = request.StartDate;
-        task.PlannedEndDate = request.PlannedEndDate;
-        task.ActualEndDate = request.ActualEndDate;
-        task.Progress = request.Progress;
-        task.Weight = request.Weight > 0 ? request.Weight : 1.0;
-        task.SortOrder = request.SortOrder;
-        task.ParentId = request.ParentId;
+        var nameChanged = false;
+        var descriptionChanged = false;
+        var priorityChanged = false;
+        var datesChanged = false;
+        var statusChanged = false;
+        var progressChanged = false;
+
+        if (!string.IsNullOrWhiteSpace(request.Name) && request.Name.Trim() != oldName)
+        {
+            task.Name = request.Name.Trim();
+            nameChanged = true;
+        }
+        if (request.Description != null && request.Description != oldDescription)
+        {
+            task.Description = request.Description;
+            descriptionChanged = true;
+        }
+        if (request.Status.HasValue && request.Status.Value != oldStatus)
+        {
+            task.Status = request.Status.Value;
+            statusChanged = true;
+        }
+        if (request.Priority.HasValue && request.Priority.Value != oldPriority)
+        {
+            task.Priority = request.Priority.Value;
+            priorityChanged = true;
+        }
+        if (request.StartDate.HasValue && request.StartDate.Value != default && request.StartDate.Value.Date != oldStartDate.Date)
+        {
+            task.StartDate = request.StartDate.Value;
+            datesChanged = true;
+        }
+        if (request.PlannedEndDate.HasValue && request.PlannedEndDate.Value != default && request.PlannedEndDate.Value.Date != oldPlannedEndDate.Date)
+        {
+            task.PlannedEndDate = request.PlannedEndDate.Value;
+            datesChanged = true;
+        }
+        if (request.ActualEndDate.HasValue)
+        {
+            task.ActualEndDate = request.ActualEndDate.Value;
+        }
+        if (request.Progress.HasValue && Math.Abs(request.Progress.Value - oldProgress) > 0.01)
+        {
+            task.Progress = request.Progress.Value;
+            progressChanged = true;
+        }
+        if (request.Weight.HasValue && request.Weight.Value > 0)
+        {
+            task.Weight = request.Weight.Value;
+        }
+        if (request.SortOrder.HasValue)
+        {
+            task.SortOrder = request.SortOrder.Value;
+        }
+        if (request.ParentId.HasValue)
+        {
+            task.ParentId = request.ParentId.Value == Guid.Empty ? null : request.ParentId.Value;
+        }
+
         task.UpdatedById = currentUserId;
         task.UpdatedAt = DateTime.UtcNow;
 
-        if (request.Status == TaskItemStatus.Completed)
+        if (request.Status.HasValue)
         {
-            task.Progress = 100.0;
-            task.ActualEndDate = request.ActualEndDate ?? (oldStatus == TaskItemStatus.Completed ? task.ActualEndDate : DateTime.UtcNow);
-        }
-        else if (request.Status == TaskItemStatus.NotStarted)
-        {
-            task.Progress = 0.0;
-            task.ActualEndDate = null;
-        }
-        else if (request.Status == TaskItemStatus.InProgress)
-        {
-            task.ActualEndDate = null;
-            if (task.Progress >= 100.0)
+            if (request.Status.Value == TaskItemStatus.Completed)
             {
-                task.Progress = 50.0;
+                task.Progress = 100.0;
+                task.ActualEndDate = request.ActualEndDate ?? (oldStatus == TaskItemStatus.Completed ? task.ActualEndDate : DateTime.UtcNow);
             }
-            else if (task.Progress == 0.0)
+            else if (request.Status.Value == TaskItemStatus.NotStarted)
             {
-                task.Progress = 10.0;
+                task.Progress = 0.0;
+                task.ActualEndDate = null;
             }
-        }
-        else if (request.Status == TaskItemStatus.OnHold)
-        {
-            task.ActualEndDate = null;
-            if (task.Progress >= 100.0)
+            else if (request.Status.Value == TaskItemStatus.InProgress)
             {
-                task.Progress = 50.0;
+                task.ActualEndDate = null;
+                if (task.Progress >= 100.0)
+                {
+                    task.Progress = 50.0;
+                }
+                else if (task.Progress == 0.0)
+                {
+                    task.Progress = 10.0;
+                }
+            }
+            else if (request.Status.Value == TaskItemStatus.OnHold)
+            {
+                task.ActualEndDate = null;
+                if (task.Progress >= 100.0)
+                {
+                    task.Progress = 50.0;
+                }
             }
         }
 
         // Update Assignees
         var assigneesToUpdate = request.AssigneeUserIds ?? request.AssigneeIds;
         var newlyAssignedUserIds = new List<Guid>();
+        var assigneesChanged = false;
+        string oldAssigneeNamesStr = "";
+        string newAssigneeNamesStr = "";
 
         if (assigneesToUpdate != null)
         {
             var newAssigneeIds = assigneesToUpdate.Distinct().ToList();
             var existingAssignees = await _context.TaskAssignees
+                .Include(a => a.User)
                 .Where(a => a.TaskId == task.Id)
                 .ToListAsync();
 
             var currentAssigneeUserIds = existingAssignees.Select(a => a.UserId).ToHashSet();
+            oldAssigneeNamesStr = string.Join(", ", existingAssignees.Select(a => a.User?.FullName ?? "N/A"));
 
-            // Remove unassigned
-            var toRemove = existingAssignees.Where(a => !newAssigneeIds.Contains(a.UserId)).ToList();
-            if (toRemove.Any())
+            // Check if there's any difference
+            if (!currentAssigneeUserIds.SetEquals(newAssigneeIds))
             {
-                _context.TaskAssignees.RemoveRange(toRemove);
-            }
+                assigneesChanged = true;
 
-            // Add newly assigned
-            var toAdd = newAssigneeIds.Where(uId => !currentAssigneeUserIds.Contains(uId)).ToList();
-            foreach (var uId in toAdd)
-            {
-                _context.TaskAssignees.Add(new TaskAssignee
+                // Remove unassigned
+                var toRemove = existingAssignees.Where(a => !newAssigneeIds.Contains(a.UserId)).ToList();
+                if (toRemove.Any())
                 {
-                    Id = Guid.NewGuid(),
-                    TaskId = task.Id,
-                    UserId = uId,
-                    AssignedAt = DateTime.UtcNow
-                });
-                newlyAssignedUserIds.Add(uId);
+                    _context.TaskAssignees.RemoveRange(toRemove);
+                }
+
+                // Add newly assigned
+                var toAdd = newAssigneeIds.Where(uId => !currentAssigneeUserIds.Contains(uId)).ToList();
+                foreach (var uId in toAdd)
+                {
+                    _context.TaskAssignees.Add(new TaskAssignee
+                    {
+                        Id = Guid.NewGuid(),
+                        TaskId = task.Id,
+                        UserId = uId,
+                        AssignedAt = DateTime.UtcNow
+                    });
+                    newlyAssignedUserIds.Add(uId);
+                }
+
+                var newUsers = await _context.Users.Where(u => newAssigneeIds.Contains(u.Id)).ToListAsync();
+                newAssigneeNamesStr = string.Join(", ", newUsers.Select(u => u.FullName));
             }
         }
 
@@ -505,15 +593,117 @@ public class TaskService : ITaskService
             }
         }
 
-        await _activityLogService.LogAsync(
-            currentUserId,
-            ActivityAction.TaskUpdated,
-            $"Cập nhật công việc '{task.Name}'",
-            projectId: task.ProjectId,
-            taskId: task.Id,
-            oldValue: $"{oldStatus} ({oldProgress}%)",
-            newValue: $"{task.Status} ({task.Progress}%)"
-        );
+        // Detailed Activity Logging for every changed attribute
+        var anyLogged = false;
+
+        if (nameChanged)
+        {
+            await _activityLogService.LogAsync(
+                currentUserId,
+                ActivityAction.TaskUpdated,
+                $"Đổi tên công việc '{oldName}' thành '{task.Name}'",
+                projectId: task.ProjectId,
+                taskId: task.Id,
+                oldValue: oldName,
+                newValue: task.Name
+            );
+            anyLogged = true;
+        }
+
+        if (assigneesChanged)
+        {
+            await _activityLogService.LogAsync(
+                currentUserId,
+                ActivityAction.TaskAssigned,
+                $"Thay đổi người thực hiện công việc '{task.Name}'",
+                projectId: task.ProjectId,
+                taskId: task.Id,
+                oldValue: string.IsNullOrWhiteSpace(oldAssigneeNamesStr) ? "Chưa giao" : oldAssigneeNamesStr,
+                newValue: string.IsNullOrWhiteSpace(newAssigneeNamesStr) ? "Chưa giao" : newAssigneeNamesStr
+            );
+            anyLogged = true;
+        }
+
+        if (statusChanged)
+        {
+            await _activityLogService.LogAsync(
+                currentUserId,
+                ActivityAction.StatusChanged,
+                $"Đổi trạng thái '{task.Name}' sang {task.Status}",
+                projectId: task.ProjectId,
+                taskId: task.Id,
+                oldValue: oldStatus.ToString(),
+                newValue: task.Status.ToString()
+            );
+            anyLogged = true;
+        }
+
+        if (progressChanged && !statusChanged)
+        {
+            await _activityLogService.LogAsync(
+                currentUserId,
+                ActivityAction.ProgressChanged,
+                $"Cập nhật tiến độ '{task.Name}': {oldProgress}% -> {task.Progress}%",
+                projectId: task.ProjectId,
+                taskId: task.Id,
+                oldValue: $"{oldProgress}%",
+                newValue: $"{task.Progress}%"
+            );
+            anyLogged = true;
+        }
+
+        if (priorityChanged)
+        {
+            await _activityLogService.LogAsync(
+                currentUserId,
+                ActivityAction.TaskUpdated,
+                $"Thay đổi mức độ ưu tiên '{task.Name}': {oldPriority} -> {task.Priority}",
+                projectId: task.ProjectId,
+                taskId: task.Id,
+                oldValue: oldPriority.ToString(),
+                newValue: task.Priority.ToString()
+            );
+            anyLogged = true;
+        }
+
+        if (datesChanged)
+        {
+            var oldDatesStr = $"{oldStartDate:dd/MM/yyyy} - {oldPlannedEndDate:dd/MM/yyyy}";
+            var newDatesStr = $"{task.StartDate:dd/MM/yyyy} - {task.PlannedEndDate:dd/MM/yyyy}";
+            await _activityLogService.LogAsync(
+                currentUserId,
+                ActivityAction.DeadlineChanged,
+                $"Điều chỉnh thời gian thực hiện '{task.Name}': {oldDatesStr} -> {newDatesStr}",
+                projectId: task.ProjectId,
+                taskId: task.Id,
+                oldValue: oldDatesStr,
+                newValue: newDatesStr
+            );
+            anyLogged = true;
+        }
+
+        if (descriptionChanged)
+        {
+            await _activityLogService.LogAsync(
+                currentUserId,
+                ActivityAction.TaskUpdated,
+                $"Cập nhật mô tả công việc '{task.Name}'",
+                projectId: task.ProjectId,
+                taskId: task.Id
+            );
+            anyLogged = true;
+        }
+
+        if (!anyLogged)
+        {
+            await _activityLogService.LogAsync(
+                currentUserId,
+                ActivityAction.TaskUpdated,
+                $"Cập nhật công việc '{task.Name}'",
+                projectId: task.ProjectId,
+                taskId: task.Id
+            );
+        }
 
         if (task.ParentId.HasValue)
         {
@@ -948,7 +1138,49 @@ public class TaskService : ITaskService
 
         var user = await _context.Users.FindAsync(currentUserId);
 
-        // Notify other assignees, creator, and project manager
+        // Detect mentioned users: scan all active users for @FullName or @Email
+        var allUsers = await _context.Users.Where(u => u.IsActive).ToListAsync();
+        var mentionedUserIds = new HashSet<Guid>();
+        var commentContent = comment.Content;
+
+        if (!string.IsNullOrEmpty(commentContent) && commentContent.Contains('@'))
+        {
+            foreach (var u in allUsers)
+            {
+                if (u.Id == currentUserId) continue;
+
+                var namePattern = "@" + u.FullName;
+                var emailPattern = "@" + u.Email;
+                var emailPrefix = "@" + (u.Email.Contains('@') ? u.Email.Split('@')[0] : u.Email);
+
+                if (commentContent.Contains(namePattern, StringComparison.OrdinalIgnoreCase) ||
+                    commentContent.Contains(emailPattern, StringComparison.OrdinalIgnoreCase) ||
+                    commentContent.Contains(emailPrefix, StringComparison.OrdinalIgnoreCase))
+                {
+                    mentionedUserIds.Add(u.Id);
+                }
+            }
+        }
+
+        // 1. Send high-priority Mention notification to specifically tagged users
+        foreach (var mentionedId in mentionedUserIds)
+        {
+            try
+            {
+                var snippet = comment.Content.Length > 80 ? comment.Content[..80] + "..." : comment.Content;
+                await _notificationService.CreateNotificationAsync(
+                    mentionedId,
+                    "Bạn được nhắc đến trong một bình luận",
+                    $"{user?.FullName ?? "Một thành viên"} đã nhắc đến bạn trong trao đổi tại công việc '{task.Name}': \"{snippet}\"",
+                    NotificationType.CommentAdded,
+                    "Task",
+                    task.Id
+                );
+            }
+            catch { }
+        }
+
+        // 2. Notify other assignees, creator, and project manager (excluding the author and already mentioned users)
         var recipientUserIds = new HashSet<Guid>(task.Assignees.Select(a => a.UserId));
         if (task.CreatedById.HasValue && task.CreatedById.Value != Guid.Empty) recipientUserIds.Add(task.CreatedById.Value);
         if (task.Project != null && task.Project.ManagerId.HasValue && task.Project.ManagerId.Value != Guid.Empty)
@@ -956,6 +1188,7 @@ public class TaskService : ITaskService
             recipientUserIds.Add(task.Project.ManagerId.Value);
         }
         recipientUserIds.Remove(currentUserId);
+        recipientUserIds.ExceptWith(mentionedUserIds);
 
         foreach (var recipientId in recipientUserIds)
         {
@@ -1446,5 +1679,175 @@ public class TaskService : ITaskService
         }
 
         await _context.SaveChangesAsync();
+    }
+
+    public async Task<ApiResponse<List<TaskChecklistItemDto>>> GetTaskChecklistAsync(Guid taskId)
+    {
+        var items = await _context.TaskChecklistItems
+            .Where(c => c.TaskId == taskId)
+            .OrderBy(c => c.SortOrder)
+            .ThenBy(c => c.CreatedAt)
+            .Select(c => new TaskChecklistItemDto
+            {
+                Id = c.Id,
+                TaskId = c.TaskId,
+                Title = c.Title,
+                IsCompleted = c.IsCompleted,
+                SortOrder = c.SortOrder,
+                CreatedAt = c.CreatedAt,
+                CompletedAt = c.CompletedAt
+            })
+            .ToListAsync();
+
+        return ApiResponse<List<TaskChecklistItemDto>>.Ok(items);
+    }
+
+    public async Task<ApiResponse<TaskChecklistItemDto>> CreateChecklistItemAsync(Guid taskId, CreateChecklistItemRequest request, Guid currentUserId)
+    {
+        var task = await _context.Tasks.FindAsync(taskId);
+        if (task == null)
+        {
+            return ApiResponse<TaskChecklistItemDto>.Fail("Không tìm thấy công việc.");
+        }
+
+        var maxSort = await _context.TaskChecklistItems
+            .Where(c => c.TaskId == taskId)
+            .Select(c => (int?)c.SortOrder)
+            .MaxAsync() ?? 0;
+
+        var item = new TaskChecklistItem
+        {
+            Id = Guid.NewGuid(),
+            TaskId = taskId,
+            Title = request.Title.Trim(),
+            IsCompleted = request.IsCompleted,
+            SortOrder = request.SortOrder > 0 ? request.SortOrder : maxSort + 1,
+            CreatedAt = DateTime.UtcNow,
+            CompletedAt = request.IsCompleted ? DateTime.UtcNow : null
+        };
+
+        _context.TaskChecklistItems.Add(item);
+        await _context.SaveChangesAsync();
+
+        return ApiResponse<TaskChecklistItemDto>.Ok(new TaskChecklistItemDto
+        {
+            Id = item.Id,
+            TaskId = item.TaskId,
+            Title = item.Title,
+            IsCompleted = item.IsCompleted,
+            SortOrder = item.SortOrder,
+            CreatedAt = item.CreatedAt,
+            CompletedAt = item.CompletedAt
+        }, "Đã thêm tiêu chí nghiệm thu.");
+    }
+
+    public async Task<ApiResponse<TaskChecklistItemDto>> UpdateChecklistItemAsync(Guid taskId, Guid itemId, UpdateChecklistItemRequest request, Guid currentUserId)
+    {
+        var item = await _context.TaskChecklistItems
+            .FirstOrDefaultAsync(c => c.TaskId == taskId && c.Id == itemId);
+
+        if (item == null)
+        {
+            return ApiResponse<TaskChecklistItemDto>.Fail("Không tìm thấy mục tiêu chí.");
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.Title))
+        {
+            item.Title = request.Title.Trim();
+        }
+
+        if (request.IsCompleted.HasValue)
+        {
+            item.IsCompleted = request.IsCompleted.Value;
+            item.CompletedAt = item.IsCompleted ? DateTime.UtcNow : null;
+        }
+
+        if (request.SortOrder.HasValue)
+        {
+            item.SortOrder = request.SortOrder.Value;
+        }
+
+        await _context.SaveChangesAsync();
+
+        return ApiResponse<TaskChecklistItemDto>.Ok(new TaskChecklistItemDto
+        {
+            Id = item.Id,
+            TaskId = item.TaskId,
+            Title = item.Title,
+            IsCompleted = item.IsCompleted,
+            SortOrder = item.SortOrder,
+            CreatedAt = item.CreatedAt,
+            CompletedAt = item.CompletedAt
+        });
+    }
+
+    public async Task<ApiResponse<bool>> DeleteChecklistItemAsync(Guid taskId, Guid itemId, Guid currentUserId)
+    {
+        var item = await _context.TaskChecklistItems
+            .FirstOrDefaultAsync(c => c.TaskId == taskId && c.Id == itemId);
+
+        if (item == null)
+        {
+            return ApiResponse<bool>.Fail("Không tìm thấy mục tiêu chí.");
+        }
+
+        _context.TaskChecklistItems.Remove(item);
+        await _context.SaveChangesAsync();
+
+        return ApiResponse<bool>.Ok(true, "Đã xóa mục tiêu chí.");
+    }
+
+    public async Task<ApiResponse<List<TaskChecklistItemDto>>> BatchSaveChecklistAsync(Guid taskId, BatchChecklistRequest request, Guid currentUserId)
+    {
+        var task = await _context.Tasks.FindAsync(taskId);
+        if (task == null)
+        {
+            return ApiResponse<List<TaskChecklistItemDto>>.Fail("Không tìm thấy công việc.");
+        }
+
+        var existingItems = await _context.TaskChecklistItems
+            .Where(c => c.TaskId == taskId)
+            .ToListAsync();
+
+        if (existingItems.Any())
+        {
+            _context.TaskChecklistItems.RemoveRange(existingItems);
+        }
+
+        var newEntities = new List<TaskChecklistItem>();
+        int order = 1;
+        foreach (var reqItem in request.Items.Where(i => !string.IsNullOrWhiteSpace(i.Title)))
+        {
+            newEntities.Add(new TaskChecklistItem
+            {
+                Id = Guid.NewGuid(),
+                TaskId = taskId,
+                Title = reqItem.Title.Trim(),
+                IsCompleted = reqItem.IsCompleted,
+                SortOrder = reqItem.SortOrder > 0 ? reqItem.SortOrder : order++,
+                CreatedAt = DateTime.UtcNow,
+                CompletedAt = reqItem.IsCompleted ? DateTime.UtcNow : null
+            });
+        }
+
+        if (newEntities.Any())
+        {
+            _context.TaskChecklistItems.AddRange(newEntities);
+        }
+
+        await _context.SaveChangesAsync();
+
+        var result = newEntities.Select(c => new TaskChecklistItemDto
+        {
+            Id = c.Id,
+            TaskId = c.TaskId,
+            Title = c.Title,
+            IsCompleted = c.IsCompleted,
+            SortOrder = c.SortOrder,
+            CreatedAt = c.CreatedAt,
+            CompletedAt = c.CompletedAt
+        }).ToList();
+
+        return ApiResponse<List<TaskChecklistItemDto>>.Ok(result, "Đã lưu tiêu chí nghiệm thu.");
     }
 }

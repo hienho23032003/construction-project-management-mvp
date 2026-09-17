@@ -566,24 +566,23 @@ export const getAppTheme = (mode: 'light' | 'dark') => {
         styleOverrides: {
           root: {
             '& .MuiOutlinedInput-root': {
-              paddingTop: '3px',
-              paddingBottom: '3px',
+              paddingTop: '4px',
+              paddingBottom: '4px',
               paddingLeft: '10px',
               paddingRight: '64px !important',
-              height: '44px',
+              minHeight: '44px',
+              height: 'auto !important',
             },
             '& .MuiOutlinedInput-root.MuiInputBase-sizeSmall': {
-              height: '36px',
-              paddingTop: '1px',
-              paddingBottom: '1px',
+              minHeight: '36px',
+              height: 'auto !important',
+              paddingTop: '2px',
+              paddingBottom: '2px',
               paddingLeft: '10px',
               paddingRight: '60px !important',
             },
             '& .MuiOutlinedInput-root .MuiAutocomplete-input': {
               padding: '2px 4px !important',
-              textOverflow: 'ellipsis',
-              overflow: 'hidden',
-              whiteSpace: 'nowrap',
             },
             '& .MuiAutocomplete-endAdornment': {
               right: '8px',

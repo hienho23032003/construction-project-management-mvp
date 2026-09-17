@@ -14,6 +14,7 @@ import {
   ActivityLog,
   TaskComment,
   TaskDependency,
+  TaskChecklistItem,
   RoleItem,
   PermissionModuleGroup,
   UserLoginSession,
@@ -179,6 +180,15 @@ export const taskApi = {
     apiClient.post<ApiResponse<TaskDependency>>('/tasks/dependencies', data),
   deleteDependency: (dependencyId: string) =>
     apiClient.delete<ApiResponse<boolean>>(`/tasks/dependencies/${dependencyId}`),
+  getChecklist: (taskId: string) => apiClient.get<ApiResponse<TaskChecklistItem[]>>(`/tasks/${taskId}/checklist`),
+  createChecklistItem: (taskId: string, data: { title: string; isCompleted?: boolean; sortOrder?: number }) =>
+    apiClient.post<ApiResponse<TaskChecklistItem>>(`/tasks/${taskId}/checklist`, data),
+  updateChecklistItem: (taskId: string, itemId: string, data: { title?: string; isCompleted?: boolean; sortOrder?: number }) =>
+    apiClient.put<ApiResponse<TaskChecklistItem>>(`/tasks/${taskId}/checklist/${itemId}`, data),
+  deleteChecklistItem: (taskId: string, itemId: string) =>
+    apiClient.delete<ApiResponse<boolean>>(`/tasks/${taskId}/checklist/${itemId}`),
+  batchSaveChecklist: (taskId: string, data: { items: { title: string; isCompleted?: boolean; sortOrder?: number }[] }) =>
+    apiClient.post<ApiResponse<TaskChecklistItem[]>>(`/tasks/${taskId}/checklist/batch`, data),
 };
 
 export const dashboardApi = {

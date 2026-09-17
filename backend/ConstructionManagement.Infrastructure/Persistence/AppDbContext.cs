@@ -24,6 +24,7 @@ public class AppDbContext : DbContext, IAppDbContext
     public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
     public DbSet<UserRoleMapping> UserRoles => Set<UserRoleMapping>();
     public DbSet<UserLoginSession> UserLoginSessions => Set<UserLoginSession>();
+    public DbSet<TaskChecklistItem> TaskChecklistItems => Set<TaskChecklistItem>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -268,6 +269,20 @@ public class AppDbContext : DbContext, IAppDbContext
             entity.HasOne(e => e.User)
                 .WithMany(u => u.Sessions)
                 .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // TaskChecklistItem
+        modelBuilder.Entity<TaskChecklistItem>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.TaskId);
+            entity.HasIndex(e => new { e.TaskId, e.SortOrder });
+            entity.Property(e => e.Title).IsRequired().HasMaxLength(500);
+
+            entity.HasOne(e => e.Task)
+                .WithMany(t => t.ChecklistItems)
+                .HasForeignKey(e => e.TaskId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
     }

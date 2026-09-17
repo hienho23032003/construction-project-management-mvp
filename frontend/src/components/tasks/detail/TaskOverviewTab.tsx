@@ -6,6 +6,7 @@ import { StatusChip } from '../../common/StatusChip';
 import { ProgressBar } from '../../common';
 import { formatDate } from '../../../utils/dateUtils';
 import { getMediaUrl } from '../../../utils/fileUtils';
+import { TaskChecklistSection } from '../checklist/TaskChecklistSection';
 
 interface TaskOverviewTabProps {
   task: TaskItem;
@@ -146,6 +147,9 @@ export const TaskOverviewTab: React.FC<TaskOverviewTabProps> = ({
           </Box>
         </Box>
       )}
+
+      {/* Task Acceptance Criteria & Checklist */}
+      <TaskChecklistSection taskId={task.id} taskTitle={task.name} />
 
       {/* Task Dependencies */}
       {dependencies.length > 0 && (

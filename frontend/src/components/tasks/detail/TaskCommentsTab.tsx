@@ -26,17 +26,21 @@ import {
   FileSpreadsheet,
   FileArchive,
   File,
+  AtSign,
 } from 'lucide-react';
-import { TaskComment } from '../../../types';
+import { TaskComment, ProjectMember } from '../../../types';
 import { useAuth } from '../../../contexts/AuthContext';
+import { useProjectMembersQuery } from '../../../hooks/useProjects';
 import { formatDateTime } from '../../../utils/dateUtils';
 import { getMediaUrl } from '../../../utils/fileUtils';
 import { ImagePreviewModal } from '../../common/ImagePreviewModal';
+import { MentionSuggestionList } from './MentionSuggestionList';
 
 interface TaskCommentsTabProps {
   comments: TaskComment[];
   loadingComments: boolean;
   canComment: boolean;
+  projectId?: string;
   onAddComment: (content: string, files?: File[]) => Promise<void>;
 }
 
@@ -85,24 +89,63 @@ const getFileIconComponent = (fileName?: string) => {
   return <File size={18} color="#64748b" />;
 };
 
+const renderFormattedComment = (content: string, isSelf: boolean) => {
+  const parts = content.split(/(@[a-zA-Z0-9À-ỹ_]+(?:\s+[a-zA-Z0-9À-ỹ_]+)*)/g);
+  return parts.map((part, index) => {
+    if (part.startsWith('@')) {
+      return (
+        <Box
+          key={index}
+          component="span"
+          sx={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            bgcolor: isSelf ? 'rgba(255, 255, 255, 0.25)' : '#e0f2fe',
+            color: isSelf ? '#ffffff' : '#0369a1',
+            px: 0.6,
+            py: 0.1,
+            borderRadius: '4px',
+            fontWeight: 700,
+            fontSize: '0.82rem',
+            border: isSelf ? '1px solid rgba(255, 255, 255, 0.3)' : '1px solid #bae6fd',
+            mx: 0.2,
+          }}
+        >
+          {part}
+        </Box>
+      );
+    }
+    return part;
+  });
+};
+
 export const TaskCommentsTab: React.FC<TaskCommentsTabProps> = ({
   comments,
   loadingComments,
   canComment,
+  projectId,
   onAddComment,
 }) => {
   const { user } = useAuth();
+  const { data: members = [] } = useProjectMembersQuery(projectId);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [previewImage, setPreviewImage] = useState<{ url: string; fileName?: string } | null>(null);
 
+  // Mention autocomplete state
+  const [showMentions, setShowMentions] = useState(false);
+  const [mentionFilter, setMentionFilter] = useState('');
+  const [mentionIndex, setMentionIndex] = useState(0);
+
   const imageInputRef = useRef<HTMLInputElement>(null);
   const docInputRef = useRef<HTMLInputElement>(null);
+  const textAreaRef = useRef<HTMLTextAreaElement | null>(null);
 
   const {
     control,
     handleSubmit,
     reset,
     watch,
+    setValue,
     formState: { isSubmitting },
   } = useForm<CommentFormData>({
     defaultValues: {
@@ -110,8 +153,58 @@ export const TaskCommentsTab: React.FC<TaskCommentsTabProps> = ({
     },
   });
 
-  const contentValue = watch('content');
+  const contentValue = watch('content') || '';
   const canSubmit = Boolean((contentValue && contentValue.trim().length > 0) || selectedFiles.length > 0);
+
+  const filteredMembers = members.filter((m) => {
+    const name = (m.fullName || m.email || '').toLowerCase();
+    const role = (m.roleInProject || m.department || '').toLowerCase();
+    const query = mentionFilter.toLowerCase();
+    return name.includes(query) || role.includes(query);
+  }).slice(0, 6);
+
+  const handleSelectMember = (member: ProjectMember) => {
+    const name = member.fullName || member.email;
+    const lastAtIndex = contentValue.lastIndexOf('@');
+    if (lastAtIndex !== -1) {
+      const prefix = contentValue.substring(0, lastAtIndex);
+      const newText = `${prefix}@${name} `;
+      setValue('content', newText);
+    } else {
+      setValue('content', `${contentValue}@${name} `);
+    }
+    setShowMentions(false);
+    setMentionFilter('');
+    setMentionIndex(0);
+    if (textAreaRef.current) {
+      textAreaRef.current.focus();
+    }
+  };
+
+  const handleContentChange = (val: string) => {
+    const lastAtIndex = val.lastIndexOf('@');
+    if (lastAtIndex !== -1) {
+      const textAfterAt = val.substring(lastAtIndex + 1);
+      if (!textAfterAt.includes('\n') && textAfterAt.length <= 25) {
+        setMentionFilter(textAfterAt);
+        setShowMentions(true);
+        setMentionIndex(0);
+        return;
+      }
+    }
+    setShowMentions(false);
+  };
+
+  const handleInsertMentionTrigger = () => {
+    const newText = contentValue.endsWith(' ') || contentValue === '' ? `${contentValue}@` : `${contentValue} @`;
+    setValue('content', newText);
+    setMentionFilter('');
+    setShowMentions(true);
+    setMentionIndex(0);
+    if (textAreaRef.current) {
+      textAreaRef.current.focus();
+    }
+  };
 
   const handleFilesAdded = (newFiles: FileList | File[]) => {
     const fileArray = Array.from(newFiles);
@@ -139,6 +232,7 @@ export const TaskCommentsTab: React.FC<TaskCommentsTabProps> = ({
   const onSubmitComment = async (formData: CommentFormData) => {
     const text = (formData.content || '').trim();
     if (!text && selectedFiles.length === 0) return;
+    setShowMentions(false);
     await onAddComment(text, selectedFiles);
     reset({ content: '' });
     setSelectedFiles([]);
@@ -249,7 +343,7 @@ export const TaskCommentsTab: React.FC<TaskCommentsTabProps> = ({
                           wordBreak: 'break-word',
                         }}
                       >
-                        {c.content}
+                        {renderFormattedComment(c.content, Boolean(isSelf))}
                       </Typography>
                     )}
 
@@ -425,6 +519,7 @@ export const TaskCommentsTab: React.FC<TaskCommentsTabProps> = ({
           onSubmit={handleSubmit(onSubmitComment)}
           onPaste={handlePaste}
           sx={{
+            position: 'relative',
             display: 'flex',
             flexDirection: 'column',
             gap: 1.25,
@@ -435,6 +530,17 @@ export const TaskCommentsTab: React.FC<TaskCommentsTabProps> = ({
             borderRadius: '10px',
           }}
         >
+          {/* Mention Autocomplete Floating Popover */}
+          {showMentions && filteredMembers.length > 0 && (
+            <MentionSuggestionList
+              members={filteredMembers}
+              selectedIndex={mentionIndex}
+              onSelect={handleSelectMember}
+              filterText={mentionFilter}
+              onClose={() => setShowMentions(false)}
+            />
+          )}
+
           <input
             type="file"
             ref={imageInputRef}
@@ -458,12 +564,49 @@ export const TaskCommentsTab: React.FC<TaskCommentsTabProps> = ({
             render={({ field }) => (
               <TextField
                 {...field}
+                inputRef={textAreaRef}
                 multiline
                 rows={2}
                 fullWidth
-                placeholder="Nhập nội dung trao đổi, hoặc chọn tệp/dán ảnh (Ctrl+V) để gửi..."
+                placeholder="Nhập nội dung trao đổi, gõ @ để tag tên thành viên, hoặc dán ảnh (Ctrl+V)..."
                 disabled={isSubmitting}
+                onChange={(e) => {
+                  field.onChange(e);
+                  handleContentChange(e.target.value);
+                }}
                 onKeyDown={(e) => {
+                  if (showMentions && filteredMembers.length > 0) {
+                    if (e.key === 'ArrowDown') {
+                      e.preventDefault();
+                      setMentionIndex((prev) => (prev + 1) % filteredMembers.length);
+                      return;
+                    }
+                    if (e.key === 'ArrowUp') {
+                      e.preventDefault();
+                      setMentionIndex((prev) => (prev - 1 + filteredMembers.length) % filteredMembers.length);
+                      return;
+                    }
+                    if (e.key === 'Enter' && !e.ctrlKey && !e.metaKey) {
+                      e.preventDefault();
+                      if (filteredMembers[mentionIndex]) {
+                        handleSelectMember(filteredMembers[mentionIndex]);
+                      }
+                      return;
+                    }
+                    if (e.key === 'Tab') {
+                      e.preventDefault();
+                      if (filteredMembers[mentionIndex]) {
+                        handleSelectMember(filteredMembers[mentionIndex]);
+                      }
+                      return;
+                    }
+                    if (e.key === 'Escape') {
+                      e.preventDefault();
+                      setShowMentions(false);
+                      return;
+                    }
+                  }
+
                   if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
                     e.preventDefault();
                     if (canSubmit) {
@@ -509,6 +652,25 @@ export const TaskCommentsTab: React.FC<TaskCommentsTabProps> = ({
               <Button
                 size="small"
                 variant="outlined"
+                startIcon={<AtSign size={15} color="#0284c7" />}
+                onClick={handleInsertMentionTrigger}
+                disabled={isSubmitting}
+                sx={{
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  fontSize: '0.75rem',
+                  py: 0.5,
+                  px: 1.25,
+                  borderColor: 'divider',
+                  color: 'text.secondary',
+                  '&:hover': { borderColor: '#0284c7', bgcolor: 'action.hover' },
+                }}
+              >
+                Nhắc Tên (@)
+              </Button>
+              <Button
+                size="small"
+                variant="outlined"
                 startIcon={<ImageIcon size={15} color="#0284c7" />}
                 onClick={() => imageInputRef.current?.click()}
                 disabled={isSubmitting}
@@ -544,9 +706,6 @@ export const TaskCommentsTab: React.FC<TaskCommentsTabProps> = ({
               >
                 Đính Kèm Tệp
               </Button>
-              <Typography variant="caption" sx={{ color: 'text.disabled', fontSize: '0.7rem', display: { xs: 'none', sm: 'block' } }}>
-                (Hỗ trợ Ctrl+V dán ảnh)
-              </Typography>
             </Box>
 
             <Button

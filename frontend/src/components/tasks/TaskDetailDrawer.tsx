@@ -236,6 +236,7 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
               comments={comments}
               loadingComments={loadingComments}
               canComment={canComment}
+              projectId={task.projectId}
               onAddComment={onAddComment}
             />
           )}

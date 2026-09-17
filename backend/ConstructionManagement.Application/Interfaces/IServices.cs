@@ -106,6 +106,13 @@ public interface ITaskService
     // Gantt Data with server-side filtering
     Task<ApiResponse<GanttDataResponse>> GetGanttDataAsync(Guid? projectId = null, TaskItemStatus? status = null, bool? activeOnly = null, DateTime? fromDate = null, DateTime? toDate = null, Guid? currentUserId = null, bool canViewAll = true, bool canViewProject = false);
 
+    // Checklist / Acceptance criteria
+    Task<ApiResponse<List<TaskChecklistItemDto>>> GetTaskChecklistAsync(Guid taskId);
+    Task<ApiResponse<TaskChecklistItemDto>> CreateChecklistItemAsync(Guid taskId, CreateChecklistItemRequest request, Guid currentUserId);
+    Task<ApiResponse<TaskChecklistItemDto>> UpdateChecklistItemAsync(Guid taskId, Guid itemId, UpdateChecklistItemRequest request, Guid currentUserId);
+    Task<ApiResponse<bool>> DeleteChecklistItemAsync(Guid taskId, Guid itemId, Guid currentUserId);
+    Task<ApiResponse<List<TaskChecklistItemDto>>> BatchSaveChecklistAsync(Guid taskId, BatchChecklistRequest request, Guid currentUserId);
+
     // Hierarchy business calculation
     Task RecalculateParentTaskProgressAsync(Guid? parentTaskId);
 }

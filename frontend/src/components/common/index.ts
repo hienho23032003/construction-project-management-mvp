@@ -22,4 +22,8 @@ export * from './EmptyStateIllustration';
 export * from './CommonDateRangePicker';
 export * from './ImagePreviewModal';
 export * from './PageFallbackSkeleton';
-
+export * from './InlineEditCell';
+export * from './AssigneeSelectPopover';
+export * from './UserMultiSelect';
+export * from './InlineDateEditCell';
+export * from './TaskProgressSlider';

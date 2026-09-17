@@ -9,10 +9,16 @@ import {
   Autocomplete,
   IconButton,
   Typography,
+  Box,
+  Avatar,
+  Chip,
+  useTheme,
 } from '@mui/material';
 import { X } from 'lucide-react';
 import { User } from '../../types';
 import { CommonButton, CommonInput } from '../common';
+import { getMediaUrl } from '../../utils/fileUtils';
+import { getDynamicRoleColor } from '../../utils/roleColors';
 
 export interface ProjectMemberFormData {
   userId: string;
@@ -34,6 +40,8 @@ export const ProjectMemberModal: React.FC<ProjectMemberModalProps> = ({
   users,
   isSubmitting = false,
 }) => {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
   const {
     control,
     handleSubmit,
@@ -97,6 +105,70 @@ export const ProjectMemberModal: React.FC<ProjectMemberModalProps> = ({
                 value={users.find((u) => u.id === field.value) || null}
                 onChange={(_, newValue) => field.onChange(newValue ? newValue.id : '')}
                 isOptionEqualToValue={(option, value) => option.id === value.id}
+                renderOption={(props, option, { selected }) => {
+                  const roleDisplay = option.roleName || option.role || 'Thành viên';
+                  const roleColors = getDynamicRoleColor(roleDisplay, isDark);
+
+                  return (
+                    <li {...props} key={option.id} style={{ display: 'flex', alignItems: 'center', padding: '6px 12px', gap: 10 }}>
+                      <Avatar
+                        src={getMediaUrl(option.avatarUrl)}
+                        sx={{
+                          width: 30,
+                          height: 30,
+                          fontSize: '0.78rem',
+                          fontWeight: 700,
+                          bgcolor: selected ? '#0284c7' : '#64748b',
+                          color: '#ffffff',
+                          flexShrink: 0,
+                        }}
+                      >
+                        {option.fullName.charAt(0)}
+                      </Avatar>
+                      <Box sx={{ minWidth: 0, flex: 1 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, flexWrap: 'wrap' }}>
+                          <Typography
+                            variant="body2"
+                            noWrap
+                            sx={{
+                              fontWeight: selected ? 700 : 600,
+                              fontSize: '0.84rem',
+                              color: 'text.primary',
+                            }}
+                          >
+                            {option.fullName}
+                          </Typography>
+                          <Chip
+                            label={roleDisplay}
+                            size="small"
+                            sx={{
+                              height: 19,
+                              fontSize: '0.67rem',
+                              fontWeight: 700,
+                              bgcolor: roleColors.bg,
+                              color: roleColors.text,
+                              border: `1px solid ${roleColors.border}`,
+                              '& .MuiChip-label': { px: 0.75 },
+                            }}
+                          />
+                        </Box>
+                        {(option.department || option.email) && (
+                          <Typography
+                            variant="caption"
+                            noWrap
+                            sx={{
+                              color: 'text.secondary',
+                              fontSize: '0.72rem',
+                              display: 'block',
+                            }}
+                          >
+                            {option.department ? `${option.department} • ${option.email}` : option.email}
+                          </Typography>
+                        )}
+                      </Box>
+                    </li>
+                  );
+                }}
                 renderInput={(params) => (
                   <TextField
                     {...params}

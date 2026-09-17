@@ -163,3 +163,29 @@ export const getRoleChipStyle = (
   }
   return { bgcolor: "#ecfdf5", color: "#047857", border: "1px solid #a7f3d0" };
 };
+
+export const getDynamicRoleColor = (roleName?: string, isDark: boolean = false) => {
+  const str = (roleName || '').trim();
+  if (!str) {
+    return {
+      bg: isDark ? 'rgba(148, 163, 184, 0.2)' : '#f1f5f9',
+      text: isDark ? '#94a3b8' : '#64748b',
+      border: isDark ? 'rgba(148, 163, 184, 0.3)' : '#cbd5e1',
+    };
+  }
+
+  // Deterministic string hash to map any custom role name dynamically to a harmonious preset
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    hash |= 0;
+  }
+  const index = Math.abs(hash) % ROLE_COLOR_PRESETS.length;
+  const preset = ROLE_COLOR_PRESETS[index];
+
+  return {
+    bg: isDark ? `${preset.color}2e` : preset.bg,
+    text: isDark ? preset.borderColor : preset.color,
+    border: isDark ? `${preset.color}5e` : preset.borderColor,
+  };
+};

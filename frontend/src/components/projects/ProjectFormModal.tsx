@@ -5,15 +5,11 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Button,
-  TextField,
   FormControl,
   InputLabel,
   Select,
   MenuItem,
   Grid,
-  Autocomplete,
-  Chip,
   IconButton,
   Typography,
 } from '@mui/material';
@@ -21,7 +17,7 @@ import { X } from 'lucide-react';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { format } from 'date-fns';
 import { Project, PriorityLevel, ProjectStatus, User } from '../../types';
-import { CommonButton, CommonInput } from '../common';
+import { CommonButton, CommonInput, UserMultiSelect } from '../common';
 
 export interface ProjectFormData {
   code: string;
@@ -208,40 +204,16 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
               validate: (val) => (val && val.length > 0) || 'Vui lòng chọn ít nhất 1 người quản lý dự án',
             }}
             render={({ field }) => (
-              <Autocomplete
-                multiple
-                options={users}
-                getOptionLabel={(option) =>
-                  typeof option === 'string'
-                    ? option
-                    : `${option.fullName} (${option.roleName || option.role} - ${option.department || ''})`
-                }
-                value={users.filter((u) => (field.value || []).includes(u.id))}
-                onChange={(_, newValue) => {
-                  const ids = newValue.map((u) => (typeof u === 'string' ? u : u.id));
-                  field.onChange(ids);
-                }}
-                isOptionEqualToValue={(option, value) => option.id === value.id}
-                renderTags={(value, getTagProps) =>
-                  value.map((option, index) => (
-                    <Chip
-                      label={typeof option === 'string' ? option : option.fullName}
-                      size="small"
-                      sx={{ fontWeight: 600, bgcolor: '#e0f2fe', color: '#0369a1' }}
-                      {...getTagProps({ index })}
-                    />
-                  ))
-                }
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="Người Quản Lý / Project Manager (PM)"
-                    placeholder={field.value && field.value.length > 0 ? '' : 'Tìm kiếm và chọn một hoặc nhiều quản lý...'}
-                    required={!field.value || field.value.length === 0}
-                    error={Boolean(errors.managerIds)}
-                    helperText={errors.managerIds?.message}
-                  />
-                )}
+              <UserMultiSelect
+                users={users}
+                value={field.value || []}
+                onChange={field.onChange}
+                label="Người Quản Lý / Project Manager (PM)"
+                placeholder="Tìm kiếm và chọn một hoặc nhiều quản lý..."
+                required
+                error={Boolean(errors.managerIds)}
+                helperText={errors.managerIds?.message}
+                defaultRoleFallback="Quản lý dự án"
               />
             )}
           />

@@ -124,16 +124,25 @@ public class UpdateTaskRequestValidator : AbstractValidator<UpdateTaskRequest>
 {
     public UpdateTaskRequestValidator()
     {
-        RuleFor(x => x.Name)
-            .NotEmpty().WithMessage("Vui lòng nhập tên công việc.")
-            .MaximumLength(250).WithMessage("Tên công việc không được vượt quá 250 ký tự.");
+        When(x => x.Name != null, () =>
+        {
+            RuleFor(x => x.Name!)
+                .NotEmpty().WithMessage("Vui lòng nhập tên công việc.")
+                .MaximumLength(250).WithMessage("Tên công việc không được vượt quá 250 ký tự.");
+        });
 
-        RuleFor(x => x.PlannedEndDate)
-            .GreaterThanOrEqualTo(x => x.StartDate)
-            .WithMessage("Ngày kết thúc dự kiến phải lớn hơn hoặc bằng ngày bắt đầu.");
+        When(x => x.StartDate.HasValue && x.PlannedEndDate.HasValue, () =>
+        {
+            RuleFor(x => x.PlannedEndDate!.Value)
+                .GreaterThanOrEqualTo(x => x.StartDate!.Value)
+                .WithMessage("Ngày kết thúc dự kiến phải lớn hơn hoặc bằng ngày bắt đầu.");
+        });
 
-        RuleFor(x => x.Progress)
-            .InclusiveBetween(0, 100).WithMessage("Tiến độ công việc phải từ 0% đến 100%.");
+        When(x => x.Progress.HasValue, () =>
+        {
+            RuleFor(x => x.Progress!.Value)
+                .InclusiveBetween(0, 100).WithMessage("Tiến độ công việc phải từ 0% đến 100%.");
+        });
     }
 }
 

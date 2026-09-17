@@ -19,6 +19,7 @@ public interface IAppDbContext
     DbSet<RolePermission> RolePermissions { get; }
     DbSet<UserRoleMapping> UserRoles { get; }
     DbSet<UserLoginSession> UserLoginSessions { get; }
+    DbSet<TaskChecklistItem> TaskChecklistItems { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

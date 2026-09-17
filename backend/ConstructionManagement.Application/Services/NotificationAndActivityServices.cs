@@ -167,6 +167,32 @@ public class ActivityLogService : IActivityLogService
         string? oldValue = null,
         string? newValue = null)
     {
+        // Debounce / coalesce rapid logs for the same user, task, and action within 15 seconds
+        if (taskId.HasValue && (action == ActivityAction.TaskAssigned || action == ActivityAction.TaskUpdated || action == ActivityAction.ProgressChanged))
+        {
+            var cutoff = DateTime.UtcNow.AddSeconds(-15);
+            var recentLog = await _context.ActivityLogs
+                .Where(al => al.UserId == userId && al.TaskId == taskId && al.Action == action && al.CreatedAt >= cutoff)
+                .OrderByDescending(al => al.CreatedAt)
+                .FirstOrDefaultAsync();
+
+            if (recentLog != null)
+            {
+                // Update existing recent log to prevent spamming multiple entries for rapid edits
+                recentLog.NewValue = newValue;
+                recentLog.Details = details;
+                recentLog.CreatedAt = DateTime.UtcNow;
+
+                if (!string.IsNullOrEmpty(recentLog.OldValue) && recentLog.OldValue == recentLog.NewValue)
+                {
+                    _context.ActivityLogs.Remove(recentLog);
+                }
+
+                await _context.SaveChangesAsync();
+                return;
+            }
+        }
+
         var log = new ActivityLog
         {
             UserId = userId,

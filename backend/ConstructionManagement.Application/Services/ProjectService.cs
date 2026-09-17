@@ -514,6 +514,8 @@ public class ProjectService : IProjectService
         var members = await _context.ProjectMembers
             .Where(pm => pm.ProjectId == projectId)
             .Include(pm => pm.User)
+                .ThenInclude(u => u.UserRoles)
+                    .ThenInclude(ur => ur.Role)
             .Select(pm => new ProjectMemberDto
             {
                 Id = pm.Id,
@@ -523,12 +525,23 @@ public class ProjectService : IProjectService
                 Email = pm.User.Email,
                 Department = pm.User.Department,
                 RoleInProject = pm.RoleInProject,
+                RoleName = pm.User.UserRoles.Where(ur => ur.Role != null).Select(ur => ur.Role!.Name).FirstOrDefault() ?? pm.User.Role.ToString(),
+                Roles = pm.User.UserRoles.Where(ur => ur.Role != null).Select(ur => ur.Role!.Name).ToList(),
+                AvatarUrl = pm.User.AvatarUrl,
                 JoinedAt = pm.JoinedAt
             })
             .ToListAsync();
 
         if (project?.Manager != null && !members.Any(m => m.UserId == project.ManagerId))
         {
+            var managerUser = await _context.Users
+                .Include(u => u.UserRoles).ThenInclude(ur => ur.Role)
+                .FirstOrDefaultAsync(u => u.Id == project.ManagerId);
+
+            var mgrRoleName = managerUser?.UserRoles.Where(ur => ur.Role != null).Select(ur => ur.Role!.Name).FirstOrDefault() 
+                              ?? managerUser?.Role.ToString() 
+                              ?? "Quản lý dự án (PM)";
+
             members.Insert(0, new ProjectMemberDto
             {
                 Id = Guid.NewGuid(),
@@ -538,6 +551,9 @@ public class ProjectService : IProjectService
                 Email = project.Manager.Email,
                 Department = project.Manager.Department,
                 RoleInProject = "Quản lý dự án (PM)",
+                RoleName = mgrRoleName,
+                Roles = managerUser?.UserRoles.Where(ur => ur.Role != null).Select(ur => ur.Role!.Name).ToList() ?? new List<string>(),
+                AvatarUrl = project.Manager.AvatarUrl,
                 JoinedAt = project.CreatedAt
             });
         }
@@ -556,11 +572,17 @@ public class ProjectService : IProjectService
         var existing = await _context.ProjectMembers
             .FirstOrDefaultAsync(pm => pm.ProjectId == projectId && pm.UserId == request.UserId);
 
+        var user = await _context.Users
+            .Include(u => u.UserRoles).ThenInclude(ur => ur.Role)
+            .FirstOrDefaultAsync(u => u.Id == request.UserId);
+
+        var userRoleName = user?.UserRoles.Where(ur => ur.Role != null).Select(ur => ur.Role!.Name).FirstOrDefault() ?? user?.Role.ToString();
+        var userRoles = user?.UserRoles.Where(ur => ur.Role != null).Select(ur => ur.Role!.Name).ToList() ?? new List<string>();
+
         if (existing != null)
         {
             existing.RoleInProject = request.RoleInProject;
             await _context.SaveChangesAsync();
-            var user = await _context.Users.FindAsync(request.UserId);
             return ApiResponse<ProjectMemberDto>.Ok(new ProjectMemberDto
             {
                 Id = existing.Id,
@@ -570,6 +592,9 @@ public class ProjectService : IProjectService
                 Email = user?.Email ?? "",
                 Department = user?.Department,
                 RoleInProject = existing.RoleInProject,
+                RoleName = userRoleName,
+                Roles = userRoles,
+                AvatarUrl = user?.AvatarUrl,
                 JoinedAt = existing.JoinedAt
             }, "Đã cập nhật vai trò thành viên.");
         }
@@ -585,18 +610,20 @@ public class ProjectService : IProjectService
         _context.ProjectMembers.Add(member);
         await _context.SaveChangesAsync();
 
-        var memberUser = await _context.Users.FindAsync(request.UserId);
         return ApiResponse<ProjectMemberDto>.Ok(new ProjectMemberDto
         {
             Id = member.Id,
             ProjectId = projectId,
             UserId = member.UserId,
-            FullName = memberUser?.FullName ?? "",
-            Email = memberUser?.Email ?? "",
-            Department = memberUser?.Department,
+            FullName = user?.FullName ?? "",
+            Email = user?.Email ?? "",
+            Department = user?.Department,
             RoleInProject = member.RoleInProject,
+            RoleName = userRoleName,
+            Roles = userRoles,
+            AvatarUrl = user?.AvatarUrl,
             JoinedAt = member.JoinedAt
-        }, "Đã thêm thành viên vào dự án.");
+        }, "Thêm thành viên vào dự án thành công.");
     }
 
     public async Task<ApiResponse<bool>> RemoveProjectMemberAsync(Guid projectId, Guid userId)

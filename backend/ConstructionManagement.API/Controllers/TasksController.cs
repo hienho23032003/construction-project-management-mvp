@@ -204,5 +204,46 @@ public class TasksController : BaseApiController
         if (!result.Success) return BadRequest(result);
         return Ok(result);
     }
+
+    // Checklist / Acceptance criteria
+    [HttpGet("{id}/checklist")]
+    public async Task<IActionResult> GetChecklist(Guid id)
+    {
+        var result = await _taskService.GetTaskChecklistAsync(id);
+        return Ok(result);
+    }
+
+    [HttpPost("{id}/checklist")]
+    public async Task<IActionResult> CreateChecklistItem(Guid id, [FromBody] CreateChecklistItemRequest request)
+    {
+        var result = await _taskService.CreateChecklistItemAsync(id, request, CurrentUserId);
+        if (!result.Success) return BadRequest(result);
+        return Ok(result);
+    }
+
+    [HttpPut("{id}/checklist/{itemId}")]
+    [HttpPatch("{id}/checklist/{itemId}")]
+    public async Task<IActionResult> UpdateChecklistItem(Guid id, Guid itemId, [FromBody] UpdateChecklistItemRequest request)
+    {
+        var result = await _taskService.UpdateChecklistItemAsync(id, itemId, request, CurrentUserId);
+        if (!result.Success) return BadRequest(result);
+        return Ok(result);
+    }
+
+    [HttpDelete("{id}/checklist/{itemId}")]
+    public async Task<IActionResult> DeleteChecklistItem(Guid id, Guid itemId)
+    {
+        var result = await _taskService.DeleteChecklistItemAsync(id, itemId, CurrentUserId);
+        if (!result.Success) return BadRequest(result);
+        return Ok(result);
+    }
+
+    [HttpPost("{id}/checklist/batch")]
+    public async Task<IActionResult> BatchSaveChecklist(Guid id, [FromBody] BatchChecklistRequest request)
+    {
+        var result = await _taskService.BatchSaveChecklistAsync(id, request, CurrentUserId);
+        if (!result.Success) return BadRequest(result);
+        return Ok(result);
+    }
 }
 

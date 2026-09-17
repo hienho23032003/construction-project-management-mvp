@@ -134,6 +134,8 @@ export interface ProjectMember {
   email: string;
   department?: string;
   roleInProject?: string;
+  roleName?: string;
+  roles?: string[];
   avatarUrl?: string;
   joinedAt: string;
 }
@@ -180,6 +182,16 @@ export interface TaskDependency {
   dependencyType: DependencyType;
 }
 
+export interface TaskChecklistItem {
+  id: string;
+  taskId: string;
+  title: string;
+  isCompleted: boolean;
+  sortOrder: number;
+  createdAt: string;
+  completedAt?: string;
+}
+
 export interface TaskItem {
   id: string;
   projectId: string;
@@ -206,6 +218,9 @@ export interface TaskItem {
   completedLateDays?: number;
   assignees: TaskAssignee[];
   dependencies?: TaskDependency[];
+  checklistItems?: TaskChecklistItem[];
+  checklistTotalCount?: number;
+  checklistCompletedCount?: number;
   subTaskCount: number;
   commentCount: number;
   createdAt: string;

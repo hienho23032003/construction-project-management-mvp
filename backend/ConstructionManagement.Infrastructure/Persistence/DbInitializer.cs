@@ -134,7 +134,49 @@ public static class DbInitializer
                     }
                 }
             }
-            await context.SaveChangesAsync();
+            // Auto fix legacy task dependencies that point to phase/parent containers instead of leaf tasks
+            var phaseDependencies = await context.TaskDependencies
+                .Where(d => context.Tasks.Any(t => t.Id == d.PredecessorTaskId && t.ParentId == null) ||
+                            context.Tasks.Any(t => t.Id == d.SuccessorTaskId && t.ParentId == null))
+                .ToListAsync();
+
+            if (phaseDependencies.Any())
+            {
+                context.TaskDependencies.RemoveRange(phaseDependencies);
+                await context.SaveChangesAsync();
+            }
+
+            // Ensure SkyTower CV5 has a complete chain of leaf task dependencies
+            var existingCv5Prj = await context.Projects.FirstOrDefaultAsync(p => p.Code == "CV5");
+            if (existingCv5Prj != null)
+            {
+                var cv5Tasks = await context.Tasks
+                    .Where(t => t.ProjectId == existingCv5Prj.Id && t.ParentId != null)
+                    .OrderBy(t => t.StartDate)
+                    .ToListAsync();
+
+                if (cv5Tasks.Count >= 2)
+                {
+                    for (int i = 0; i < cv5Tasks.Count - 1; i++)
+                    {
+                        var predId = cv5Tasks[i].Id;
+                        var succId = cv5Tasks[i + 1].Id;
+                        var exists = await context.TaskDependencies.AnyAsync(d => d.PredecessorTaskId == predId && d.SuccessorTaskId == succId);
+                        if (!exists)
+                        {
+                            context.TaskDependencies.Add(new TaskDependency
+                            {
+                                Id = Guid.NewGuid(),
+                                PredecessorTaskId = predId,
+                                SuccessorTaskId = succId,
+                                DependencyType = DependencyType.FinishToStart,
+                                CreatedAt = DateTime.UtcNow
+                            });
+                        }
+                    }
+                    await context.SaveChangesAsync();
+                }
+            }
 
             return; // DB already seeded
         }
@@ -777,16 +819,18 @@ public static class DbInitializer
             new TaskAssignee { TaskId = task4_2.Id, UserId = engAn.Id, AssignedAt = today.AddDays(-1) }
         );
 
-        // Task Dependencies for CV5 Gantt
+        // Task Dependencies for CV5 Gantt (Continuous leaf-to-leaf critical path)
         context.TaskDependencies.AddRange(
             new TaskDependency { PredecessorTaskId = task1_1.Id, SuccessorTaskId = task1_2.Id, DependencyType = DependencyType.FinishToStart, CreatedAt = today.AddDays(-30) },
             new TaskDependency { PredecessorTaskId = task1_2.Id, SuccessorTaskId = task1_3.Id, DependencyType = DependencyType.FinishToStart, CreatedAt = today.AddDays(-30) },
-            new TaskDependency { PredecessorTaskId = task1_3.Id, SuccessorTaskId = phase2.Id, DependencyType = DependencyType.FinishToStart, CreatedAt = today.AddDays(-25) },
+            new TaskDependency { PredecessorTaskId = task1_3.Id, SuccessorTaskId = task2_1.Id, DependencyType = DependencyType.FinishToStart, CreatedAt = today.AddDays(-25) },
             new TaskDependency { PredecessorTaskId = task2_1.Id, SuccessorTaskId = task2_2.Id, DependencyType = DependencyType.FinishToStart, CreatedAt = today.AddDays(-20) },
-            new TaskDependency { PredecessorTaskId = phase2.Id, SuccessorTaskId = phase3.Id, DependencyType = DependencyType.FinishToStart, CreatedAt = today.AddDays(-10) },
+            new TaskDependency { PredecessorTaskId = task2_2.Id, SuccessorTaskId = task3_1.Id, DependencyType = DependencyType.FinishToStart, CreatedAt = today.AddDays(-10) },
             new TaskDependency { PredecessorTaskId = task3_1.Id, SuccessorTaskId = task3_2.Id, DependencyType = DependencyType.FinishToStart, CreatedAt = today.AddDays(-5) },
             new TaskDependency { PredecessorTaskId = task3_2.Id, SuccessorTaskId = task3_3.Id, DependencyType = DependencyType.FinishToStart, CreatedAt = today.AddDays(-2) },
-            new TaskDependency { PredecessorTaskId = phase3.Id, SuccessorTaskId = phase4.Id, DependencyType = DependencyType.FinishToStart, CreatedAt = today.AddDays(-1) }
+            new TaskDependency { PredecessorTaskId = task3_3.Id, SuccessorTaskId = task4_1.Id, DependencyType = DependencyType.FinishToStart, CreatedAt = today.AddDays(-1) },
+            new TaskDependency { PredecessorTaskId = task4_1.Id, SuccessorTaskId = task4_2.Id, DependencyType = DependencyType.FinishToStart, CreatedAt = today.AddDays(-1) },
+            new TaskDependency { PredecessorTaskId = task4_2.Id, SuccessorTaskId = task4_3.Id, DependencyType = DependencyType.FinishToStart, CreatedAt = today.AddDays(-1) }
         );
 
         // Comments on active task

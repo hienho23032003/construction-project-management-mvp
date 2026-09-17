@@ -375,7 +375,7 @@ export const ProjectsPage: React.FC = () => {
                   setRowsPerPage(newRowsPerPage);
                   setPage(0);
                 }}
-                rowsPerPageOptions={[10, 15, 20, 30, 50, 100]}
+                rowsPerPageOptions={[10, 20, 50, 100]}
               />
             </Paper>
           </>
@@ -408,7 +408,7 @@ export const ProjectsPage: React.FC = () => {
               setRowsPerPage(newRowsPerPage);
               handlePageChange(0);
             }}
-            rowsPerPageOptions={[6, 12, 24, 48]}
+            rowsPerPageOptions={[10, 20, 50, 100]}
           />
         </Paper>
       )}

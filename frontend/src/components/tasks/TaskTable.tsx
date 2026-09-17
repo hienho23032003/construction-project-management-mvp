@@ -1,25 +1,23 @@
 import React, { memo, useState, useEffect, useMemo } from 'react';
 import {
-  TableContainer,
   Table,
   TableHead,
   TableBody,
   TableRow,
   TableCell,
-  TableSortLabel,
+  Typography,
   Chip,
   Box,
-  Typography,
-  Slider,
-  Skeleton,
-  IconButton,
-  Tooltip,
-  Avatar,
   useTheme,
+  TableContainer,
+  TableSortLabel,
+  Tooltip,
+  IconButton,
+  Skeleton,
 } from '@mui/material';
 import { FolderKanban, ChevronDown, ChevronRight } from 'lucide-react';
 import { TaskItem, TaskStatus, PriorityLevel } from '../../types';
-import { StatusSelect, PrioritySelect } from '../common';
+import { StatusSelect, PrioritySelect, InlineEditCell, AssigneeSelectPopover, InlineDateEditCell, TaskProgressSlider } from '../common';
 import { formatDate } from '../../utils/dateUtils';
 import { getMediaUrl } from '../../utils/fileUtils';
 import { useAuth } from '../../contexts/AuthContext';
@@ -32,10 +30,14 @@ interface TaskTableRowProps {
   canUpdateStatus?: boolean;
   canUpdateProgress?: boolean;
   canUpdatePriority?: boolean;
+  canEditName?: boolean;
   onRowClick: (task: TaskItem) => void;
   onStatusChange: (taskId: string, status: TaskStatus) => void;
   onProgressChange: (taskId: string, progress: number) => void;
   onPriorityChange?: (taskId: string, priority: PriorityLevel) => void;
+  onTaskNameChange?: (taskId: string, newName: string) => void;
+  onAssigneesChange?: (taskId: string, assigneeUserIds: string[]) => void;
+  onDatesChange?: (taskId: string, startDate: string, plannedEndDate: string) => void;
 }
 
 const TaskTableRow: React.FC<TaskTableRowProps> = memo(({
@@ -44,10 +46,14 @@ const TaskTableRow: React.FC<TaskTableRowProps> = memo(({
   canUpdateStatus = true,
   canUpdateProgress = true,
   canUpdatePriority = true,
+  canEditName = true,
   onRowClick,
   onStatusChange,
   onProgressChange,
   onPriorityChange,
+  onTaskNameChange,
+  onAssigneesChange,
+  onDatesChange,
 }) => {
   const { user } = useAuth();
   const theme = useTheme();
@@ -58,16 +64,9 @@ const TaskTableRow: React.FC<TaskTableRowProps> = memo(({
   const allowStatus = hasManagerRights || (canUpdateStatus && isAssigned) || isAssigned;
   const allowProgress = hasManagerRights || (canUpdateProgress && isAssigned) || isAssigned;
   const allowPriority = hasManagerRights || (canUpdatePriority && isAssigned) || isAssigned;
-
-  const [localProgress, setLocalProgress] = useState(task.progress);
-
-  useEffect(() => {
-    setLocalProgress(task.progress);
-  }, [task.progress]);
-
-  const formattedDate = useMemo(() => {
-    return formatDate(task.plannedEndDate);
-  }, [task.plannedEndDate]);
+  const allowEditName = (hasManagerRights || (canEditName && isAssigned)) && Boolean(onTaskNameChange);
+  const allowEditAssignees = (hasManagerRights || isAssigned) && Boolean(onAssigneesChange);
+  const allowEditDates = (hasManagerRights || isAssigned) && Boolean(onDatesChange);
 
   const isCompletedLate = task.status === 'Completed' && Boolean(
     task.isCompletedLate ||
@@ -107,109 +106,23 @@ const TaskTableRow: React.FC<TaskTableRowProps> = memo(({
           }}
         />
       </TableCell>
-      <TableCell sx={{ whiteSpace: 'nowrap', minWidth: 200 }}>
-        <Typography
-          variant="body2"
-          sx={{
-            fontWeight: 600,
-            color: 'text.primary',
-            whiteSpace: 'nowrap',
-          }}
-          title={task.name}
-        >
-          {task.name}
-        </Typography>
-        {task.parentName && (
-          <Typography
-            variant="caption"
-            sx={{
-              color: 'text.secondary',
-              whiteSpace: 'nowrap',
-              display: 'block',
-            }}
-            title={`Thuộc hạng mục: ${task.parentName}`}
-          >
-            Thuộc hạng mục: {task.parentName}
-          </Typography>
-        )}
+      <TableCell sx={{ whiteSpace: 'nowrap', minWidth: 220 }} onClick={(e) => e.stopPropagation()}>
+        <InlineEditCell
+          value={task.name}
+          subtitle={task.parentName ? `Thuộc hạng mục: ${task.parentName}` : undefined}
+          disabled={!allowEditName}
+          onSave={(newName) => onTaskNameChange?.(task.id, newName)}
+          placeholder="Nhập tên công việc..."
+        />
       </TableCell>
-      <TableCell sx={{ whiteSpace: 'nowrap', minWidth: 140 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'nowrap', gap: 0.5 }}>
-          {task.assignees.length === 0 ? (
-            <Typography variant="caption" sx={{ color: 'text.disabled', whiteSpace: 'nowrap' }}>
-              Chưa gán
-            </Typography>
-          ) : (
-            <>
-              <Chip
-                key={task.assignees[0].id || task.assignees[0].userId}
-                avatar={
-                  <Avatar
-                    src={getMediaUrl(task.assignees[0].avatarUrl)}
-                    sx={{ width: 18, height: 18, fontSize: '0.65rem' }}
-                  >
-                    {task.assignees[0].fullName.charAt(0)}
-                  </Avatar>
-                }
-                label={task.assignees[0].fullName}
-                size="small"
-                sx={{
-                  height: 22,
-                  fontSize: '0.7rem',
-                  whiteSpace: 'nowrap',
-                  maxWidth: task.assignees.length > 1 ? 120 : 160,
-                  bgcolor: isDark ? 'rgba(255, 255, 255, 0.08)' : undefined,
-                  border: `1px solid ${theme.palette.divider}`,
-                  '& .MuiChip-label': {
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                  },
-                }}
-              />
-              {task.assignees.length > 1 && (
-                <Tooltip
-                  title={
-                    <Box sx={{ p: 0.5, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                      <Typography variant="caption" sx={{ fontWeight: 700, mb: 0.25, display: 'block', color: 'inherit' }}>
-                        Người thực hiện khác ({task.assignees.length - 1}):
-                      </Typography>
-                      {task.assignees.slice(1).map((a) => (
-                        <Box key={a.id || a.userId} sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-                          <Avatar
-                            src={getMediaUrl(a.avatarUrl)}
-                            sx={{ width: 18, height: 18, fontSize: '0.65rem' }}
-                          >
-                            {a.fullName.charAt(0)}
-                          </Avatar>
-                          <Typography variant="caption" sx={{ color: 'inherit' }}>
-                            {a.fullName}
-                          </Typography>
-                        </Box>
-                      ))}
-                    </Box>
-                  }
-                  arrow
-                  placement="top"
-                >
-                  <Chip
-                    label={`+${task.assignees.length - 1}`}
-                    size="small"
-                    sx={{
-                      height: 22,
-                      fontSize: '0.7rem',
-                      fontWeight: 700,
-                      bgcolor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#f1f5f9',
-                      color: 'text.secondary',
-                      cursor: 'pointer',
-                      flexShrink: 0,
-                    }}
-                  />
-                </Tooltip>
-              )}
-            </>
-          )}
-        </Box>
+      <TableCell sx={{ whiteSpace: 'nowrap', minWidth: 140 }} onClick={(e) => e.stopPropagation()}>
+        <AssigneeSelectPopover
+          assignees={task.assignees}
+          taskId={task.id}
+          projectId={task.projectId}
+          disabled={!allowEditAssignees}
+          onAssigneesChange={onAssigneesChange}
+        />
       </TableCell>
       <TableCell onClick={(e) => e.stopPropagation()} sx={{ whiteSpace: 'nowrap' }}>
         <PrioritySelect
@@ -218,20 +131,18 @@ const TaskTableRow: React.FC<TaskTableRowProps> = memo(({
           disabled={!allowPriority}
         />
       </TableCell>
-      <TableCell sx={{ whiteSpace: 'nowrap' }}>
-        <Typography
-          variant="caption"
-          sx={{
-            fontWeight: 600,
-            color: task.isOverdue || isCompletedLate ? (isDark ? '#f87171' : '#ef4444') : 'text.primary',
-            whiteSpace: 'nowrap',
-            display: 'block',
-          }}
-        >
-          {formattedDate}
-          {task.isOverdue && ` (Trễ ${task.overdueDays} ngày)`}
-          {isCompletedLate && ` (Trễ ${completedLateDays} ngày)`}
-        </Typography>
+      <TableCell onClick={(e) => e.stopPropagation()} sx={{ whiteSpace: 'nowrap' }}>
+        <InlineDateEditCell
+          mode="range"
+          startDate={task.startDate}
+          plannedEndDate={task.plannedEndDate}
+          isOverdue={task.isOverdue}
+          overdueDays={task.overdueDays}
+          isCompletedLate={isCompletedLate}
+          completedLateDays={completedLateDays}
+          disabled={!allowEditDates}
+          onDatesChange={(start, end) => onDatesChange?.(task.id, start, end)}
+        />
       </TableCell>
       <TableCell onClick={(e) => e.stopPropagation()} sx={{ whiteSpace: 'nowrap' }}>
         <StatusSelect
@@ -240,28 +151,12 @@ const TaskTableRow: React.FC<TaskTableRowProps> = memo(({
           disabled={!allowStatus}
         />
       </TableCell>
-      <TableCell onClick={(e) => e.stopPropagation()} sx={{ whiteSpace: 'nowrap', minWidth: 120 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Slider
-            size="small"
-            value={localProgress}
-            min={0}
-            max={100}
-            step={5}
-            disabled={!allowProgress}
-            onChange={(_, val) => setLocalProgress(val as number)}
-            onChangeCommitted={(_, val) => {
-              const nextVal = val as number;
-              if (nextVal !== task.progress) {
-                onProgressChange(task.id, nextVal);
-              }
-            }}
-            sx={{ color: localProgress >= 100 ? (isDark ? '#34d399' : '#10b981') : (isDark ? '#38bdf8' : '#0284c7') }}
-          />
-          <Typography variant="caption" sx={{ fontWeight: 700, minWidth: 30, whiteSpace: 'nowrap', color: 'text.primary' }}>
-            {localProgress}%
-          </Typography>
-        </Box>
+      <TableCell sx={{ whiteSpace: 'nowrap', minWidth: 140, width: '160px' }}>
+        <TaskProgressSlider
+          value={task.progress}
+          disabled={!allowProgress}
+          onChange={(nextVal) => onProgressChange(task.id, nextVal)}
+        />
       </TableCell>
     </TableRow>
   );
@@ -281,9 +176,13 @@ interface TaskTableProps {
   onStatusChange: (taskId: string, status: TaskStatus) => void;
   onProgressChange: (taskId: string, progress: number) => void;
   onPriorityChange?: (taskId: string, priority: PriorityLevel) => void;
+  onTaskNameChange?: (taskId: string, newName: string) => void;
+  onAssigneesChange?: (taskId: string, assigneeUserIds: string[]) => void;
+  onDatesChange?: (taskId: string, startDate: string, plannedEndDate: string) => void;
   canUpdateStatus?: boolean;
   canUpdateProgress?: boolean;
   canUpdatePriority?: boolean;
+  canEditName?: boolean;
 }
 
 export const TaskTable: React.FC<TaskTableProps> = memo(({
@@ -298,9 +197,13 @@ export const TaskTable: React.FC<TaskTableProps> = memo(({
   onStatusChange,
   onProgressChange,
   onPriorityChange,
+  onTaskNameChange,
+  onAssigneesChange,
+  onDatesChange,
   canUpdateStatus = true,
   canUpdateProgress = true,
   canUpdatePriority = true,
+  canEditName = true,
 }) => {
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
@@ -558,10 +461,14 @@ export const TaskTable: React.FC<TaskTableProps> = memo(({
                         canUpdateStatus={canUpdateStatus}
                         canUpdateProgress={canUpdateProgress}
                         canUpdatePriority={canUpdatePriority}
+                        canEditName={canEditName}
                         onRowClick={onRowClick}
                         onStatusChange={onStatusChange}
                         onProgressChange={onProgressChange}
                         onPriorityChange={onPriorityChange}
+                        onTaskNameChange={onTaskNameChange}
+                        onAssigneesChange={onAssigneesChange}
+                        onDatesChange={onDatesChange}
                       />
                     ))}
                 </React.Fragment>

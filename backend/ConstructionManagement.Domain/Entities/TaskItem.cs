@@ -42,4 +42,5 @@ public class TaskItem
     public ICollection<TaskDependency> Predecessors { get; set; } = new List<TaskDependency>(); // Tasks that this task depends on
     public ICollection<TaskDependency> Successors { get; set; } = new List<TaskDependency>();   // Tasks that depend on this task
     public ICollection<ActivityLog> ActivityLogs { get; set; } = new List<ActivityLog>();
+    public ICollection<TaskChecklistItem> ChecklistItems { get; set; } = new List<TaskChecklistItem>();
 }

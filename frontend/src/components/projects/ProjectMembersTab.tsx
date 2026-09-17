@@ -15,6 +15,7 @@ import {
 import { Plus, Trash2, Mail, Briefcase, ChevronRight } from 'lucide-react';
 import { ProjectMember } from '../../types';
 import { getMediaUrl } from '../../utils/fileUtils';
+import { getDynamicRoleColor } from '../../utils/roleColors';
 import { usePermission } from '../../hooks/usePermission';
 import { PERMISSIONS } from '../../constants/permissions';
 
@@ -144,17 +145,22 @@ export const ProjectMembersTab: React.FC<ProjectMembersTabProps> = memo(({
                           {m.fullName}
                         </Typography>
                         <Chip
-                          label={m.roleInProject || 'Thành viên'}
+                          label={m.roles?.[0] || m.roleName || m.roleInProject || 'Thành viên'}
                           size="small"
                           sx={{
                             mt: 0.35,
-                            height: 18,
-                            fontSize: '0.65rem',
-                            fontWeight: 600,
-                            bgcolor: (theme) =>
-                              theme.palette.mode === 'dark' ? 'rgba(56, 189, 248, 0.16)' : '#e0f2fe',
-                            color: (theme) =>
-                              theme.palette.mode === 'dark' ? '#38bdf8' : '#0369a1',
+                            height: 19,
+                            fontSize: '0.67rem',
+                            fontWeight: 700,
+                            ...(() => {
+                              const roleText = m.roles?.[0] || m.roleName || m.roleInProject || 'Thành viên';
+                              const roleColors = getDynamicRoleColor(roleText);
+                              return {
+                                bgcolor: roleColors.bg,
+                                color: roleColors.text,
+                                border: `1px solid ${roleColors.border}`,
+                              };
+                            })(),
                             maxWidth: '100%',
                             '& .MuiChip-label': {
                               overflow: 'hidden',

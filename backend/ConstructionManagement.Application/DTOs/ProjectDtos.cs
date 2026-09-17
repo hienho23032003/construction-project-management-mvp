@@ -82,6 +82,8 @@ public class ProjectMemberDto
     public string Email { get; set; } = string.Empty;
     public string? Department { get; set; }
     public string? RoleInProject { get; set; }
+    public string? RoleName { get; set; }
+    public List<string> Roles { get; set; } = new();
     public string? AvatarUrl { get; set; }
     public DateTime JoinedAt { get; set; }
 }

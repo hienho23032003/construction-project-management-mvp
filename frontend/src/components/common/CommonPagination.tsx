@@ -58,6 +58,14 @@ export const CommonPagination: React.FC<CommonPaginationProps> = React.memo(({
     return [1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages];
   }, [currentPage, totalPages]);
 
+  const normalizedOptions = React.useMemo(() => {
+    const set = new Set(rowsPerPageOptions);
+    if (rowsPerPage && !set.has(rowsPerPage)) {
+      set.add(rowsPerPage);
+    }
+    return Array.from(set).sort((a, b) => a - b);
+  }, [rowsPerPageOptions, rowsPerPage]);
+
   return (
     <Box
       sx={{
@@ -79,10 +87,10 @@ export const CommonPagination: React.FC<CommonPaginationProps> = React.memo(({
         </Typography>
         <Select
           size="small"
-          value={rowsPerPage}
+          value={rowsPerPage || (normalizedOptions[0] ?? 10)}
           onChange={(e) => onRowsPerPageChange(Number(e.target.value))}
           sx={{
-            minWidth: 68,
+            minWidth: 70,
             height: 30,
             fontSize: '0.8125rem',
             fontWeight: 600,
@@ -105,7 +113,7 @@ export const CommonPagination: React.FC<CommonPaginationProps> = React.memo(({
             },
           }}
         >
-          {rowsPerPageOptions.map((opt) => (
+          {normalizedOptions.map((opt) => (
             <MenuItem key={opt} value={opt} sx={{ fontSize: '0.8125rem', fontWeight: 600 }}>
               {opt}
             </MenuItem>

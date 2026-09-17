@@ -31,9 +31,11 @@ import { CommonInput } from '../components/common';
 import {
   useTasksQuery,
   useTaskDetailQuery,
+  useUpdateTaskMutation,
   useUpdateTaskStatusMutation,
   useUpdateTaskProgressMutation,
   useUpdateTaskPriorityMutation,
+  useUpdateTaskDatesMutation,
   useTaskCommentsQuery,
   useTaskDependenciesQuery,
   useAddCommentMutation,
@@ -179,9 +181,11 @@ export const TasksPage: React.FC = () => {
   const { data, isLoading } = useTasksQuery(queryParams);
 
   const { data: projects = [] } = useProjectsListQuery();
+  const updateTaskMutation = useUpdateTaskMutation();
   const updateStatusMutation = useUpdateTaskStatusMutation();
   const updateProgressMutation = useUpdateTaskProgressMutation();
   const updatePriorityMutation = useUpdateTaskPriorityMutation();
+  const updateDatesMutation = useUpdateTaskDatesMutation();
 
   const selectedTaskId = selectedTask?.id;
   const { data: comments = [], isLoading: loadingComments } = useTaskCommentsQuery(selectedTaskId);
@@ -217,6 +221,10 @@ export const TasksPage: React.FC = () => {
     removeParams('taskId', 'tab', 'taskTab');
   }, [removeParams]);
 
+  const handleTaskNameChange = useCallback((taskId: string, name: string) => {
+    updateTaskMutation.mutate({ id: taskId, data: { name } });
+  }, [updateTaskMutation]);
+
   const handleStatusChange = useCallback((taskId: string, status: TaskStatus) => {
     updateStatusMutation.mutate({ id: taskId, status });
   }, [updateStatusMutation]);
@@ -228,6 +236,14 @@ export const TasksPage: React.FC = () => {
   const handlePriorityChange = useCallback((taskId: string, priority: PriorityLevel) => {
     updatePriorityMutation.mutate({ id: taskId, priority });
   }, [updatePriorityMutation]);
+
+  const handleAssigneesChange = useCallback((taskId: string, assigneeUserIds: string[]) => {
+    updateTaskMutation.mutate({ id: taskId, data: { assigneeUserIds } });
+  }, [updateTaskMutation]);
+
+  const handleDatesChange = useCallback((taskId: string, startDate: string, plannedEndDate: string) => {
+    updateDatesMutation.mutate({ id: taskId, startDate, plannedEndDate });
+  }, [updateDatesMutation]);
 
   usePresenceHeartbeat({
     projectId: selectedProjectId !== 'ALL' ? selectedProjectId : undefined,
@@ -387,6 +403,7 @@ export const TasksPage: React.FC = () => {
                   onCardClick={handleRowClick}
                   onStatusChange={handleStatusChange}
                   onProgressChange={handleProgressChange}
+                  onAssigneesChange={handleAssigneesChange}
                 />
               ))}
             </Box>
@@ -415,9 +432,12 @@ export const TasksPage: React.FC = () => {
             onToggleGroup={handleToggleGroup}
             onSort={handleSort}
             onRowClick={handleRowClick}
+            onTaskNameChange={handleTaskNameChange}
             onStatusChange={handleStatusChange}
             onProgressChange={handleProgressChange}
             onPriorityChange={handlePriorityChange}
+            onAssigneesChange={handleAssigneesChange}
+            onDatesChange={handleDatesChange}
             canUpdateStatus={canUpdateStatus}
             canUpdateProgress={canUpdateProgress}
             canUpdatePriority={canUpdatePriority}

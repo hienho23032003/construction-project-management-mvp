@@ -5,13 +5,12 @@ import {
   Box,
   Typography,
   Chip,
-  Slider,
   Avatar,
 } from '@mui/material';
 import { TaskItem, TaskStatus } from '../../types';
 import { formatDate } from '../../utils/dateUtils';
 import { getMediaUrl } from '../../utils/fileUtils';
-import { PriorityBadge, StatusSelect } from '../common';
+import { PriorityBadge, StatusSelect, AssigneeSelectPopover, TaskProgressSlider } from '../common';
 import { useAuth } from '../../contexts/AuthContext';
 import { usePermission } from '../../hooks/usePermission';
 import { PERMISSIONS } from '../../constants/permissions';
@@ -23,6 +22,7 @@ interface TaskCardProps {
   onCardClick: (task: TaskItem) => void;
   onStatusChange: (taskId: string, status: TaskStatus) => void;
   onProgressChange: (taskId: string, progress: number) => void;
+  onAssigneesChange?: (taskId: string, assigneeUserIds: string[]) => void;
 }
 
 export const TaskCard: React.FC<TaskCardProps> = memo(({
@@ -32,6 +32,7 @@ export const TaskCard: React.FC<TaskCardProps> = memo(({
   onCardClick,
   onStatusChange,
   onProgressChange,
+  onAssigneesChange,
 }) => {
   const { user } = useAuth();
   const { isSuperAdmin, can } = usePermission();
@@ -39,12 +40,7 @@ export const TaskCard: React.FC<TaskCardProps> = memo(({
   const isAssigned = Boolean(user?.id && task.assignees?.some((a) => a.userId === user.id || a.id === user.id));
   const allowStatus = hasManagerRights || (canUpdateStatus && isAssigned) || isAssigned;
   const allowProgress = hasManagerRights || (canUpdateProgress && isAssigned) || isAssigned;
-
-  const [localProgress, setLocalProgress] = useState(task.progress);
-
-  useEffect(() => {
-    setLocalProgress(task.progress);
-  }, [task.progress]);
+  const allowEditAssignees = (hasManagerRights || isAssigned) && Boolean(onAssigneesChange);
 
   const formattedDate = useMemo(() => {
     return formatDate(task.plannedEndDate);
@@ -161,30 +157,18 @@ export const TaskCard: React.FC<TaskCardProps> = memo(({
           <PriorityBadge priority={task.priority} />
         </Box>
 
-        {/* Assignees List */}
-        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 1, mt: 'auto' }}>
-          {task.assignees.length === 0 ? (
-            <Typography variant="caption" sx={{ color: 'text.disabled' }}>
-              Chưa gán
-            </Typography>
-          ) : (
-            task.assignees.map((a) => (
-              <Chip
-                key={a.id}
-                avatar={
-                  <Avatar
-                    src={getMediaUrl(a.avatarUrl)}
-                    sx={{ width: 18, height: 18, fontSize: '0.65rem' }}
-                  >
-                    {a.fullName.charAt(0)}
-                  </Avatar>
-                }
-                label={a.fullName}
-                size="small"
-                sx={{ height: 22, fontSize: '0.7rem' }}
-              />
-            ))
-          )}
+        {/* Assignees Quick Edit */}
+        <Box
+          onClick={(e) => e.stopPropagation()}
+          sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 1, mt: 'auto' }}
+        >
+          <AssigneeSelectPopover
+            assignees={task.assignees}
+            taskId={task.id}
+            projectId={task.projectId}
+            disabled={!allowEditAssignees}
+            onAssigneesChange={onAssigneesChange}
+          />
         </Box>
 
         {/* Timeline & Due Date */}
@@ -221,30 +205,11 @@ export const TaskCard: React.FC<TaskCardProps> = memo(({
         </Box>
 
         {/* Progress Slider */}
-        <Box
-          onClick={(e) => e.stopPropagation()}
-          sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
-        >
-          <Slider
-            size="small"
-            value={localProgress}
-            min={0}
-            max={100}
-            step={5}
-            disabled={!allowProgress}
-            onChange={(_, val) => setLocalProgress(val as number)}
-            onChangeCommitted={(_, val) => {
-              const nextVal = val as number;
-              if (nextVal !== task.progress) {
-                onProgressChange(task.id, nextVal);
-              }
-            }}
-            sx={{ color: localProgress >= 100 ? '#10b981' : '#0284c7' }}
-          />
-          <Typography variant="caption" sx={{ fontWeight: 700, minWidth: 32, textAlign: 'right', color: 'text.primary' }}>
-            {localProgress}%
-          </Typography>
-        </Box>
+        <TaskProgressSlider
+          value={task.progress}
+          disabled={!allowProgress}
+          onChange={(nextVal) => onProgressChange(task.id, nextVal)}
+        />
       </CardContent>
     </Card>
   );

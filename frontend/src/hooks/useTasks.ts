@@ -324,3 +324,111 @@ export const useAddCommentMutation = (taskId?: string) => {
     },
   });
 };
+
+export const useTaskChecklistQuery = (taskId?: string) => {
+  return useQuery({
+    queryKey: ['task-checklist', taskId],
+    queryFn: async () => {
+      if (!taskId) return [];
+      const res = await taskApi.getChecklist(taskId);
+      if (!res.data.success || !res.data.data) {
+        throw new Error(res.data.message || 'Không thể tải tiêu chí nghiệm thu');
+      }
+      return res.data.data;
+    },
+    enabled: Boolean(taskId),
+    staleTime: 5_000,
+  });
+};
+
+export const useCreateChecklistItemMutation = (taskId?: string) => {
+  const queryClient = useQueryClient();
+  const { showSuccess, showError } = useToast();
+
+  return useMutation({
+    mutationFn: (data: { title: string; isCompleted?: boolean; sortOrder?: number }) => {
+      if (!taskId) throw new Error('Thiếu mã công việc');
+      return taskApi.createChecklistItem(taskId, data);
+    },
+    onSuccess: () => {
+      if (taskId) {
+        queryClient.invalidateQueries({ queryKey: ['task-checklist', taskId] });
+        queryClient.invalidateQueries({ queryKey: ['task-detail', taskId] });
+        queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      }
+      showSuccess('Đã thêm tiêu chí nghiệm thu!');
+    },
+    onError: (err: any) => {
+      showError(err.response?.data?.message || err.message || 'Thêm tiêu chí nghiệm thu thất bại');
+    },
+  });
+};
+
+export const useUpdateChecklistItemMutation = (taskId?: string) => {
+  const queryClient = useQueryClient();
+  const { showError } = useToast();
+
+  return useMutation({
+    mutationFn: ({ itemId, data }: { itemId: string; data: { title?: string; isCompleted?: boolean; sortOrder?: number } }) => {
+      if (!taskId) throw new Error('Thiếu mã công việc');
+      return taskApi.updateChecklistItem(taskId, itemId, data);
+    },
+    onSuccess: () => {
+      if (taskId) {
+        queryClient.invalidateQueries({ queryKey: ['task-checklist', taskId] });
+        queryClient.invalidateQueries({ queryKey: ['task-detail', taskId] });
+        queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      }
+    },
+    onError: (err: any) => {
+      showError(err.response?.data?.message || err.message || 'Cập nhật tiêu chí thất bại');
+    },
+  });
+};
+
+export const useDeleteChecklistItemMutation = (taskId?: string) => {
+  const queryClient = useQueryClient();
+  const { showSuccess, showError } = useToast();
+
+  return useMutation({
+    mutationFn: (itemId: string) => {
+      if (!taskId) throw new Error('Thiếu mã công việc');
+      return taskApi.deleteChecklistItem(taskId, itemId);
+    },
+    onSuccess: () => {
+      if (taskId) {
+        queryClient.invalidateQueries({ queryKey: ['task-checklist', taskId] });
+        queryClient.invalidateQueries({ queryKey: ['task-detail', taskId] });
+        queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      }
+      showSuccess('Đã xóa tiêu chí nghiệm thu!');
+    },
+    onError: (err: any) => {
+      showError(err.response?.data?.message || err.message || 'Xóa tiêu chí thất bại');
+    },
+  });
+};
+
+export const useBatchSaveChecklistMutation = (taskId?: string) => {
+  const queryClient = useQueryClient();
+  const { showSuccess, showError } = useToast();
+
+  return useMutation({
+    mutationFn: (items: { title: string; isCompleted?: boolean; sortOrder?: number }[]) => {
+      if (!taskId) throw new Error('Thiếu mã công việc');
+      return taskApi.batchSaveChecklist(taskId, { items });
+    },
+    onSuccess: () => {
+      if (taskId) {
+        queryClient.invalidateQueries({ queryKey: ['task-checklist', taskId] });
+        queryClient.invalidateQueries({ queryKey: ['task-detail', taskId] });
+        queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      }
+      showSuccess('Đã lưu danh sách tiêu chí nghiệm thu!');
+    },
+    onError: (err: any) => {
+      showError(err.response?.data?.message || err.message || 'Lưu tiêu chí thất bại');
+    },
+  });
+};
+
