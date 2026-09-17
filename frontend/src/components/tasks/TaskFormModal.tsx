@@ -25,6 +25,7 @@ import { PriorityLevel, TaskItem, TaskStatus, User } from '../../types';
 import { useProjectMembersQuery, useProjectsListQuery } from '../../hooks/useProjects';
 import { usePresenceHeartbeat } from '../../hooks/usePresence';
 import { CoEditingWarningBanner } from '../presence/ProjectPresenceAvatars';
+import { CommonButton, CommonInput } from '../common';
 
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -244,10 +245,11 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          borderBottom: '1px solid #e2e8f0',
+          borderBottom: '1px solid',
+          borderColor: 'divider',
         }}
       >
-        <Typography variant="h3" sx={{ fontWeight: 700, fontSize: '1.15rem', color: '#0f172a', pr: 2, wordBreak: 'break-word' }}>
+        <Typography variant="h3" sx={{ fontWeight: 700, fontSize: '1.15rem', color: 'text.primary', pr: 2, wordBreak: 'break-word' }}>
           {editingTask ? `Chỉnh Sửa Công Việc: ${editingTask.name}` : parentTaskId ? 'Thêm Công Việc Con' : 'Tạo Công Việc Mới'}
         </Typography>
         <IconButton
@@ -255,9 +257,9 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
           onClick={onClose}
           size="small"
           sx={{
-            color: '#94a3b8',
+            color: 'text.secondary',
             flexShrink: 0,
-            '&:hover': { color: '#0f172a', bgcolor: '#f1f5f9' },
+            '&:hover': { color: 'text.primary', bgcolor: 'action.hover' },
           }}
         >
           <X size={20} />
@@ -291,7 +293,7 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
             control={control}
             rules={{ required: 'Tên công việc không được để trống' }}
             render={({ field }) => (
-              <TextField
+              <CommonInput
                 {...field}
                 label="Tên Công Việc"
                 required
@@ -307,7 +309,7 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
             name="description"
             control={control}
             render={({ field }) => (
-              <TextField
+              <CommonInput
                 {...field}
                 label="Mô Tả Yêu Cầu Kỹ Thuật"
                 fullWidth
@@ -517,20 +519,21 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
           sx={{
             px: 3,
             py: 2,
-            bgcolor: '#f8fafc',
-            borderTop: '1px solid #e2e8f0',
+            bgcolor: (theme) => theme.palette.mode === 'dark' ? '#141414' : '#f8fafc',
+            borderTop: '1px solid',
+            borderColor: 'divider',
             flexShrink: 0,
             display: 'flex',
             justifyContent: 'flex-end',
             gap: 1.5,
           }}
         >
-          <Button onClick={onClose} variant="outlined" color="inherit" disabled={isSubmitting} sx={{ borderRadius: 1.5, textTransform: 'none', fontWeight: 600 }}>
+          <CommonButton onClick={onClose} variant="secondary" disabled={isSubmitting}>
             Hủy Bỏ
-          </Button>
-          <Button type="submit" variant="contained" sx={{ bgcolor: '#0284c7', borderRadius: 1.5, textTransform: 'none', fontWeight: 600, px: 3 }} disabled={isSubmitting}>
+          </CommonButton>
+          <CommonButton type="submit" variant="primary" loading={isSubmitting}>
             {isSubmitting ? 'Đang lưu...' : 'Lưu Công Việc'}
-          </Button>
+          </CommonButton>
         </DialogActions>
       </form>
     </Dialog>

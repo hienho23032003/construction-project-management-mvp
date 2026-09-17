@@ -1,7 +1,7 @@
 import React from 'react';
-import { Select, MenuItem, Box, SelectChangeEvent } from '@mui/material';
+import { Select, MenuItem, Box, SelectChangeEvent, useTheme } from '@mui/material';
 import { TaskStatus } from '../../types';
-import { statusMap } from './StatusChip';
+import { getStatusConfig } from './StatusChip';
 
 interface StatusSelectProps {
   value: TaskStatus | string;
@@ -27,8 +27,10 @@ export const StatusSelect: React.FC<StatusSelectProps> = ({
   isOverdue,
   sx,
 }) => {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
   const currentKey = value || 'NotStarted';
-  const currentStyle = statusMap[currentKey] || statusMap['NotStarted'];
+  const currentStyle = getStatusConfig(currentKey, isDark);
 
   const handleChange = (e: SelectChangeEvent<unknown>) => {
     onChange(e.target.value as TaskStatus);
@@ -42,7 +44,7 @@ export const StatusSelect: React.FC<StatusSelectProps> = ({
       disabled={disabled}
       onClick={(e) => e.stopPropagation()}
       renderValue={(selected) => {
-        const item = statusMap[selected as string] || statusMap['NotStarted'];
+        const item = getStatusConfig(selected as string, isDark);
         return (
           <Box
             sx={{
@@ -83,7 +85,7 @@ export const StatusSelect: React.FC<StatusSelectProps> = ({
         },
         '&:hover': {
           backgroundColor: currentStyle.bg,
-          filter: 'brightness(0.96)',
+          filter: isDark ? 'brightness(1.15)' : 'brightness(0.96)',
         },
         '& .MuiSelect-select': {
           py: 0.5,
@@ -102,51 +104,44 @@ export const StatusSelect: React.FC<StatusSelectProps> = ({
         PaperProps: {
           sx: {
             borderRadius: '8px',
-            mt: 0.5,
-            boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.15)',
+            boxShadow: isDark
+              ? '0 10px 25px rgba(0,0,0,0.6)'
+              : '0 8px 20px rgba(0,0,0,0.08)',
+            border: `1px solid ${theme.palette.divider}`,
+            bgcolor: 'background.paper',
           },
         },
       }}
     >
       {statusOptions.map((opt) => {
-        const style = statusMap[opt.value] || statusMap['NotStarted'];
+        const optStyle = getStatusConfig(opt.value, isDark);
         return (
           <MenuItem
             key={opt.value}
             value={opt.value}
             sx={{
-              py: 0.6,
-              px: 1,
-              fontSize: '0.8125rem',
+              fontSize: '0.8rem',
+              fontWeight: 600,
+              color: isDark ? '#eeeeee' : optStyle.color,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+              py: 0.85,
+              '&:hover': {
+                bgcolor: isDark ? 'rgba(255, 255, 255, 0.06)' : optStyle.bg,
+              },
             }}
           >
             <Box
               sx={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                px: 1.25,
-                py: 0.4,
-                borderRadius: '5px',
-                backgroundColor: style.bg,
-                color: style.color,
-                border: `1px solid ${style.border}`,
-                fontWeight: 600,
-                fontSize: '0.75rem',
-                width: '100%',
+                width: 7,
+                height: 7,
+                borderRadius: '50%',
+                bgcolor: optStyle.color,
+                flexShrink: 0,
               }}
-            >
-              <Box
-                sx={{
-                  width: 6,
-                  height: 6,
-                  borderRadius: '50%',
-                  bgcolor: style.color,
-                  mr: 1,
-                  flexShrink: 0,
-                }}
-              />
-              {opt.label}
-            </Box>
+            />
+            {opt.label}
           </MenuItem>
         );
       })}

@@ -1,7 +1,8 @@
 import React from 'react';
-import { Box, Typography, IconButton } from '@mui/material';
+import { Box, Typography, IconButton, useTheme } from '@mui/material';
 import { ChevronDown, ChevronRight as ChevronRightIcon } from 'lucide-react';
 import { GanttTask } from '../../types';
+import { PriorityBadge } from '../common';
 
 export interface GanttTreeItem extends GanttTask {
   depth: number;
@@ -19,7 +20,7 @@ interface GanttLeftTreeProps {
   onTaskClick?: (task: GanttTask) => void;
 }
 
-export const GanttLeftTree: React.FC<GanttLeftTreeProps> = ({
+export const GanttLeftTree: React.FC<GanttLeftTreeProps> = React.memo(({
   leftPanelRef,
   onScroll,
   width,
@@ -29,6 +30,9 @@ export const GanttLeftTree: React.FC<GanttLeftTreeProps> = ({
   onToggleCollapse,
   onTaskClick,
 }) => {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
+
   return (
     <Box
       ref={leftPanelRef}
@@ -40,7 +44,7 @@ export const GanttLeftTree: React.FC<GanttLeftTreeProps> = ({
         flexShrink: 0,
         display: 'flex',
         flexDirection: 'column',
-        bgcolor: '#ffffff',
+        bgcolor: 'background.paper',
         height: '100%',
         overflowY: 'auto',
         overflowX: 'hidden',
@@ -57,8 +61,8 @@ export const GanttLeftTree: React.FC<GanttLeftTreeProps> = ({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          bgcolor: '#f8fafc',
-          borderBottom: '1px solid #cbd5e1',
+          bgcolor: isDark ? '#141414' : '#f8fafc',
+          borderBottom: `1px solid ${theme.palette.divider}`,
           position: 'sticky',
           top: 0,
           zIndex: 20,
@@ -66,11 +70,11 @@ export const GanttLeftTree: React.FC<GanttLeftTreeProps> = ({
       >
         <Typography
           variant="subtitle2"
-          sx={{ fontWeight: 700, color: '#475569', textTransform: 'uppercase', fontSize: '0.78rem' }}
+          sx={{ fontWeight: 700, color: 'text.primary', textTransform: 'uppercase', fontSize: '0.78rem' }}
         >
           Hạng Mục / Công Việc
         </Typography>
-        <Typography variant="caption" sx={{ fontWeight: 700, color: '#64748b' }}>
+        <Typography variant="caption" sx={{ fontWeight: 700, color: isDark ? '#38bdf8' : '#0284c7' }}>
           Tiến độ
         </Typography>
       </Box>
@@ -103,12 +107,22 @@ export const GanttLeftTree: React.FC<GanttLeftTreeProps> = ({
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              borderBottom: '1px solid #f1f5f9',
-              bgcolor: isProject ? '#f1f5f9' : isPhase ? '#f8fafc' : '#ffffff',
+              borderBottom: `1px solid ${theme.palette.divider}`,
+              bgcolor: isProject
+                ? isDark
+                  ? 'rgba(56, 189, 248, 0.1)'
+                  : '#f1f5f9'
+                : isPhase
+                ? isDark
+                  ? 'rgba(255, 255, 255, 0.03)'
+                  : '#f8fafc'
+                : 'background.paper',
               cursor: 'pointer',
               userSelect: 'none',
               contain: 'content',
-              '&:hover': { bgcolor: '#f0f9ff' },
+              '&:hover': {
+                bgcolor: isDark ? 'rgba(56, 189, 248, 0.14)' : '#f0f9ff',
+              },
             }}
           >
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, minWidth: 0, pr: 1 }}>
@@ -116,7 +130,7 @@ export const GanttLeftTree: React.FC<GanttLeftTreeProps> = ({
                 <IconButton
                   size="small"
                   onClick={(e) => onToggleCollapse(task.id, e)}
-                  sx={{ p: 0.25, color: '#64748b' }}
+                  sx={{ p: 0.25, color: isDark ? '#38bdf8' : '#0284c7' }}
                 >
                   {isCollapsed ? <ChevronRightIcon size={16} /> : <ChevronDown size={16} />}
                 </IconButton>
@@ -131,7 +145,11 @@ export const GanttLeftTree: React.FC<GanttLeftTreeProps> = ({
                 sx={{
                   fontWeight: isProject ? 700 : isPhase ? 600 : 500,
                   fontSize: isProject ? '0.875rem' : '0.8125rem',
-                  color: isProject ? '#0f172a' : isPhase ? '#1e293b' : '#334155',
+                  color: isProject
+                    ? isDark
+                      ? '#38bdf8'
+                      : '#0284c7'
+                    : 'text.primary',
                 }}
               >
                 {task.name}
@@ -139,11 +157,23 @@ export const GanttLeftTree: React.FC<GanttLeftTreeProps> = ({
             </Box>
 
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0 }}>
+              {!isProject && task.priority && (
+                <PriorityBadge priority={task.priority} variant="flagOnly" size="small" />
+              )}
               <Typography
                 variant="caption"
                 sx={{
                   fontWeight: 700,
-                  color: task.progress >= 100 ? '#10b981' : task.progress > 0 ? '#0284c7' : '#94a3b8',
+                  color:
+                    task.progress >= 100
+                      ? isDark
+                        ? '#34d399'
+                        : '#10b981'
+                      : task.progress > 0
+                      ? isDark
+                        ? '#38bdf8'
+                        : '#0284c7'
+                      : 'text.disabled',
                 }}
               >
                 {task.progress}%
@@ -154,4 +184,6 @@ export const GanttLeftTree: React.FC<GanttLeftTreeProps> = ({
       })}
     </Box>
   );
-};
+});
+
+GanttLeftTree.displayName = 'GanttLeftTree';

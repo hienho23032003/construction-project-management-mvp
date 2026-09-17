@@ -97,8 +97,8 @@ export const CommonDropdownMenu: React.FC<CommonDropdownMenuProps> = ({
           disabled={disabled}
           onClick={handleClick}
           sx={{
-            color: '#64748b',
-            '&:hover': { bgcolor: '#f1f5f9', color: '#0f172a' },
+            color: 'text.secondary',
+            '&:hover': { bgcolor: 'action.hover', color: 'text.primary' },
             ...buttonSx,
           }}
         >
@@ -120,9 +120,6 @@ export const CommonDropdownMenu: React.FC<CommonDropdownMenuProps> = ({
         sx={{
           textTransform: 'none',
           fontWeight: 600,
-          fontSize: '0.8125rem',
-          borderRadius: '8px',
-          borderColor: '#cbd5e1',
           ...buttonSx,
         }}
       >
@@ -149,10 +146,13 @@ export const CommonDropdownMenu: React.FC<CommonDropdownMenuProps> = ({
         }}
         PaperProps={{
           sx: {
+            mt: 0.5,
             minWidth: 160,
             borderRadius: '8px',
-            boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
-            border: '1px solid #e2e8f0',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
+            border: '1px solid',
+            borderColor: 'divider',
+            bgcolor: 'background.paper',
             py: 0.5,
             ...menuSx,
           },
@@ -171,10 +171,10 @@ export const CommonDropdownMenu: React.FC<CommonDropdownMenuProps> = ({
                 fontWeight: 600,
                 py: 1,
                 px: 1.5,
-                color: item.danger ? '#ef4444' : '#1e293b',
+                color: item.danger ? '#ef4444' : 'text.primary',
                 '&:hover': {
-                  bgcolor: item.danger ? '#fee2e2' : '#f8fafc',
-                  color: item.danger ? '#b91c1c' : '#0284c7',
+                  bgcolor: item.danger ? 'rgba(239, 68, 68, 0.16)' : 'action.hover',
+                  color: item.danger ? '#f87171' : 'primary.main',
                 },
               }}
             >
@@ -182,7 +182,7 @@ export const CommonDropdownMenu: React.FC<CommonDropdownMenuProps> = ({
                 <ListItemIcon
                   sx={{
                     minWidth: 28,
-                    color: item.danger ? 'inherit' : '#64748b',
+                    color: item.danger ? 'inherit' : 'text.secondary',
                   }}
                 >
                   {item.icon}
@@ -197,7 +197,7 @@ export const CommonDropdownMenu: React.FC<CommonDropdownMenuProps> = ({
                 }}
               />
             </MenuItem>
-            {item.divider && <Divider sx={{ my: 0.5, borderColor: '#f1f5f9' }} />}
+            {item.divider && <Divider sx={{ my: 0.5, borderColor: 'divider' }} />}
           </React.Fragment>
         ))}
       </Menu>

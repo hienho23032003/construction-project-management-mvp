@@ -29,25 +29,26 @@ export const EmployeeStatsCards: React.FC<EmployeeStatsCardsProps> = ({
           sx={{
             p: 2.5,
             borderRadius: 2,
-            border: '1px solid #e2e8f0',
-            bgcolor: '#ffffff',
+            border: '1px solid',
+            borderColor: 'divider',
+            bgcolor: 'background.paper',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
           }}
         >
           <Box>
-            <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 600, textTransform: 'uppercase', fontSize: '0.72rem' }}>
+            <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, textTransform: 'uppercase', fontSize: '0.72rem' }}>
               Dự Án Tham Gia
             </Typography>
-            <Typography variant="h4" sx={{ fontWeight: 800, color: '#0f172a', mt: 0.5 }}>
+            <Typography variant="h4" sx={{ fontWeight: 800, color: 'text.primary', mt: 0.5 }}>
               {stats?.totalProjects || 0}
             </Typography>
             <Typography variant="caption" sx={{ color: '#0284c7', fontWeight: 600, display: 'block', mt: 0.25 }}>
               {projects.filter((p) => p.projectStatus === 'InProgress').length} công trình đang thi công
             </Typography>
           </Box>
-          <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: '#f0f9ff', color: '#0284c7' }}>
+          <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(2, 132, 199, 0.15)' : '#f0f9ff', color: '#0284c7' }}>
             <FolderKanban size={26} />
           </Box>
         </Paper>
@@ -60,25 +61,26 @@ export const EmployeeStatsCards: React.FC<EmployeeStatsCardsProps> = ({
           sx={{
             p: 2.5,
             borderRadius: 2,
-            border: '1px solid #e2e8f0',
-            bgcolor: '#ffffff',
+            border: '1px solid',
+            borderColor: 'divider',
+            bgcolor: 'background.paper',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
           }}
         >
           <Box>
-            <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 600, textTransform: 'uppercase', fontSize: '0.72rem' }}>
+            <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, textTransform: 'uppercase', fontSize: '0.72rem' }}>
               Việc Được Giao
             </Typography>
-            <Typography variant="h4" sx={{ fontWeight: 800, color: '#0f172a', mt: 0.5 }}>
+            <Typography variant="h4" sx={{ fontWeight: 800, color: 'text.primary', mt: 0.5 }}>
               {stats?.totalTasks || 0}
             </Typography>
             <Typography variant="caption" sx={{ color: '#10b981', fontWeight: 600, display: 'block', mt: 0.25 }}>
               {stats?.completedTasks || 0} đã xong • {stats?.inProgressTasks || 0} đang làm
             </Typography>
           </Box>
-          <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: '#ecfdf5', color: '#10b981' }}>
+          <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(16, 185, 129, 0.15)' : '#ecfdf5', color: '#10b981' }}>
             <CheckCircle2 size={26} />
           </Box>
         </Paper>
@@ -91,24 +93,25 @@ export const EmployeeStatsCards: React.FC<EmployeeStatsCardsProps> = ({
           sx={{
             p: 2.5,
             borderRadius: 2,
-            border: '1px solid #e2e8f0',
-            bgcolor: '#ffffff',
+            border: '1px solid',
+            borderColor: 'divider',
+            bgcolor: 'background.paper',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
           }}
         >
           <Box>
-            <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 600, textTransform: 'uppercase', fontSize: '0.72rem' }}>
+            <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, textTransform: 'uppercase', fontSize: '0.72rem' }}>
               Việc Quá Hạn
             </Typography>
-            <Typography variant="h4" sx={{ fontWeight: 800, color: (stats?.overdueTasks || 0) > 0 ? '#ef4444' : '#0f172a', mt: 0.5 }}>
+            <Typography variant="h4" sx={{ fontWeight: 800, color: (stats?.overdueTasks || 0) > 0 ? '#ef4444' : 'text.primary', mt: 0.5 }}>
               {stats?.overdueTasks || 0}
             </Typography>
             <Typography
               variant="caption"
               sx={{
-                color: (stats?.overdueTasks || 0) > 0 ? '#ef4444' : '#64748b',
+                color: (stats?.overdueTasks || 0) > 0 ? '#ef4444' : 'text.secondary',
                 fontWeight: 600,
                 display: 'block',
                 mt: 0.25,
@@ -121,8 +124,11 @@ export const EmployeeStatsCards: React.FC<EmployeeStatsCardsProps> = ({
             sx={{
               p: 1.5,
               borderRadius: 2,
-              bgcolor: (stats?.overdueTasks || 0) > 0 ? '#fef2f2' : '#f1f5f9',
-              color: (stats?.overdueTasks || 0) > 0 ? '#ef4444' : '#64748b',
+              bgcolor: (theme) =>
+                (stats?.overdueTasks || 0) > 0
+                  ? theme.palette.mode === 'dark' ? 'rgba(239, 68, 68, 0.15)' : '#fef2f2'
+                  : theme.palette.mode === 'dark' ? 'rgba(148, 163, 184, 0.15)' : '#f1f5f9',
+              color: (stats?.overdueTasks || 0) > 0 ? '#ef4444' : 'text.secondary',
             }}
           >
             <AlertTriangle size={26} />
@@ -137,15 +143,16 @@ export const EmployeeStatsCards: React.FC<EmployeeStatsCardsProps> = ({
           sx={{
             p: 2.5,
             borderRadius: 2,
-            border: '1px solid #e2e8f0',
-            bgcolor: '#ffffff',
+            border: '1px solid',
+            borderColor: 'divider',
+            bgcolor: 'background.paper',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
           }}
         >
           <Box>
-            <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 600, textTransform: 'uppercase', fontSize: '0.72rem' }}>
+            <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, textTransform: 'uppercase', fontSize: '0.72rem' }}>
               Tỷ Lệ Đúng Hạn
             </Typography>
             <Typography
@@ -165,7 +172,7 @@ export const EmployeeStatsCards: React.FC<EmployeeStatsCardsProps> = ({
             >
               {(stats?.totalTasks ?? 0) === 0 ? 100 : (stats?.onTimeCompletionRate ?? 0)}%
             </Typography>
-            <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 600, display: 'block', mt: 0.25 }}>
+            <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, display: 'block', mt: 0.25 }}>
               Tiến độ TB: {stats?.averageTaskProgress || 0}%
             </Typography>
           </Box>
@@ -173,14 +180,14 @@ export const EmployeeStatsCards: React.FC<EmployeeStatsCardsProps> = ({
             sx={{
               p: 1.5,
               borderRadius: 2,
-              bgcolor:
+              bgcolor: (theme) =>
                 (stats?.totalTasks ?? 0) === 0
-                  ? '#f0f9ff'
+                  ? theme.palette.mode === 'dark' ? 'rgba(2, 132, 199, 0.15)' : '#f0f9ff'
                   : (stats?.onTimeCompletionRate ?? 100) >= 80
-                  ? '#ecfdf5'
+                  ? theme.palette.mode === 'dark' ? 'rgba(16, 185, 129, 0.15)' : '#ecfdf5'
                   : (stats?.onTimeCompletionRate ?? 100) >= 50
-                  ? '#fffbeb'
-                  : '#fef2f2',
+                  ? theme.palette.mode === 'dark' ? 'rgba(245, 158, 11, 0.15)' : '#fffbeb'
+                  : theme.palette.mode === 'dark' ? 'rgba(239, 68, 68, 0.15)' : '#fef2f2',
               color:
                 (stats?.totalTasks ?? 0) === 0
                   ? '#0284c7'

@@ -42,43 +42,43 @@ export const TaskOverviewTab: React.FC<TaskOverviewTabProps> = ({
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
       {/* Properties Grid */}
-      <Paper sx={{ p: 2, borderRadius: '8px', border: '1px solid #e2e8f0', bgcolor: '#f8fafc' }}>
+      <Paper sx={{ p: 2, borderRadius: '8px', border: '1px solid', borderColor: 'divider', bgcolor: (theme) => theme.palette.mode === 'dark' ? '#242526' : '#f8fafc' }}>
         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
           <Box>
-            <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 600, display: 'block', mb: 0.5 }}>
+            <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, display: 'block', mb: 0.5 }}>
               Trạng thái hiện tại:
             </Typography>
             <StatusChip status={task.status} isOverdue={task.isOverdue} />
           </Box>
 
           <Box>
-            <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 600, display: 'block', mb: 0.5 }}>
+            <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, display: 'block', mb: 0.5 }}>
               Tiến độ hoàn thành:
             </Typography>
             <ProgressBar value={task.progress} height={8} showText={true} />
           </Box>
 
           <Box>
-            <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 600, display: 'block', mb: 0.5 }}>
+            <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, display: 'block', mb: 0.5 }}>
               Ngày bắt đầu dự kiến:
             </Typography>
-            <Typography variant="body2" sx={{ fontWeight: 600, color: '#0f172a' }}>
+            <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary' }}>
               {formatDate(task.startDate)}
             </Typography>
           </Box>
 
           <Box>
-            <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 600, display: 'block', mb: 0.5 }}>
+            <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, display: 'block', mb: 0.5 }}>
               Hạn hoàn thành (Deadline):
             </Typography>
-            <Typography variant="body2" sx={{ fontWeight: 700, color: task.isOverdue ? '#ef4444' : '#0f172a' }}>
+            <Typography variant="body2" sx={{ fontWeight: 700, color: task.isOverdue ? '#ef4444' : 'text.primary' }}>
               {formatDate(task.plannedEndDate)}
             </Typography>
           </Box>
 
           {task.actualEndDate && (
             <Box>
-              <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 600, display: 'block', mb: 0.5 }}>
+              <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, display: 'block', mb: 0.5 }}>
                 Ngày thực tế hoàn thành:
               </Typography>
               <Typography variant="body2" sx={{ fontWeight: 600, color: isCompletedLate ? '#ef4444' : '#10b981' }}>
@@ -88,12 +88,12 @@ export const TaskOverviewTab: React.FC<TaskOverviewTabProps> = ({
           )}
 
           <Box sx={{ gridColumn: { xs: '1', sm: '1 / -1' } }}>
-            <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 600, display: 'block', mb: 0.75 }}>
+            <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, display: 'block', mb: 0.75 }}>
               Nhân sự phụ trách thi công:
             </Typography>
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75 }}>
               {task.assignees.length === 0 ? (
-                <Typography variant="caption" sx={{ color: '#94a3b8', fontStyle: 'italic' }}>
+                <Typography variant="caption" sx={{ color: 'text.disabled', fontStyle: 'italic' }}>
                   Chưa phân công nhân sự
                 </Typography>
               ) : (
@@ -115,8 +115,9 @@ export const TaskOverviewTab: React.FC<TaskOverviewTabProps> = ({
                     label={a.fullName}
                     size="small"
                     sx={{
-                      bgcolor: '#ffffff',
-                      border: '1px solid #e2e8f0',
+                      bgcolor: 'background.paper',
+                      border: '1px solid',
+                      borderColor: 'divider',
                       fontWeight: 600,
                       height: 26,
                       '& .MuiChip-avatar': {
@@ -135,11 +136,11 @@ export const TaskOverviewTab: React.FC<TaskOverviewTabProps> = ({
       {/* Description */}
       {task.description && (
         <Box>
-          <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1, color: '#0f172a' }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1, color: 'text.primary' }}>
             Mô Tả Yêu Cầu Kỹ Thuật
           </Typography>
-          <Box sx={{ bgcolor: '#ffffff', p: 2, borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-            <Typography variant="body2" sx={{ color: '#334155', fontSize: '0.875rem', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
+          <Box sx={{ bgcolor: 'background.paper', p: 2, borderRadius: '8px', border: '1px solid', borderColor: 'divider' }}>
+            <Typography variant="body2" sx={{ color: 'text.primary', fontSize: '0.875rem', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
               {task.description}
             </Typography>
           </Box>
@@ -149,7 +150,7 @@ export const TaskOverviewTab: React.FC<TaskOverviewTabProps> = ({
       {/* Task Dependencies */}
       {dependencies.length > 0 && (
         <Box>
-          <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1, color: '#0f172a' }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1, color: 'text.primary' }}>
             Liên Kết Phụ Thuộc Công Việc ({dependencies.length})
           </Typography>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
@@ -159,8 +160,9 @@ export const TaskOverviewTab: React.FC<TaskOverviewTabProps> = ({
                 sx={{
                   p: 1.5,
                   borderRadius: '8px',
-                  bgcolor: '#ffffff',
-                  border: '1px solid #e2e8f0',
+                  bgcolor: 'background.paper',
+                  border: '1px solid',
+                  borderColor: 'divider',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
@@ -168,7 +170,7 @@ export const TaskOverviewTab: React.FC<TaskOverviewTabProps> = ({
                 }}
               >
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Typography variant="body2" sx={{ fontWeight: 600, color: '#0f172a' }}>
+                  <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary' }}>
                     {d.predecessorTaskName}
                   </Typography>
                   <ArrowRight size={14} color="#64748b" />

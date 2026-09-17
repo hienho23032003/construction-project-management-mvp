@@ -123,7 +123,7 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
     >
       <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>
         {/* Header Section */}
-        <Box sx={{ p: { xs: 2, sm: 2.5 }, pb: 1.5, bgcolor: '#ffffff', borderBottom: '1px solid #e2e8f0' }}>
+        <Box sx={{ p: { xs: 2, sm: 2.5 }, pb: 1.5, bgcolor: 'background.paper', borderBottom: '1px solid', borderColor: 'divider' }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
               <Chip
@@ -143,9 +143,10 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
                   label={`Trễ ${task.overdueDays || 1} ngày`}
                   size="small"
                   sx={{
-                    bgcolor: '#fef2f2',
+                    bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(239, 68, 68, 0.15)' : '#fef2f2',
                     color: '#ef4444',
-                    border: '1px solid #fecaca',
+                    border: '1px solid',
+                    borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(239, 68, 68, 0.3)' : '#fecaca',
                     fontWeight: 700,
                     height: 24,
                     fontSize: '0.75rem',
@@ -158,9 +159,10 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
                   label={`Xong trễ ${completedLateDays} ngày`}
                   size="small"
                   sx={{
-                    bgcolor: '#fef2f2',
+                    bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(239, 68, 68, 0.15)' : '#fef2f2',
                     color: '#ef4444',
-                    border: '1px solid #fecaca',
+                    border: '1px solid',
+                    borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(239, 68, 68, 0.3)' : '#fecaca',
                     fontWeight: 700,
                     height: 24,
                     fontSize: '0.75rem',
@@ -168,12 +170,12 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
                 />
               )}
             </Box>
-            <IconButton size="small" onClick={onClose} sx={{ color: '#64748b' }}>
+            <IconButton size="small" onClick={onClose} sx={{ color: 'text.secondary' }}>
               <X size={20} />
             </IconButton>
           </Box>
 
-          <Typography variant="h3" sx={{ fontWeight: 700, fontSize: { xs: '1.1rem', sm: '1.25rem' }, color: '#0f172a', lineHeight: 1.4 }}>
+          <Typography variant="h3" sx={{ fontWeight: 700, fontSize: { xs: '1.1rem', sm: '1.25rem' }, color: 'text.primary', lineHeight: 1.4 }}>
             {task.name}
           </Typography>
 

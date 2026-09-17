@@ -800,6 +800,54 @@ public class TaskService : ITaskService
         return await GetTaskByIdAsync(task.Id);
     }
 
+    public async Task<ApiResponse<TaskDto>> UpdatePriorityAsync(Guid id, UpdateTaskPriorityRequest request, Guid currentUserId)
+    {
+        var task = await _context.Tasks
+            .Include(t => t.Assignees)
+            .Include(t => t.Project).ThenInclude(p => p.Members)
+            .FirstOrDefaultAsync(t => t.Id == id);
+        if (task == null) return ApiResponse<TaskDto>.Fail("Không tìm thấy công việc.");
+
+        var isAssigned = task.Assignees.Any(a => a.UserId == currentUserId);
+        if (!isAssigned)
+        {
+            var user = await _context.Users.FindAsync(currentUserId);
+            var isSuperAdmin = user?.Role == UserRole.SuperAdmin;
+            var isProjectManager = task.Project?.ManagerId == currentUserId || 
+                                   task.Project?.CreatedById == currentUserId || 
+                                   task.CreatedById == currentUserId ||
+                                   task.Project?.Members.Any(m => m.UserId == currentUserId && (m.RoleInProject == "Quản lý công trình (PM)" || m.RoleInProject == "Quản lý dự án" || m.RoleInProject == "Chỉ huy trưởng")) == true;
+            
+            var permissions = await _roleService.GetUserPermissionsAsync(currentUserId);
+            var canOverride = (permissions.Contains("tasks.edit") || permissions.Contains("tasks.update_status")) &&
+                              (permissions.Contains("tasks.view_all") || (permissions.Contains("tasks.view_project") && task.Project?.Members.Any(m => m.UserId == currentUserId) == true));
+
+            if (!isSuperAdmin && !isProjectManager && !canOverride)
+            {
+                return ApiResponse<TaskDto>.Fail("Bạn không có quyền thay đổi mức độ ưu tiên công việc này.");
+            }
+        }
+
+        var oldPriority = task.Priority;
+        task.Priority = request.Priority;
+        task.UpdatedById = currentUserId;
+        task.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+
+        await _activityLogService.LogAsync(
+            currentUserId,
+            ActivityAction.TaskUpdated,
+            $"Thay đổi mức độ ưu tiên công việc '{task.Name}': {oldPriority} -> {task.Priority}",
+            projectId: task.ProjectId,
+            taskId: task.Id,
+            oldValue: oldPriority.ToString(),
+            newValue: task.Priority.ToString()
+        );
+
+        return await GetTaskByIdAsync(task.Id);
+    }
+
     public async Task<ApiResponse<List<TaskCommentDto>>> GetTaskCommentsAsync(Guid taskId)
     {
         var comments = await _context.TaskComments

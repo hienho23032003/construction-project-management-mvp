@@ -15,6 +15,7 @@ import {
   Checkbox,
   FormControlLabel,
   Tooltip,
+  useTheme,
 } from '@mui/material';
 import {
   LogIn,
@@ -29,14 +30,11 @@ import {
   CheckCircle2,
   TrendingUp,
   Award,
-  Building2,
-  Users,
-  FileText,
-  Clock,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { SUCCESS_MESSAGES, ERROR_MESSAGES } from '../constants';
+import { CommonInput, CommonButton, CommonChip } from '../components/common';
 
 interface LoginFormData {
   email: string;
@@ -136,17 +134,11 @@ export const LoginPage: React.FC = () => {
     }
   };
 
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
+
   return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        display: 'flex',
-        flexDirection: 'row',
-        width: '100%',
-        bgcolor: '#ffffff',
-        overflow: 'hidden',
-      }}
-    >
+    <Box sx={{ display: 'flex', minHeight: '100vh', width: '100vw', overflow: 'hidden', bgcolor: 'background.default' }}>
       {/* ======================================================== */}
       {/* LEFT COLUMN: 58% on desktop, hidden on mobile            */}
       {/* ======================================================== */}
@@ -515,8 +507,9 @@ export const LoginPage: React.FC = () => {
           alignItems: 'center',
           justifyContent: 'center',
           p: { xs: 3, sm: 5, md: 4, lg: 5 },
-          bgcolor: '#ffffff',
-          borderLeft: { md: '1px solid #e2e8f0' },
+          bgcolor: 'background.paper',
+          borderLeft: { md: '1px solid' },
+          borderColor: 'divider',
           overflowY: 'auto',
         }}
       >
@@ -537,10 +530,10 @@ export const LoginPage: React.FC = () => {
               sx={{ height: 38, objectFit: 'contain' }}
             />
             <Box>
-              <Typography variant="h6" sx={{ fontWeight: 800, color: '#0f172a', lineHeight: 1.1 }}>
+              <Typography variant="h6" sx={{ fontWeight: 800, color: 'text.primary', lineHeight: 1.1 }}>
                 FCB<span style={{ color: '#0284c7' }}>VN</span>
               </Typography>
-              <Typography variant="caption" sx={{ color: '#64748b', fontSize: '0.75rem' }}>
+              <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.75rem' }}>
                 Quản Lý Thi Công & Dự Án
               </Typography>
             </Box>
@@ -548,10 +541,10 @@ export const LoginPage: React.FC = () => {
 
           {/* Form Header */}
           <Box sx={{ mb: 3 }}>
-            <Typography variant="h4" sx={{ fontWeight: 800, fontSize: { xs: '1.4rem', sm: '1.6rem' }, color: '#0f172a' }}>
+            <Typography variant="h4" sx={{ fontWeight: 800, fontSize: { xs: '1.4rem', sm: '1.6rem' }, color: 'text.primary' }}>
               Đăng Nhập Hệ Thống
             </Typography>
-            <Typography variant="body2" sx={{ color: '#64748b', mt: 0.5, fontSize: '0.875rem' }}>
+            <Typography variant="body2" sx={{ color: 'text.secondary', mt: 0.5, fontSize: '0.875rem' }}>
               Chào mừng bạn trở lại! Nhập thông tin tài khoản để tiếp tục làm việc.
             </Typography>
           </Box>
@@ -579,23 +572,20 @@ export const LoginPage: React.FC = () => {
                 },
               }}
               render={({ field }) => (
-                <TextField
+                <CommonInput
                   {...field}
                   label="Email công việc"
                   type="email"
                   fullWidth
                   required
                   placeholder="name@construction.com"
-                  error={Boolean(errors.email)}
-                  helperText={errors.email?.message}
+                  error={errors.email?.message}
                   disabled={loading}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <Mail size={18} color="#64748b" />
-                      </InputAdornment>
-                    ),
-                  }}
+                  startAdornment={
+                    <InputAdornment position="start">
+                      <Mail size={18} color={isDark ? '#b0b3b8' : '#64748b'} />
+                    </InputAdornment>
+                  }
                 />
               )}
             />
@@ -605,35 +595,20 @@ export const LoginPage: React.FC = () => {
               control={control}
               rules={{ required: 'Vui lòng nhập mật khẩu' }}
               render={({ field }) => (
-                <TextField
+                <CommonInput
                   {...field}
                   label="Mật khẩu"
-                  type={showPassword ? 'text' : 'password'}
+                  isPassword
                   fullWidth
                   required
                   placeholder="Nhập mật khẩu..."
-                  error={Boolean(errors.password)}
-                  helperText={errors.password?.message}
+                  error={errors.password?.message}
                   disabled={loading}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <Lock size={18} color="#64748b" />
-                      </InputAdornment>
-                    ),
-                    endAdornment: (
-                      <InputAdornment position="end">
-                        <IconButton
-                          size="small"
-                          onClick={() => setShowPassword(!showPassword)}
-                          edge="end"
-                          aria-label="Hiện/ẩn mật khẩu"
-                        >
-                          {showPassword ? <EyeOff size={18} color="#64748b" /> : <Eye size={18} color="#64748b" />}
-                        </IconButton>
-                      </InputAdornment>
-                    ),
-                  }}
+                  startAdornment={
+                    <InputAdornment position="start">
+                      <Lock size={18} color={isDark ? '#b0b3b8' : '#64748b'} />
+                    </InputAdornment>
+                  }
                 />
               )}
             />
@@ -650,10 +625,10 @@ export const LoginPage: React.FC = () => {
                         {...field}
                         checked={field.value}
                         size="small"
-                        sx={{ color: '#0284c7', '&.Mui-checked': { color: '#0284c7' } }}
+                        sx={{ color: '#2d88ff', '&.Mui-checked': { color: '#2d88ff' } }}
                       />
                     }
-                    label={<Typography variant="body2" sx={{ color: '#475569', fontSize: '0.85rem' }}>Ghi nhớ đăng nhập</Typography>}
+                    label={<Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '0.85rem' }}>Ghi nhớ đăng nhập</Typography>}
                     sx={{ userSelect: 'none' }}
                   />
                 )}
@@ -661,11 +636,11 @@ export const LoginPage: React.FC = () => {
               <Typography
                 variant="caption"
                 sx={{
-                  color: '#0284c7',
+                  color: isDark ? '#2d88ff' : '#0284c7',
                   fontWeight: 600,
                   cursor: 'pointer',
                   fontSize: '0.8rem',
-                  '&:hover': { textDecoration: 'underline', color: '#0369a1' },
+                  '&:hover': { textDecoration: 'underline' },
                 }}
                 onClick={() => showSuccess('Vui lòng liên hệ Quản trị viên để đặt lại mật khẩu.')}
               >
@@ -674,25 +649,24 @@ export const LoginPage: React.FC = () => {
             </Box>
 
             {/* Submit Button */}
-            <Button
+            <CommonButton
               type="submit"
-              variant="contained"
+              variant="primary"
               size="large"
-              disabled={loading}
-              startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <LogIn size={18} />}
+              loading={loading}
+              loadingText="Đang xác thực..."
+              startIcon={<LogIn size={18} />}
               sx={{
                 py: 1.3,
                 fontSize: '0.95rem',
                 fontWeight: 700,
-                bgcolor: '#0284c7',
-                borderRadius: '8px',
                 boxShadow: '0 4px 12px rgba(2, 132, 199, 0.25)',
                 '&:hover': { bgcolor: '#0369a1' },
                 textTransform: 'none',
               }}
             >
               {loading ? 'Đang Xác Thực...' : 'Đăng Nhập'}
-            </Button>
+            </CommonButton>
           </Box>
 
           <Divider sx={{ my: 3 }}>
@@ -702,9 +676,10 @@ export const LoginPage: React.FC = () => {
               size="small"
               sx={{
                 fontWeight: 600,
-                color: '#0284c7',
-                bgcolor: '#f0f9ff',
-                border: '1px solid #bae6fd',
+                color: isDark ? '#2d88ff' : '#0284c7',
+                bgcolor: isDark ? '#18191a' : '#f0f9ff',
+                border: '1px solid',
+                borderColor: isDark ? '#3a3b3c' : '#bae6fd',
                 fontSize: '0.75rem',
                 px: 0.5,
               }}
@@ -720,26 +695,27 @@ export const LoginPage: React.FC = () => {
                   sx={{
                     p: 1.2,
                     borderRadius: '8px',
-                    border: '1px solid #e2e8f0',
-                    bgcolor: '#f8fafc',
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    bgcolor: isDark ? '#18191a' : '#f8fafc',
                     cursor: 'pointer',
                     transition: 'all 0.15s ease',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
                     '&:hover': {
-                      bgcolor: '#f0f9ff',
-                      borderColor: '#7dd3fc',
+                      bgcolor: isDark ? '#3a3b3c' : '#f0f9ff',
+                      borderColor: '#2d88ff',
                       transform: 'translateY(-1px)',
-                      boxShadow: '0 2px 6px rgba(2, 132, 199, 0.1)',
+                      boxShadow: isDark ? '0 2px 8px rgba(0,0,0,0.5)' : '0 2px 6px rgba(2, 132, 199, 0.1)',
                     },
                   }}
                 >
                   <Box sx={{ overflow: 'hidden' }}>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 700, fontSize: '0.78rem', color: '#0f172a' }} noWrap>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 700, fontSize: '0.78rem', color: 'text.primary' }} noWrap>
                       {acc.role}
                     </Typography>
-                    <Typography variant="caption" sx={{ color: '#64748b', fontSize: '0.7rem', display: 'block' }} noWrap>
+                    <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.7rem', display: 'block' }} noWrap>
                       {acc.email.split('@')[0]}
                     </Typography>
                   </Box>
@@ -750,8 +726,8 @@ export const LoginPage: React.FC = () => {
                       height: 18,
                       fontSize: '0.65rem',
                       fontWeight: 700,
-                      bgcolor: acc.badgeColor,
-                      color: acc.textColor,
+                      bgcolor: isDark ? '#3a3b3c' : acc.badgeColor,
+                      color: isDark ? '#e4e6eb' : acc.textColor,
                       borderRadius: '4px',
                     }}
                   />

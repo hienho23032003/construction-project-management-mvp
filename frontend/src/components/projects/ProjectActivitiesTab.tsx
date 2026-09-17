@@ -45,14 +45,15 @@ export const ProjectActivitiesTab: React.FC<ProjectActivitiesTabProps> = memo(({
                 sx={{
                   p: 2,
                   borderRadius: '8px',
-                  bgcolor: '#f8fafc',
-                  border: '1px solid #e2e8f0',
+                  bgcolor: (theme) => theme.palette.mode === 'dark' ? '#141414' : '#f8fafc',
+                  border: '1px solid',
+                  borderColor: 'divider',
                   cursor: hasTask ? 'pointer' : 'default',
                   transition: 'all 0.2s ease',
                   '&:hover': hasTask
                     ? {
-                        bgcolor: '#f0f9ff',
-                        borderColor: '#bae6fd',
+                        bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(56, 189, 248, 0.08)' : '#f0f9ff',
+                        borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(56, 189, 248, 0.4)' : '#bae6fd',
                         transform: 'translateY(-1px)',
                         boxShadow: '0 2px 6px rgba(2, 132, 199, 0.08)',
                       }
@@ -75,10 +76,10 @@ export const ProjectActivitiesTab: React.FC<ProjectActivitiesTabProps> = memo(({
                       >
                         {act.userName ? act.userName.charAt(0) : 'U'}
                       </Avatar>
-                      <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#0f172a' }}>
+                      <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'text.primary' }}>
                         {act.userName}
                       </Typography>
-                      <Typography variant="body2" sx={{ color: '#475569' }}>
+                      <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                         {formatLogDetails(act.details)}
                       </Typography>
                       {act.taskName && (
@@ -90,9 +91,9 @@ export const ProjectActivitiesTab: React.FC<ProjectActivitiesTabProps> = memo(({
                             height: 22,
                             fontSize: '0.75rem',
                             fontWeight: 600,
-                            bgcolor: '#e0f2fe',
-                            color: '#0369a1',
-                            border: '1px solid #bae6fd',
+                            bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(56, 189, 248, 0.16)' : '#e0f2fe',
+                            color: (theme) => theme.palette.mode === 'dark' ? '#38bdf8' : '#0369a1',
+                            border: (theme) => theme.palette.mode === 'dark' ? '1px solid rgba(56, 189, 248, 0.35)' : '1px solid #bae6fd',
                           }}
                         />
                       )}
@@ -106,7 +107,7 @@ export const ProjectActivitiesTab: React.FC<ProjectActivitiesTabProps> = memo(({
                   </Box>
 
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0 }}>
-                    <Typography variant="caption" sx={{ color: '#94a3b8' }}>
+                    <Typography variant="caption" sx={{ color: 'text.disabled' }}>
                       {formatDateTime(act.createdAt)}
                     </Typography>
                     {hasTask && (

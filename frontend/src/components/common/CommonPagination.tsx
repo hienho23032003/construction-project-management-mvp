@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Typography, Select, MenuItem, IconButton, Button } from '@mui/material';
+import { Box, Typography, Select, MenuItem, IconButton, Button, useTheme } from '@mui/material';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface CommonPaginationProps {
@@ -12,7 +12,7 @@ interface CommonPaginationProps {
   isZeroIndexed?: boolean; // Default true (MUI standard 0-indexed)
 }
 
-export const CommonPagination: React.FC<CommonPaginationProps> = ({
+export const CommonPagination: React.FC<CommonPaginationProps> = React.memo(({
   page,
   rowsPerPage,
   totalCount,
@@ -21,45 +21,42 @@ export const CommonPagination: React.FC<CommonPaginationProps> = ({
   rowsPerPageOptions = [10, 20, 50, 100],
   isZeroIndexed = true,
 }) => {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
   const currentPage = isZeroIndexed ? page + 1 : page;
   const totalPages = Math.max(1, Math.ceil(totalCount / rowsPerPage));
 
   const from = totalCount === 0 ? 0 : (currentPage - 1) * rowsPerPage + 1;
   const to = Math.min(currentPage * rowsPerPage, totalCount);
 
-  const handlePrev = () => {
+  const handlePrev = React.useCallback(() => {
     if (currentPage > 1) {
       onPageChange(isZeroIndexed ? page - 1 : page - 1);
     }
-  };
+  }, [currentPage, isZeroIndexed, page, onPageChange]);
 
-  const handleNext = () => {
+  const handleNext = React.useCallback(() => {
     if (currentPage < totalPages) {
       onPageChange(isZeroIndexed ? page + 1 : page + 1);
     }
-  };
+  }, [currentPage, totalPages, isZeroIndexed, page, onPageChange]);
 
-  const handlePageClick = (p: number) => {
+  const handlePageClick = React.useCallback((p: number) => {
     onPageChange(isZeroIndexed ? p - 1 : p);
-  };
+  }, [isZeroIndexed, onPageChange]);
 
-  const getPageNumbers = (current: number, total: number): (number | string)[] => {
-    if (total <= 7) {
-      return Array.from({ length: total }, (_, i) => i + 1);
+  const pageItems = React.useMemo(() => {
+    if (totalPages <= 7) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
     }
-
-    if (current <= 4) {
-      return [1, 2, 3, 4, 5, '...', total];
+    if (currentPage <= 4) {
+      return [1, 2, 3, 4, 5, '...', totalPages];
     }
-
-    if (current >= total - 3) {
-      return [1, '...', total - 4, total - 3, total - 2, total - 1, total];
+    if (currentPage >= totalPages - 3) {
+      return [1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
     }
-
-    return [1, '...', current - 1, current, current + 1, '...', total];
-  };
-
-  const pageItems = getPageNumbers(currentPage, totalPages);
+    return [1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages];
+  }, [currentPage, totalPages]);
 
   return (
     <Box
@@ -71,12 +68,13 @@ export const CommonPagination: React.FC<CommonPaginationProps> = ({
         gap: 1.5,
         px: 2,
         py: 1.2,
-        bgcolor: '#ffffff',
+        bgcolor: 'background.paper',
+        borderTop: `1px solid ${theme.palette.divider}`,
       }}
     >
       {/* Left side: Rows per page & count */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-        <Typography variant="body2" sx={{ color: '#64748b', fontSize: '0.8125rem', whiteSpace: 'nowrap' }}>
+        <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '0.8125rem', whiteSpace: 'nowrap' }}>
           Hiển thị
         </Typography>
         <Select
@@ -88,17 +86,17 @@ export const CommonPagination: React.FC<CommonPaginationProps> = ({
             height: 30,
             fontSize: '0.8125rem',
             fontWeight: 600,
-            color: '#0f172a',
-            bgcolor: '#f8fafc',
+            color: 'text.primary',
+            bgcolor: isDark ? '#18191a' : '#f8fafc',
             borderRadius: '8px',
             '& .MuiOutlinedInput-notchedOutline': {
-              borderColor: '#cbd5e1',
+              borderColor: isDark ? '#3a3b3c' : '#cbd5e1',
             },
             '&:hover .MuiOutlinedInput-notchedOutline': {
-              borderColor: '#0284c7',
+              borderColor: isDark ? '#2d88ff' : '#0284c7',
             },
             '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-              borderColor: '#0284c7',
+              borderColor: isDark ? '#2d88ff' : '#0284c7',
             },
             '& .MuiSelect-select': {
               py: '4px !important',
@@ -113,8 +111,8 @@ export const CommonPagination: React.FC<CommonPaginationProps> = ({
             </MenuItem>
           ))}
         </Select>
-        <Typography variant="body2" sx={{ color: '#64748b', fontSize: '0.8125rem', whiteSpace: 'nowrap' }}>
-          dòng / trang • Tổng số <strong>{totalCount}</strong> kết quả ({from} - {to})
+        <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '0.8125rem', whiteSpace: 'nowrap' }}>
+          dòng / trang • Tổng số <strong style={{ color: isDark ? '#e4e6eb' : '#0f172a' }}>{totalCount}</strong> kết quả ({from} - {to})
         </Typography>
       </Box>
 
@@ -126,13 +124,18 @@ export const CommonPagination: React.FC<CommonPaginationProps> = ({
           disabled={currentPage <= 1}
           title="Trang trước"
           sx={{
-            border: '1px solid #e2e8f0',
+            border: `1px solid ${theme.palette.divider}`,
             borderRadius: '8px',
             width: 30,
             height: 30,
-            color: '#475569',
-            '&:disabled': { borderColor: '#f1f5f9', color: '#cbd5e1' },
-            '&:hover': { bgcolor: '#f0f9ff', borderColor: '#38bdf8', color: '#0284c7' },
+            color: 'text.secondary',
+            bgcolor: isDark ? '#242526' : 'transparent',
+            '&:disabled': { borderColor: theme.palette.divider, color: isDark ? '#71767b' : '#cbd5e1' },
+            '&:hover': {
+              bgcolor: isDark ? 'rgba(45, 136, 255, 0.12)' : '#f0f9ff',
+              borderColor: isDark ? '#2d88ff' : '#0284c7',
+              color: isDark ? '#2d88ff' : '#0284c7',
+            },
           }}
         >
           <ChevronLeft size={16} />
@@ -149,7 +152,7 @@ export const CommonPagination: React.FC<CommonPaginationProps> = ({
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  color: '#94a3b8',
+                  color: isDark ? '#b0b3b8' : '#94a3b8',
                   fontWeight: 700,
                   fontSize: '0.85rem',
                 }}
@@ -173,14 +176,14 @@ export const CommonPagination: React.FC<CommonPaginationProps> = ({
                 fontSize: '0.8125rem',
                 fontWeight: isActive ? 800 : 600,
                 borderRadius: '8px',
-                bgcolor: isActive ? '#0284c7' : '#ffffff',
-                color: isActive ? '#ffffff !important' : '#334155',
-                border: isActive ? '1px solid #0284c7' : '1px solid #e2e8f0',
+                bgcolor: isActive ? '#0284c7' : isDark ? '#242526' : '#ffffff',
+                color: isActive ? '#ffffff !important' : isDark ? '#b0b3b8' : '#334155',
+                border: isActive ? '1px solid #0284c7' : `1px solid ${theme.palette.divider}`,
                 boxShadow: isActive ? '0 1px 3px rgba(2, 132, 199, 0.3)' : 'none',
                 '&:hover': {
-                  bgcolor: isActive ? '#0369a1' : '#f0f9ff',
-                  borderColor: isActive ? '#0369a1' : '#38bdf8',
-                  color: isActive ? '#ffffff' : '#0284c7',
+                  bgcolor: isActive ? '#0369a1' : isDark ? 'rgba(45, 136, 255, 0.12)' : '#f0f9ff',
+                  borderColor: isActive ? '#0369a1' : isDark ? '#2d88ff' : '#0284c7',
+                  color: isActive ? '#ffffff' : isDark ? '#2d88ff' : '#0284c7',
                 },
               }}
             >
@@ -195,13 +198,18 @@ export const CommonPagination: React.FC<CommonPaginationProps> = ({
           disabled={currentPage >= totalPages}
           title="Trang kế tiếp"
           sx={{
-            border: '1px solid #e2e8f0',
+            border: `1px solid ${theme.palette.divider}`,
             borderRadius: '8px',
             width: 30,
             height: 30,
-            color: '#475569',
-            '&:disabled': { borderColor: '#f1f5f9', color: '#cbd5e1' },
-            '&:hover': { bgcolor: '#f0f9ff', borderColor: '#38bdf8', color: '#0284c7' },
+            color: 'text.secondary',
+            bgcolor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'transparent',
+            '&:disabled': { borderColor: theme.palette.divider, color: isDark ? '#475569' : '#cbd5e1' },
+            '&:hover': {
+              bgcolor: isDark ? 'rgba(56, 189, 248, 0.12)' : '#f0f9ff',
+              borderColor: isDark ? '#38bdf8' : '#0284c7',
+              color: isDark ? '#38bdf8' : '#0284c7',
+            },
           }}
         >
           <ChevronRight size={16} />
@@ -209,4 +217,6 @@ export const CommonPagination: React.FC<CommonPaginationProps> = ({
       </Box>
     </Box>
   );
-};
+});
+
+CommonPagination.displayName = 'CommonPagination';

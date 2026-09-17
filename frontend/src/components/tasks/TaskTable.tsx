@@ -10,17 +10,16 @@ import {
   Chip,
   Box,
   Typography,
-  Select,
-  MenuItem,
   Slider,
   Skeleton,
   IconButton,
   Tooltip,
   Avatar,
+  useTheme,
 } from '@mui/material';
 import { FolderKanban, ChevronDown, ChevronRight } from 'lucide-react';
-import { TaskItem, TaskStatus } from '../../types';
-import { StatusSelect } from '../common';
+import { TaskItem, TaskStatus, PriorityLevel } from '../../types';
+import { StatusSelect, PrioritySelect } from '../common';
 import { formatDate } from '../../utils/dateUtils';
 import { getMediaUrl } from '../../utils/fileUtils';
 import { useAuth } from '../../contexts/AuthContext';
@@ -32,9 +31,11 @@ interface TaskTableRowProps {
   stt: number;
   canUpdateStatus?: boolean;
   canUpdateProgress?: boolean;
+  canUpdatePriority?: boolean;
   onRowClick: (task: TaskItem) => void;
   onStatusChange: (taskId: string, status: TaskStatus) => void;
   onProgressChange: (taskId: string, progress: number) => void;
+  onPriorityChange?: (taskId: string, priority: PriorityLevel) => void;
 }
 
 const TaskTableRow: React.FC<TaskTableRowProps> = memo(({
@@ -42,16 +43,21 @@ const TaskTableRow: React.FC<TaskTableRowProps> = memo(({
   stt,
   canUpdateStatus = true,
   canUpdateProgress = true,
+  canUpdatePriority = true,
   onRowClick,
   onStatusChange,
   onProgressChange,
+  onPriorityChange,
 }) => {
   const { user } = useAuth();
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
   const { isSuperAdmin, can } = usePermission();
   const hasManagerRights = isSuperAdmin || can(PERMISSIONS.TASKS_EDIT);
   const isAssigned = Boolean(user?.id && task.assignees?.some((a) => a.userId === user.id || a.id === user.id));
   const allowStatus = hasManagerRights || (canUpdateStatus && isAssigned) || isAssigned;
   const allowProgress = hasManagerRights || (canUpdateProgress && isAssigned) || isAssigned;
+  const allowPriority = hasManagerRights || (canUpdatePriority && isAssigned) || isAssigned;
 
   const [localProgress, setLocalProgress] = useState(task.progress);
 
@@ -79,18 +85,26 @@ const TaskTableRow: React.FC<TaskTableRowProps> = memo(({
       onClick={() => onRowClick(task)}
       sx={{
         cursor: 'pointer',
-        bgcolor: task.isOverdue || isCompletedLate ? '#fffdfd' : 'inherit',
-        '&:hover': { bgcolor: '#f8fafc !important' },
+        bgcolor: 'inherit',
+        '&:hover': {
+          bgcolor: isDark ? 'rgba(255, 255, 255, 0.04) !important' : 'action.hover',
+        },
       }}
     >
-      <TableCell sx={{ textAlign: 'center', whiteSpace: 'nowrap', fontWeight: 600, color: '#64748b' }}>
+      <TableCell sx={{ textAlign: 'center', whiteSpace: 'nowrap', fontWeight: 600, color: 'text.secondary' }}>
         {stt}
       </TableCell>
       <TableCell sx={{ whiteSpace: 'nowrap' }}>
         <Chip
           label={task.projectCode || 'N/A'}
           size="small"
-          sx={{ bgcolor: '#e0f2fe', color: '#0369a1', fontWeight: 800, fontSize: '0.75rem' }}
+          sx={{
+            bgcolor: isDark ? 'rgba(56, 189, 248, 0.15)' : '#e0f2fe',
+            color: isDark ? '#38bdf8' : '#0369a1',
+            border: isDark ? '1px solid rgba(56, 189, 248, 0.3)' : 'none',
+            fontWeight: 800,
+            fontSize: '0.75rem',
+          }}
         />
       </TableCell>
       <TableCell sx={{ whiteSpace: 'nowrap', minWidth: 200 }}>
@@ -98,7 +112,7 @@ const TaskTableRow: React.FC<TaskTableRowProps> = memo(({
           variant="body2"
           sx={{
             fontWeight: 600,
-            color: '#0f172a',
+            color: 'text.primary',
             whiteSpace: 'nowrap',
           }}
           title={task.name}
@@ -109,7 +123,7 @@ const TaskTableRow: React.FC<TaskTableRowProps> = memo(({
           <Typography
             variant="caption"
             sx={{
-              color: '#64748b',
+              color: 'text.secondary',
               whiteSpace: 'nowrap',
               display: 'block',
             }}
@@ -120,44 +134,96 @@ const TaskTableRow: React.FC<TaskTableRowProps> = memo(({
         )}
       </TableCell>
       <TableCell sx={{ whiteSpace: 'nowrap', minWidth: 140 }}>
-        <Box sx={{ display: 'flex', flexWrap: 'nowrap', gap: 0.5 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'nowrap', gap: 0.5 }}>
           {task.assignees.length === 0 ? (
-            <Typography variant="caption" sx={{ color: '#94a3b8', whiteSpace: 'nowrap' }}>
+            <Typography variant="caption" sx={{ color: 'text.disabled', whiteSpace: 'nowrap' }}>
               Chưa gán
             </Typography>
           ) : (
-            task.assignees.slice(0, 2).map((a) => (
+            <>
               <Chip
-                key={a.id}
+                key={task.assignees[0].id || task.assignees[0].userId}
                 avatar={
                   <Avatar
-                    src={getMediaUrl(a.avatarUrl)}
+                    src={getMediaUrl(task.assignees[0].avatarUrl)}
                     sx={{ width: 18, height: 18, fontSize: '0.65rem' }}
                   >
-                    {a.fullName.charAt(0)}
+                    {task.assignees[0].fullName.charAt(0)}
                   </Avatar>
                 }
-                label={a.fullName}
+                label={task.assignees[0].fullName}
                 size="small"
-                sx={{ height: 22, fontSize: '0.7rem', whiteSpace: 'nowrap' }}
+                sx={{
+                  height: 22,
+                  fontSize: '0.7rem',
+                  whiteSpace: 'nowrap',
+                  maxWidth: task.assignees.length > 1 ? 120 : 160,
+                  bgcolor: isDark ? 'rgba(255, 255, 255, 0.08)' : undefined,
+                  border: `1px solid ${theme.palette.divider}`,
+                  '& .MuiChip-label': {
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  },
+                }}
               />
-            ))
-          )}
-          {task.assignees.length > 2 && (
-            <Chip
-              label={`+${task.assignees.length - 2}`}
-              size="small"
-              sx={{ height: 22, fontSize: '0.7rem', bgcolor: '#f1f5f9' }}
-            />
+              {task.assignees.length > 1 && (
+                <Tooltip
+                  title={
+                    <Box sx={{ p: 0.5, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                      <Typography variant="caption" sx={{ fontWeight: 700, mb: 0.25, display: 'block', color: 'inherit' }}>
+                        Người thực hiện khác ({task.assignees.length - 1}):
+                      </Typography>
+                      {task.assignees.slice(1).map((a) => (
+                        <Box key={a.id || a.userId} sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                          <Avatar
+                            src={getMediaUrl(a.avatarUrl)}
+                            sx={{ width: 18, height: 18, fontSize: '0.65rem' }}
+                          >
+                            {a.fullName.charAt(0)}
+                          </Avatar>
+                          <Typography variant="caption" sx={{ color: 'inherit' }}>
+                            {a.fullName}
+                          </Typography>
+                        </Box>
+                      ))}
+                    </Box>
+                  }
+                  arrow
+                  placement="top"
+                >
+                  <Chip
+                    label={`+${task.assignees.length - 1}`}
+                    size="small"
+                    sx={{
+                      height: 22,
+                      fontSize: '0.7rem',
+                      fontWeight: 700,
+                      bgcolor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#f1f5f9',
+                      color: 'text.secondary',
+                      cursor: 'pointer',
+                      flexShrink: 0,
+                    }}
+                  />
+                </Tooltip>
+              )}
+            </>
           )}
         </Box>
+      </TableCell>
+      <TableCell onClick={(e) => e.stopPropagation()} sx={{ whiteSpace: 'nowrap' }}>
+        <PrioritySelect
+          value={task.priority}
+          onChange={(priority) => onPriorityChange?.(task.id, priority)}
+          disabled={!allowPriority}
+        />
       </TableCell>
       <TableCell sx={{ whiteSpace: 'nowrap' }}>
         <Typography
           variant="caption"
           sx={{
             fontWeight: 600,
-            color: task.isOverdue || isCompletedLate ? '#ef4444' : '#334155',
+            color: task.isOverdue || isCompletedLate ? (isDark ? '#f87171' : '#ef4444') : 'text.primary',
             whiteSpace: 'nowrap',
             display: 'block',
           }}
@@ -190,9 +256,9 @@ const TaskTableRow: React.FC<TaskTableRowProps> = memo(({
                 onProgressChange(task.id, nextVal);
               }
             }}
-            sx={{ color: localProgress >= 100 ? '#10b981' : '#0284c7' }}
+            sx={{ color: localProgress >= 100 ? (isDark ? '#34d399' : '#10b981') : (isDark ? '#38bdf8' : '#0284c7') }}
           />
-          <Typography variant="caption" sx={{ fontWeight: 700, minWidth: 30, whiteSpace: 'nowrap' }}>
+          <Typography variant="caption" sx={{ fontWeight: 700, minWidth: 30, whiteSpace: 'nowrap', color: 'text.primary' }}>
             {localProgress}%
           </Typography>
         </Box>
@@ -214,15 +280,15 @@ interface TaskTableProps {
   onRowClick: (task: TaskItem) => void;
   onStatusChange: (taskId: string, status: TaskStatus) => void;
   onProgressChange: (taskId: string, progress: number) => void;
+  onPriorityChange?: (taskId: string, priority: PriorityLevel) => void;
   canUpdateStatus?: boolean;
   canUpdateProgress?: boolean;
+  canUpdatePriority?: boolean;
 }
 
 export const TaskTable: React.FC<TaskTableProps> = memo(({
   tasks,
   loading,
-  page = 0,
-  rowsPerPage = 10,
   sortBy,
   isDescending,
   collapsedGroups: controlledCollapsedGroups,
@@ -231,9 +297,14 @@ export const TaskTable: React.FC<TaskTableProps> = memo(({
   onRowClick,
   onStatusChange,
   onProgressChange,
+  onPriorityChange,
   canUpdateStatus = true,
   canUpdateProgress = true,
+  canUpdatePriority = true,
 }) => {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
+
   // State for tracking collapsed project groups (if not controlled from parent)
   const [internalCollapsedGroups, setInternalCollapsedGroups] = useState<Record<string, boolean>>({});
 
@@ -286,6 +357,7 @@ export const TaskTable: React.FC<TaskTableProps> = memo(({
       sx={{
         overflow: 'auto',
         maxHeight: 'calc(100vh - 270px)',
+        bgcolor: 'background.paper',
       }}
     >
       <Table
@@ -323,6 +395,16 @@ export const TaskTable: React.FC<TaskTableProps> = memo(({
             </TableCell>
             <TableCell sx={{ minWidth: 150, whiteSpace: 'nowrap', py: 1.5, fontWeight: 700, fontSize: '0.8rem' }}>
               Người Thực Hiện
+            </TableCell>
+            <TableCell sx={{ minWidth: 125, whiteSpace: 'nowrap', py: 1.5, fontWeight: 700, fontSize: '0.8rem' }}>
+              <TableSortLabel
+                active={sortBy === 'priority'}
+                direction={isDescending ? 'desc' : 'asc'}
+                onClick={() => onSort('priority')}
+                sx={{ whiteSpace: 'nowrap' }}
+              >
+                Ưu Tiên
+              </TableSortLabel>
             </TableCell>
             <TableCell sx={{ minWidth: 140, whiteSpace: 'nowrap', py: 1.5, fontWeight: 700, fontSize: '0.8rem' }}>
               <TableSortLabel
@@ -364,6 +446,7 @@ export const TaskTable: React.FC<TaskTableProps> = memo(({
                 <TableCell sx={{ whiteSpace: 'nowrap' }}><Skeleton variant="rounded" width={60} height={24} sx={{ borderRadius: 1 }} /></TableCell>
                 <TableCell sx={{ whiteSpace: 'nowrap' }}><Skeleton variant="text" width="80%" height={22} /><Skeleton variant="text" width="40%" height={16} /></TableCell>
                 <TableCell sx={{ whiteSpace: 'nowrap' }}><Skeleton variant="rounded" width={90} height={22} sx={{ borderRadius: 1 }} /></TableCell>
+                <TableCell sx={{ whiteSpace: 'nowrap' }}><Skeleton variant="rounded" width={75} height={24} sx={{ borderRadius: 1 }} /></TableCell>
                 <TableCell sx={{ whiteSpace: 'nowrap' }}><Skeleton variant="text" width={80} height={20} /></TableCell>
                 <TableCell sx={{ whiteSpace: 'nowrap' }}><Skeleton variant="rounded" width={100} height={28} sx={{ borderRadius: 1 }} /></TableCell>
                 <TableCell sx={{ whiteSpace: 'nowrap' }}><Skeleton variant="rounded" width="90%" height={12} sx={{ borderRadius: 1 }} /></TableCell>
@@ -371,7 +454,7 @@ export const TaskTable: React.FC<TaskTableProps> = memo(({
             ))
           ) : tasks.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={7} align="center" sx={{ py: 6, color: '#94a3b8', whiteSpace: 'nowrap' }}>
+              <TableCell colSpan={8} align="center" sx={{ py: 6, color: 'text.disabled', whiteSpace: 'nowrap' }}>
                 Không tìm thấy công việc nào phù hợp với điều kiện lọc.
               </TableCell>
             </TableRow>
@@ -386,22 +469,21 @@ export const TaskTable: React.FC<TaskTableProps> = memo(({
                   <TableRow
                     onClick={() => toggleGroup(groupKey)}
                     sx={{
-                      bgcolor: '#f1f5f9',
-                      borderLeft: '4px solid #0284c7',
+                      bgcolor: isDark ? 'rgba(0, 0, 0, 0.35)' : '#f1f5f9',
+                      borderLeft: `4px solid ${isDark ? '#38bdf8' : '#0284c7'}`,
                       cursor: 'pointer',
                       userSelect: 'none',
-                      transition: 'background-color 0.15s ease',
                       '&:hover': {
-                        bgcolor: '#e2e8f0 !important',
+                        bgcolor: isDark ? 'rgba(255, 255, 255, 0.06) !important' : '#e2e8f0 !important',
                       },
                       '& td': {
                         py: 0.85,
                         px: 2,
-                        borderBottom: '1px solid #cbd5e1',
+                        borderBottom: `1px solid ${theme.palette.divider}`,
                       },
                     }}
                   >
-                    <TableCell colSpan={7}>
+                    <TableCell colSpan={8}>
                       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1.5 }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                           <Tooltip title={isCollapsed ? 'Nhấp để mở rộng' : 'Nhấp để thu gọn'} arrow>
@@ -409,7 +491,7 @@ export const TaskTable: React.FC<TaskTableProps> = memo(({
                               size="small"
                               sx={{
                                 p: 0.25,
-                                color: '#0284c7',
+                                color: isDark ? '#38bdf8' : '#0284c7',
                                 transition: 'transform 0.2s',
                               }}
                               onClick={(e) => {
@@ -420,12 +502,12 @@ export const TaskTable: React.FC<TaskTableProps> = memo(({
                               {isCollapsed ? <ChevronRight size={18} /> : <ChevronDown size={18} />}
                             </IconButton>
                           </Tooltip>
-                          <FolderKanban size={17} color="#0284c7" />
+                          <FolderKanban size={17} color={isDark ? '#38bdf8' : '#0284c7'} />
                           <Chip
                             label={group.projectCode}
                             size="small"
                             sx={{
-                              bgcolor: '#0284c7',
+                              bgcolor: isDark ? '#0284c7' : '#0284c7',
                               color: '#ffffff',
                               fontWeight: 800,
                               fontSize: '0.75rem',
@@ -435,7 +517,7 @@ export const TaskTable: React.FC<TaskTableProps> = memo(({
                           {group.projectName && (
                             <Typography
                               variant="subtitle2"
-                              sx={{ fontWeight: 700, color: '#0f172a', fontSize: '0.85rem' }}
+                              sx={{ fontWeight: 700, color: 'text.primary', fontSize: '0.85rem' }}
                             >
                               {group.projectName}
                             </Typography>
@@ -447,9 +529,15 @@ export const TaskTable: React.FC<TaskTableProps> = memo(({
                             size="small"
                             variant="outlined"
                             sx={{
-                              borderColor: isCollapsed ? '#0284c7' : '#94a3b8',
-                              bgcolor: isCollapsed ? '#e0f2fe' : '#ffffff',
-                              color: isCollapsed ? '#0369a1' : '#475569',
+                              borderColor: isCollapsed ? (isDark ? '#38bdf8' : '#0284c7') : theme.palette.divider,
+                              bgcolor: isCollapsed
+                                ? isDark
+                                  ? 'rgba(56, 189, 248, 0.15)'
+                                  : '#e0f2fe'
+                                : isDark
+                                ? 'rgba(255, 255, 255, 0.05)'
+                                : '#ffffff',
+                              color: isCollapsed ? (isDark ? '#38bdf8' : '#0369a1') : 'text.secondary',
                               fontWeight: 600,
                               fontSize: '0.7rem',
                               height: 22,
@@ -469,9 +557,11 @@ export const TaskTable: React.FC<TaskTableProps> = memo(({
                         stt={item.originalIndex + 1}
                         canUpdateStatus={canUpdateStatus}
                         canUpdateProgress={canUpdateProgress}
+                        canUpdatePriority={canUpdatePriority}
                         onRowClick={onRowClick}
                         onStatusChange={onStatusChange}
                         onProgressChange={onProgressChange}
+                        onPriorityChange={onPriorityChange}
                       />
                     ))}
                 </React.Fragment>

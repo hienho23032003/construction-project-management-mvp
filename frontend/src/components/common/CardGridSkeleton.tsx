@@ -14,14 +14,19 @@ export const CardGridSkeleton: React.FC<CardGridSkeletonProps> = ({ count = 6 })
           xs: '1fr',
           sm: 'repeat(2, 1fr)',
           md: 'repeat(3, 1fr)',
+          lg: 'repeat(4, 1fr)',
+          xl: 'repeat(5, 1fr)',
+          '@media (min-width: 1400px)': {
+            gridTemplateColumns: 'repeat(5, 1fr)',
+          },
         },
-        gap: { xs: 2, sm: 2.5 },
+        gap: 1.5,
         width: '100%',
         p: '2px',
       }}
     >
       {Array.from({ length: count }).map((_, i) => (
-        <Card key={i} sx={{ border: '1px solid #e2e8f0', borderRadius: '8px', p: 1 }}>
+        <Card key={i} sx={{ border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper', borderRadius: '8px', p: 1 }}>
           <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <Skeleton variant="rounded" width={80} height={24} sx={{ borderRadius: 1 }} />

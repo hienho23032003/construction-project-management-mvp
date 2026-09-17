@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback, useMemo } from 'react';
 import { NotificationItem } from '../types';
 import { notificationApi } from '../services/api/endpoints';
 import { useAuth } from './AuthContext';
@@ -25,7 +25,7 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
   const [hasMore, setHasMore] = useState<boolean>(false);
   const [loadingMore, setLoadingMore] = useState<boolean>(false);
 
-  const fetchNotifications = async () => {
+  const fetchNotifications = useCallback(async () => {
     if (!isAuthenticated) return;
     try {
       const res = await notificationApi.getMyNotifications({ pageIndex: 1, pageSize: 15 });
@@ -38,9 +38,9 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
     } catch (err) {
       console.error('Failed to fetch notifications:', err);
     }
-  };
+  }, [isAuthenticated]);
 
-  const loadMore = async () => {
+  const loadMore = useCallback(async () => {
     if (!isAuthenticated || loadingMore || !hasMore) return;
     try {
       setLoadingMore(true);
@@ -58,7 +58,7 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
     } finally {
       setLoadingMore(false);
     }
-  };
+  }, [isAuthenticated, loadingMore, hasMore, pageIndex, notifications.length]);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -66,9 +66,9 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
       const interval = setInterval(fetchNotifications, 30000); // 30s poll
       return () => clearInterval(interval);
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, fetchNotifications]);
 
-  const markAsRead = async (id: string) => {
+  const markAsRead = useCallback(async (id: string) => {
     try {
       await notificationApi.markAsRead(id);
       setNotifications((prev) =>
@@ -77,33 +77,46 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
     } catch (err) {
       console.error('Failed to mark read:', err);
     }
-  };
+  }, []);
 
-  const markAllAsRead = async () => {
+  const markAllAsRead = useCallback(async () => {
     try {
       await notificationApi.markAllAsRead();
       setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
     } catch (err) {
       console.error('Failed to mark all read:', err);
     }
-  };
+  }, []);
 
-  const unreadCount = notifications.filter((n) => !n.isRead).length;
+  const unreadCount = useMemo(() => notifications.filter((n) => !n.isRead).length, [notifications]);
+
+  const notificationContextValue = useMemo<NotificationContextType>(
+    () => ({
+      notifications,
+      unreadCount,
+      totalCount,
+      hasMore,
+      loadingMore,
+      fetchNotifications,
+      loadMore,
+      markAsRead,
+      markAllAsRead,
+    }),
+    [
+      notifications,
+      unreadCount,
+      totalCount,
+      hasMore,
+      loadingMore,
+      fetchNotifications,
+      loadMore,
+      markAsRead,
+      markAllAsRead,
+    ]
+  );
 
   return (
-    <NotificationContext.Provider
-      value={{
-        notifications,
-        unreadCount,
-        totalCount,
-        hasMore,
-        loadingMore,
-        fetchNotifications,
-        loadMore,
-        markAsRead,
-        markAllAsRead,
-      }}
-    >
+    <NotificationContext.Provider value={notificationContextValue}>
       {children}
     </NotificationContext.Provider>
   );

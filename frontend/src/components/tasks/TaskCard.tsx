@@ -78,11 +78,17 @@ export const TaskCard: React.FC<TaskCardProps> = memo(({
         display: 'flex',
         flexDirection: 'column',
         borderRadius: '10px',
-        border: '1px solid #e2e8f0',
+        border: '1px solid',
+        borderColor: 'divider',
         borderLeft: `4px solid ${statusBorderColor} !important`,
-        bgcolor: task.isOverdue || isCompletedLate ? '#fffbfb' : '#ffffff',
+        bgcolor: (theme) =>
+          task.isOverdue || isCompletedLate
+            ? theme.palette.mode === 'dark'
+              ? 'rgba(239, 68, 68, 0.08)'
+              : '#fffbfb'
+            : 'background.paper',
         boxShadow: '0 1px 3px 0 rgba(15, 23, 42, 0.04), 0 1px 2px -1px rgba(15, 23, 42, 0.02)',
-        transition: 'all 0.22s cubic-bezier(0.4, 0, 0.2, 1)',
+        transition: 'transform 0.15s ease, box-shadow 0.15s ease',
         boxSizing: 'border-box',
         overflow: 'hidden',
         '&:hover': {
@@ -91,20 +97,21 @@ export const TaskCard: React.FC<TaskCardProps> = memo(({
         },
       }}
     >
-      <CardContent sx={{ p: 2.25, flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+      <CardContent sx={{ p: 1.5, pb: 1.25, flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
         {/* Header: Project Code & Status */}
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1.5 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
           <Chip
             label={task.projectCode || 'N/A'}
             size="small"
             sx={{
-              bgcolor: '#f0f9ff',
-              color: '#0284c7',
+              bgcolor: (theme) => (theme.palette.mode === 'dark' ? 'rgba(56, 189, 248, 0.15)' : '#f0f9ff'),
+              color: (theme) => (theme.palette.mode === 'dark' ? '#38bdf8' : '#0284c7'),
               fontWeight: 800,
-              fontSize: '0.72rem',
-              border: '1px solid #e0f2fe',
+              fontSize: '0.7rem',
+              border: '1px solid',
+              borderColor: (theme) => (theme.palette.mode === 'dark' ? 'rgba(56, 189, 248, 0.3)' : '#e0f2fe'),
               borderRadius: '6px',
-              height: 24,
+              height: 22,
             }}
           />
           <Box onClick={(e) => e.stopPropagation()}>
@@ -118,13 +125,16 @@ export const TaskCard: React.FC<TaskCardProps> = memo(({
 
         {/* Task Name */}
         <Typography
-          variant="subtitle1"
+          variant="subtitle2"
           sx={{
             fontWeight: 700,
-            color: '#0f172a',
+            color: 'text.primary',
+            fontSize: '0.85rem',
             lineHeight: 1.3,
-            mb: 0.5,
+            mb: 0.25,
           }}
+          noWrap
+          title={task.name}
         >
           {task.name}
         </Typography>
@@ -134,24 +144,27 @@ export const TaskCard: React.FC<TaskCardProps> = memo(({
           <Typography
             variant="caption"
             sx={{
-              color: '#64748b',
-              mb: 1.5,
+              color: 'text.secondary',
+              mb: 1,
               display: 'block',
+              fontSize: '0.7rem',
             }}
+            noWrap
+            title={`Thuộc hạng mục: ${task.parentName}`}
           >
             Thuộc hạng mục: {task.parentName}
           </Typography>
         )}
 
         {/* Priority Badge */}
-        <Box sx={{ mb: 1.5 }}>
+        <Box sx={{ mb: 1 }}>
           <PriorityBadge priority={task.priority} />
         </Box>
 
         {/* Assignees List */}
-        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 1.5, mt: 'auto' }}>
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 1, mt: 'auto' }}>
           {task.assignees.length === 0 ? (
-            <Typography variant="caption" sx={{ color: '#94a3b8' }}>
+            <Typography variant="caption" sx={{ color: 'text.disabled' }}>
               Chưa gán
             </Typography>
           ) : (
@@ -175,22 +188,34 @@ export const TaskCard: React.FC<TaskCardProps> = memo(({
         </Box>
 
         {/* Timeline & Due Date */}
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5, pt: 1, borderTop: '1px solid #f1f5f9' }}>
-          <Typography variant="caption" sx={{ color: task.isOverdue || isCompletedLate ? '#dc2626' : '#64748b', fontWeight: task.isOverdue || isCompletedLate ? 600 : 400 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5, pt: 1, borderTop: '1px solid', borderColor: 'divider' }}>
+          <Typography variant="caption" sx={{ color: task.isOverdue || isCompletedLate ? '#ef4444' : 'text.secondary', fontWeight: task.isOverdue || isCompletedLate ? 600 : 400 }}>
             Hạn: {formattedDate}
           </Typography>
           {task.isOverdue && (
             <Chip
               label={`Trễ ${task.overdueDays} ngày`}
               size="small"
-              sx={{ height: 20, fontSize: '0.65rem', bgcolor: '#fee2e2', color: '#dc2626', fontWeight: 700 }}
+              sx={{
+                height: 20,
+                fontSize: '0.65rem',
+                bgcolor: (theme) => (theme.palette.mode === 'dark' ? 'rgba(239, 68, 68, 0.2)' : '#fee2e2'),
+                color: (theme) => (theme.palette.mode === 'dark' ? '#f87171' : '#dc2626'),
+                fontWeight: 700,
+              }}
             />
           )}
           {isCompletedLate && (
             <Chip
               label={`Xong trễ ${completedLateDays} ngày`}
               size="small"
-              sx={{ height: 20, fontSize: '0.65rem', bgcolor: '#fee2e2', color: '#dc2626', fontWeight: 700 }}
+              sx={{
+                height: 20,
+                fontSize: '0.65rem',
+                bgcolor: (theme) => (theme.palette.mode === 'dark' ? 'rgba(239, 68, 68, 0.2)' : '#fee2e2'),
+                color: (theme) => (theme.palette.mode === 'dark' ? '#f87171' : '#dc2626'),
+                fontWeight: 700,
+              }}
             />
           )}
         </Box>
@@ -216,7 +241,7 @@ export const TaskCard: React.FC<TaskCardProps> = memo(({
             }}
             sx={{ color: localProgress >= 100 ? '#10b981' : '#0284c7' }}
           />
-          <Typography variant="caption" sx={{ fontWeight: 700, minWidth: 32, textAlign: 'right', color: '#0f172a' }}>
+          <Typography variant="caption" sx={{ fontWeight: 700, minWidth: 32, textAlign: 'right', color: 'text.primary' }}>
             {localProgress}%
           </Typography>
         </Box>

@@ -6,6 +6,7 @@ import {
   Avatar,
   Box,
   Tooltip,
+  useTheme,
 } from '@mui/material';
 import { Edit, Trash2 } from 'lucide-react';
 import { Project } from '../../types';
@@ -46,7 +47,10 @@ export const ProjectTable: React.FC<ProjectTableProps> = memo(({
   canDelete = false,
   isAdmin = false,
 }) => {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
   const showDelete = canDelete || isAdmin;
+
   const columns: ColumnDef<Project>[] = useMemo(
     () => [
       {
@@ -60,7 +64,11 @@ export const ProjectTable: React.FC<ProjectTableProps> = memo(({
           <Chip
             label={value}
             size="small"
-            sx={{ bgcolor: '#0284c7', color: '#ffffff', fontWeight: 800 }}
+            sx={{
+              bgcolor: isDark ? '#0284c7' : '#0284c7',
+              color: '#ffffff',
+              fontWeight: 800,
+            }}
           />
         ),
       },
@@ -72,11 +80,11 @@ export const ProjectTable: React.FC<ProjectTableProps> = memo(({
         minWidth: 220,
         cell: ({ value, row }) => (
           <div>
-            <Typography variant="body2" sx={{ fontWeight: 700, color: '#0f172a' }}>
+            <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.primary' }}>
               {value}
             </Typography>
             {row.location && (
-              <Typography variant="caption" sx={{ color: '#64748b' }}>
+              <Typography variant="caption" sx={{ color: 'text.secondary' }}>
                 {row.location}
               </Typography>
             )}
@@ -112,7 +120,7 @@ export const ProjectTable: React.FC<ProjectTableProps> = memo(({
 
           if (managers.length === 0) {
             return (
-              <Typography variant="caption" sx={{ color: '#94a3b8' }}>
+              <Typography variant="caption" sx={{ color: 'text.disabled' }}>
                 Chưa gán
               </Typography>
             );
@@ -126,7 +134,14 @@ export const ProjectTable: React.FC<ProjectTableProps> = memo(({
                   avatar={
                     <Avatar
                       src={getMediaUrl(m.avatarUrl)}
-                      sx={{ width: 20, height: 20, fontSize: '0.65rem', bgcolor: '#e0f2fe', color: '#0369a1' }}
+                      sx={{
+                        width: 20,
+                        height: 20,
+                        fontSize: '0.65rem',
+                        bgcolor: '#0284c7',
+                        color: '#ffffff',
+                        fontWeight: 700,
+                      }}
                     >
                       {m.fullName.charAt(0)}
                     </Avatar>
@@ -137,8 +152,9 @@ export const ProjectTable: React.FC<ProjectTableProps> = memo(({
                     height: 24,
                     fontSize: '0.72rem',
                     whiteSpace: 'nowrap',
-                    bgcolor: '#f8fafc',
-                    border: '1px solid #e2e8f0',
+                    bgcolor: isDark ? 'rgba(255, 255, 255, 0.06)' : '#f8fafc',
+                    color: 'text.primary',
+                    border: `1px solid ${theme.palette.divider}`,
                   }}
                 />
               ))}
@@ -147,7 +163,12 @@ export const ProjectTable: React.FC<ProjectTableProps> = memo(({
                   <Chip
                     label={`+${managers.length - 2}`}
                     size="small"
-                    sx={{ height: 24, fontSize: '0.72rem', bgcolor: '#f1f5f9' }}
+                    sx={{
+                      height: 24,
+                      fontSize: '0.72rem',
+                      bgcolor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#f1f5f9',
+                      color: 'text.secondary',
+                    }}
                   />
                 </Tooltip>
               )}
@@ -160,10 +181,10 @@ export const ProjectTable: React.FC<ProjectTableProps> = memo(({
         header: 'Ngày Bắt Đầu',
         accessorKey: 'startDate',
         sortable: true,
-        width: 110,
-        minWidth: 110,
+        width: 120,
+        minWidth: 120,
         cell: ({ value }) => (
-          <Typography variant="body2" sx={{ color: '#475569' }}>
+          <Typography variant="body2" sx={{ fontSize: '0.8125rem', color: 'text.secondary' }}>
             {formatDate(value)}
           </Typography>
         ),
@@ -173,10 +194,17 @@ export const ProjectTable: React.FC<ProjectTableProps> = memo(({
         header: 'Hạn Dự Kiến',
         accessorKey: 'plannedEndDate',
         sortable: true,
-        width: 110,
-        minWidth: 110,
-        cell: ({ value }) => (
-          <Typography variant="body2" sx={{ color: '#475569' }}>
+        width: 120,
+        minWidth: 120,
+        cell: ({ value, row }) => (
+          <Typography
+            variant="body2"
+            sx={{
+              fontSize: '0.8125rem',
+              color: row.isOverdue ? (isDark ? '#f87171' : '#ef4444') : 'text.secondary',
+              fontWeight: row.isOverdue ? 700 : 500,
+            }}
+          >
             {formatDate(value)}
           </Typography>
         ),
@@ -186,57 +214,83 @@ export const ProjectTable: React.FC<ProjectTableProps> = memo(({
         header: 'Tiến Độ',
         accessorKey: 'progress',
         sortable: true,
-        width: 160,
-        minWidth: 140,
-        cell: ({ value }) => (
-          <ProgressBar value={value} showText={true} height={8} />
+        width: 130,
+        minWidth: 130,
+        cell: ({ value }) => <ProgressBar value={value} />,
+      },
+      {
+        id: 'actions',
+        header: 'Thao Tác',
+        align: 'center',
+        width: 100,
+        minWidth: 100,
+        cell: ({ row }) => (
+          <Box
+            sx={{ display: 'flex', justifyContent: 'center', gap: 0.5 }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {canEdit && onEditClick && (
+              <Tooltip title="Chỉnh sửa dự án">
+                <IconButton
+                  size="small"
+                  onClick={(e) => onEditClick(row, e)}
+                  sx={{
+                    color: isDark ? '#94a3b8' : '#64748b',
+                    '&:hover': {
+                      color: isDark ? '#38bdf8' : '#0284c7',
+                      bgcolor: isDark ? 'rgba(56, 189, 248, 0.12)' : '#f0f9ff',
+                    },
+                  }}
+                >
+                  <Edit size={16} />
+                </IconButton>
+              </Tooltip>
+            )}
+            {showDelete && onDeleteClick && (
+              <Tooltip title="Xóa dự án">
+                <IconButton
+                  size="small"
+                  onClick={(e) => onDeleteClick(row.id, e)}
+                  sx={{
+                    color: isDark ? '#f87171' : '#ef4444',
+                    '&:hover': {
+                      color: '#dc2626',
+                      bgcolor: isDark ? 'rgba(239, 68, 68, 0.15)' : '#fef2f2',
+                    },
+                  }}
+                >
+                  <Trash2 size={16} />
+                </IconButton>
+              </Tooltip>
+            )}
+          </Box>
         ),
       },
-      ...((canEdit && onEditClick) || (showDelete && onDeleteClick)
-        ? [
-            {
-              id: 'actions',
-              header: 'Thao Tác',
-              width: 90,
-              minWidth: 90,
-              align: 'right' as const,
-              cell: ({ row }: { row: Project }) => (
-                <span onClick={(e) => e.stopPropagation()}>
-                  {canEdit && onEditClick && (
-                    <IconButton size="small" onClick={(e) => onEditClick(row, e)}>
-                      <Edit size={16} color="#64748b" />
-                    </IconButton>
-                  )}
-                  {showDelete && onDeleteClick && (
-                    <IconButton size="small" onClick={(e) => onDeleteClick(row.id, e)}>
-                      <Trash2 size={16} color="#ef4444" />
-                    </IconButton>
-                  )}
-                </span>
-              ),
-            },
-          ]
-        : []),
     ],
-    [canEdit, showDelete, onDeleteClick, onEditClick]
+    [canEdit, showDelete, onEditClick, onDeleteClick, isDark, theme.palette.divider]
   );
 
   return (
-    <CommonTable<Project>
-      data={projects}
+    <CommonTable
       columns={columns}
+      data={projects}
       loading={loading}
       showSTT
       sttConfig={{
         page,
         rowsPerPage,
+        width: 60,
       }}
       sortBy={sortBy}
       isDescending={isDescending}
       onSort={onSort}
-      rowKey="id"
       onRowClick={(row) => onRowClick(row.id)}
-      emptyMessage="Không tìm thấy dự án nào"
+      rowKey="id"
+      density="compact"
+      emptyMessage="Chưa có dự án nào."
+      containerSx={{
+        bgcolor: 'background.paper',
+      }}
     />
   );
 });

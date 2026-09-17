@@ -275,7 +275,7 @@ export function CommonSelect<V extends string | number = string, Multiple extend
           sx={{
             fontWeight: 600,
             fontSize: '0.85rem',
-            color: '#0f172a',
+            color: 'text.primary',
             overflow: 'hidden',
             textOverflow: 'ellipsis',
           }}
@@ -341,9 +341,11 @@ export function CommonSelect<V extends string | number = string, Multiple extend
           PaperProps: {
             sx: {
               maxHeight: 320,
-              boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
               borderRadius: '8px',
-              border: '1px solid #e2e8f0',
+              border: '1px solid',
+              borderColor: 'divider',
+              bgcolor: 'background.paper',
               mt: 0.5,
               ...menuSx,
             },
@@ -351,11 +353,11 @@ export function CommonSelect<V extends string | number = string, Multiple extend
         }}
         sx={{
           borderRadius: '8px',
-          bgcolor: '#ffffff',
+          bgcolor: 'background.paper',
           fontSize: '0.85rem',
           fontWeight: 600,
           '& .MuiOutlinedInput-notchedOutline': {
-            borderColor: '#cbd5e1',
+            borderColor: (theme: any) => theme.palette.mode === 'dark' ? '#3a3b3c' : '#cbd5e1',
           },
           '&:hover .MuiOutlinedInput-notchedOutline': {
             borderColor: '#0284c7',
@@ -374,8 +376,8 @@ export function CommonSelect<V extends string | number = string, Multiple extend
               <ListSubheader
                 key={`subheader-${group.name}`}
                 sx={{
-                  bgcolor: '#f8fafc',
-                  color: '#64748b',
+                  bgcolor: (theme) => theme.palette.mode === 'dark' ? '#18191a' : '#f8fafc',
+                  color: 'text.secondary',
                   fontWeight: 700,
                   fontSize: '0.75rem',
                   lineHeight: '28px',
@@ -398,12 +400,13 @@ export function CommonSelect<V extends string | number = string, Multiple extend
                       fontWeight: isSelected ? 700 : 500,
                       py: 1,
                       px: 1.5,
+                      color: 'text.primary',
                       '&.Mui-selected': {
-                        bgcolor: 'rgba(2, 132, 199, 0.08) !important',
-                        color: '#0284c7',
+                        bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(45, 136, 255, 0.16) !important' : 'rgba(2, 132, 199, 0.08) !important',
+                        color: 'primary.main',
                       },
                       '&:hover': {
-                        bgcolor: '#f1f5f9',
+                        bgcolor: 'action.hover',
                       },
                     }}
                   >
@@ -415,7 +418,7 @@ export function CommonSelect<V extends string | number = string, Multiple extend
                           <Checkbox
                             size="small"
                             checked={isSelected}
-                            sx={{ p: 0.5, mr: 1, color: '#cbd5e1', '&.Mui-checked': { color: '#0284c7' } }}
+                            sx={{ p: 0.5, mr: 1, color: 'text.disabled', '&.Mui-checked': { color: 'primary.main' } }}
                           />
                         )}
                         {opt.icon && <ListItemIcon sx={{ minWidth: 28, color: 'inherit' }}>{opt.icon}</ListItemIcon>}
@@ -437,10 +440,11 @@ export function CommonSelect<V extends string | number = string, Multiple extend
                           primaryTypographyProps={{
                             fontSize: '0.825rem',
                             fontWeight: isSelected ? 700 : 500,
+                            color: 'inherit',
                           }}
                           secondaryTypographyProps={{
                             fontSize: '0.725rem',
-                            color: '#64748b',
+                            color: 'text.secondary',
                           }}
                         />
                       </>
@@ -464,12 +468,13 @@ export function CommonSelect<V extends string | number = string, Multiple extend
                     fontWeight: isSelected ? 700 : 500,
                     py: 1,
                     px: 1.5,
+                    color: 'text.primary',
                     '&.Mui-selected': {
-                      bgcolor: 'rgba(2, 132, 199, 0.08) !important',
-                      color: '#0284c7',
+                      bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(45, 136, 255, 0.16) !important' : 'rgba(2, 132, 199, 0.08) !important',
+                      color: 'primary.main',
                     },
                     '&:hover': {
-                      bgcolor: '#f1f5f9',
+                      bgcolor: 'action.hover',
                     },
                   }}
                 >
@@ -481,7 +486,7 @@ export function CommonSelect<V extends string | number = string, Multiple extend
                         <Checkbox
                           size="small"
                           checked={isSelected}
-                          sx={{ p: 0.5, mr: 1, color: '#cbd5e1', '&.Mui-checked': { color: '#0284c7' } }}
+                          sx={{ p: 0.5, mr: 1, color: 'text.disabled', '&.Mui-checked': { color: 'primary.main' } }}
                         />
                       )}
                       {opt.icon && <ListItemIcon sx={{ minWidth: 28, color: 'inherit' }}>{opt.icon}</ListItemIcon>}
@@ -503,10 +508,11 @@ export function CommonSelect<V extends string | number = string, Multiple extend
                         primaryTypographyProps={{
                           fontSize: '0.825rem',
                           fontWeight: isSelected ? 700 : 500,
+                          color: 'inherit',
                         }}
                         secondaryTypographyProps={{
                           fontSize: '0.725rem',
-                          color: '#64748b',
+                          color: 'text.secondary',
                         }}
                       />
                     </>

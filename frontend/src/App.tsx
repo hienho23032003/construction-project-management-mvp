@@ -1,11 +1,10 @@
 import React from 'react';
 import { BrowserRouter } from 'react-router-dom';
-import { ThemeProvider, CssBaseline } from '@mui/material';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFnsV3';
 import { vi } from 'date-fns/locale/vi';
-import { theme } from './theme/theme';
+import { ThemeContextProvider } from './contexts/ThemeContext';
 import { AuthProvider } from './contexts/AuthContext';
 import { NotificationProvider } from './contexts/NotificationContext';
 import { ToastProvider } from './contexts/ToastContext';
@@ -26,9 +25,8 @@ const queryClient = new QueryClient({
 export const App: React.FC = () => {
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider theme={theme}>
+      <ThemeContextProvider>
         <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={vi}>
-          <CssBaseline />
           <ToastProvider>
             <AuthProvider>
               <NotificationProvider>
@@ -39,7 +37,7 @@ export const App: React.FC = () => {
             </AuthProvider>
           </ToastProvider>
         </LocalizationProvider>
-      </ThemeProvider>
+      </ThemeContextProvider>
     </QueryClientProvider>
   );
 };

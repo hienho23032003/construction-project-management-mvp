@@ -20,18 +20,20 @@ import {
   LayoutGrid,
   List as ListIcon,
 } from 'lucide-react';
-import { TaskItem, TaskStatus } from '../types';
+import { TaskItem, TaskStatus, PriorityLevel } from '../types';
 import { TaskTable } from '../components/tasks/TaskTable';
 import { TaskCard } from '../components/tasks/TaskCard';
 import { TaskDetailDrawer } from '../components/tasks/TaskDetailDrawer';
 import { CardGridSkeleton } from '../components/common/CardGridSkeleton';
 import { CommonPagination } from '../components/common/CommonPagination';
 import { ScopeChip } from '../components/common/ScopeChip';
+import { CommonInput } from '../components/common';
 import {
   useTasksQuery,
   useTaskDetailQuery,
   useUpdateTaskStatusMutation,
   useUpdateTaskProgressMutation,
+  useUpdateTaskPriorityMutation,
   useTaskCommentsQuery,
   useTaskDependenciesQuery,
   useAddCommentMutation,
@@ -51,6 +53,7 @@ export const TasksPage: React.FC = () => {
   const canViewProject = canViewAll || can(PERMISSIONS.TASKS_VIEW_PROJECT);
   const canUpdateStatus = isSuperAdmin || can(PERMISSIONS.TASKS_UPDATE_STATUS);
   const canUpdateProgress = isSuperAdmin || can(PERMISSIONS.TASKS_UPDATE_PROGRESS);
+  const canUpdatePriority = isSuperAdmin || can(PERMISSIONS.TASKS_EDIT) || can(PERMISSIONS.TASKS_UPDATE_STATUS);
   const canComment = isSuperAdmin || can(PERMISSIONS.TASKS_COMMENT);
 
   const { getParam, getNumberParam, setParam, setParams, removeParams } = useAppSearchParams();
@@ -67,7 +70,7 @@ export const TasksPage: React.FC = () => {
 
   // Pagination & Filtering & Sorting
   const [page, setPage] = useState(pageParam);
-  const [rowsPerPage, setRowsPerPage] = useState(viewParam === 'grid' ? 9 : 10);
+  const [rowsPerPage, setRowsPerPage] = useState(viewParam === 'grid' ? 10 : 10);
   const [sortBy, setSortBy] = useState('sortOrder');
   const [isDescending, setIsDescending] = useState(false);
   const [search, setSearch] = useState(searchParam);
@@ -136,15 +139,17 @@ export const TasksPage: React.FC = () => {
     setViewMode(val);
     setParam('view', val === 'grid' ? 'grid' : null);
     if (val === 'grid') {
-      if (rowsPerPage === 10 || rowsPerPage === 20) {
-        setRowsPerPage(9);
-        setPage(0);
-      }
-    } else {
-      if (rowsPerPage === 9 || rowsPerPage === 18) {
+      if (rowsPerPage === 20) {
+        setRowsPerPage(15);
+      } else if (rowsPerPage !== 10 && rowsPerPage !== 15 && rowsPerPage !== 20 && rowsPerPage !== 30 && rowsPerPage !== 50) {
         setRowsPerPage(10);
-        setPage(0);
       }
+      setPage(0);
+    } else {
+      if (rowsPerPage === 15 || rowsPerPage === 30) {
+        setRowsPerPage(10);
+      }
+      setPage(0);
     }
   };
 
@@ -176,6 +181,7 @@ export const TasksPage: React.FC = () => {
   const { data: projects = [] } = useProjectsListQuery();
   const updateStatusMutation = useUpdateTaskStatusMutation();
   const updateProgressMutation = useUpdateTaskProgressMutation();
+  const updatePriorityMutation = useUpdateTaskPriorityMutation();
 
   const selectedTaskId = selectedTask?.id;
   const { data: comments = [], isLoading: loadingComments } = useTaskCommentsQuery(selectedTaskId);
@@ -219,6 +225,10 @@ export const TasksPage: React.FC = () => {
     updateProgressMutation.mutate({ id: taskId, progress });
   }, [updateProgressMutation]);
 
+  const handlePriorityChange = useCallback((taskId: string, priority: PriorityLevel) => {
+    updatePriorityMutation.mutate({ id: taskId, priority });
+  }, [updatePriorityMutation]);
+
   usePresenceHeartbeat({
     projectId: selectedProjectId !== 'ALL' ? selectedProjectId : undefined,
     enabled: selectedProjectId !== 'ALL',
@@ -230,12 +240,12 @@ export const TasksPage: React.FC = () => {
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', flexWrap: 'wrap', gap: 1.5 }}>
         <Box>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-            <Typography variant="h2" sx={{ fontWeight: 800, fontSize: { xs: '1.15rem', sm: '1.35rem' }, color: '#0f172a' }}>
+            <Typography variant="h2" sx={{ fontWeight: 800, fontSize: { xs: '1.15rem', sm: '1.35rem' }, color: 'text.primary' }}>
               Quản Lý Công Việc & Tiến Độ Thi Công
             </Typography>
             <ScopeChip canViewAll={canViewAll} canViewProject={canViewProject} />
           </Box>
-          <Typography variant="body2" sx={{ color: '#64748b', mt: 0.25, fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
+          <Typography variant="body2" sx={{ color: 'text.secondary', mt: 0.25, fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
             {canViewAll
               ? 'Tra cứu, cập nhật tiến độ, bình luận và theo dõi deadline toàn hệ thống'
               : canViewProject
@@ -249,24 +259,21 @@ export const TasksPage: React.FC = () => {
       </Box>
 
       {/* Filters Toolbar */}
-      <Paper sx={{ p: { xs: 1.5, sm: 2 }, border: '1px solid #e2e8f0', borderRadius: '8px', display: 'flex', gap: 1.5, flexWrap: 'wrap', alignItems: 'center', width: '100%', maxWidth: '100%' }}>
+      <Paper sx={{ p: { xs: 1.5, sm: 2 }, border: '1px solid', borderColor: 'divider', borderRadius: '8px', bgcolor: 'background.paper', display: 'flex', gap: 1.5, flexWrap: 'wrap', alignItems: 'center', width: '100%', maxWidth: '100%' }}>
         {/* Compact Search Input */}
         <Box sx={{ width: { xs: '100%', sm: 260, md: 320 }, minWidth: 0 }}>
-          <TextField
-            size="small"
-            fullWidth
+          <CommonInput
+            isSearch
+            clearable
             placeholder="Tìm công việc..."
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
               setPage(0);
             }}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <Search size={18} color="#94a3b8" />
-                </InputAdornment>
-              ),
+            onClear={() => {
+              setSearch('');
+              setPage(0);
             }}
           />
         </Box>
@@ -347,8 +354,8 @@ export const TasksPage: React.FC = () => {
       ) : viewMode === 'grid' ? (
         <>
           {tasks.length === 0 ? (
-            <Paper sx={{ p: { xs: 3, sm: 6 }, textAlign: 'center', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-              <Typography variant="body2" sx={{ color: '#94a3b8' }}>
+            <Paper sx={{ p: { xs: 3, sm: 6 }, textAlign: 'center', borderRadius: '8px', border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}>
+              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                 Không tìm thấy công việc nào phù hợp với điều kiện lọc.
               </Typography>
             </Paper>
@@ -360,8 +367,13 @@ export const TasksPage: React.FC = () => {
                   xs: '1fr',
                   sm: 'repeat(2, 1fr)',
                   md: 'repeat(3, 1fr)',
+                  lg: 'repeat(4, 1fr)',
+                  xl: 'repeat(5, 1fr)',
+                  '@media (min-width: 1400px)': {
+                    gridTemplateColumns: 'repeat(5, 1fr)',
+                  },
                 },
-                gap: { xs: 2, sm: 2.5 },
+                gap: 1.5,
                 width: '100%',
                 p: '2px',
               }}
@@ -379,19 +391,19 @@ export const TasksPage: React.FC = () => {
               ))}
             </Box>
           )}
-          <Paper sx={{ border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden', mt: 1 }}>
+          <Paper sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '8px', overflow: 'hidden', mt: 1, bgcolor: 'background.paper' }}>
             <CommonPagination
               page={page}
               rowsPerPage={rowsPerPage}
               totalCount={totalCount}
               onPageChange={handlePageChange}
               onRowsPerPageChange={handleRowsPerPageChange}
-              rowsPerPageOptions={[9, 18, 27, 45, 90]}
+              rowsPerPageOptions={[10, 15, 20, 30, 50, 100]}
             />
           </Paper>
         </>
       ) : (
-        <Paper sx={{ border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden', bgcolor: '#ffffff' }}>
+        <Paper sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '8px', overflow: 'hidden', bgcolor: 'background.paper' }}>
           <TaskTable
             tasks={tasks}
             loading={isLoading}
@@ -405,8 +417,10 @@ export const TasksPage: React.FC = () => {
             onRowClick={handleRowClick}
             onStatusChange={handleStatusChange}
             onProgressChange={handleProgressChange}
+            onPriorityChange={handlePriorityChange}
             canUpdateStatus={canUpdateStatus}
             canUpdateProgress={canUpdateProgress}
+            canUpdatePriority={canUpdatePriority}
           />
           <CommonPagination
             page={page}

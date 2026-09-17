@@ -31,7 +31,9 @@ export const DashboardDateFilter: React.FC<DashboardDateFilterProps> = ({
       sx={{
         p: { xs: 1.5, sm: 2 },
         borderRadius: '8px',
-        border: '1px solid #e2e8f0',
+        border: '1px solid',
+        borderColor: 'divider',
+        bgcolor: 'background.paper',
         display: 'flex',
         flexDirection: { xs: 'column', md: 'row' },
         alignItems: { xs: 'stretch', md: 'center' },
@@ -61,17 +63,17 @@ export const DashboardDateFilter: React.FC<DashboardDateFilterProps> = ({
             width: 32,
             height: 32,
             borderRadius: '8px',
-            bgcolor: '#e0f2fe',
+            bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(56, 189, 248, 0.16)' : '#e0f2fe',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: '#0284c7',
+            color: (theme) => theme.palette.mode === 'dark' ? '#38bdf8' : '#0284c7',
             flexShrink: 0,
           }}
         >
           <Filter size={18} />
         </Box>
-        <Typography variant="subtitle1" sx={{ fontWeight: 700, color: '#0f172a', fontSize: { xs: '0.9rem', sm: '1rem' } }}>
+        <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'text.primary', fontSize: { xs: '0.9rem', sm: '1rem' } }}>
           Bộ Lọc Thời Gian Dashboard
         </Typography>
         <ScopeChip canViewAll={canViewAll} canViewProject={canViewProject} />

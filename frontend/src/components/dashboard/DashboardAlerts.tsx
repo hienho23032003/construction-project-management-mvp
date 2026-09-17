@@ -1,9 +1,9 @@
 import React, { memo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Box, Grid, Paper, Typography, Button, Chip } from '@mui/material';
+import { Box, Grid, Typography, useTheme } from '@mui/material';
 import { AlertTriangle, Calendar } from 'lucide-react';
 import { DashboardSummary } from '../../types';
-import { ProgressBar } from '../common/ProgressBar';
+import { CommonCard, CommonButton, CommonChip, ProgressBar } from '../common';
 import { formatDate } from '../../utils/dateUtils';
 
 interface DashboardAlertsProps {
@@ -13,6 +13,8 @@ interface DashboardAlertsProps {
 
 export const DashboardAlerts: React.FC<DashboardAlertsProps> = memo(({ data, onSelectTask }) => {
   const navigate = useNavigate();
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
 
   const handleTaskClick = (taskId: string) => {
     if (onSelectTask) {
@@ -26,32 +28,25 @@ export const DashboardAlerts: React.FC<DashboardAlertsProps> = memo(({ data, onS
     <Grid container spacing={{ xs: 2, md: 2.5 }}>
       {/* Critical Overdue Tasks */}
       <Grid item xs={12} md={6}>
-        <Paper
+        <CommonCard
+          title={`Cảnh Báo Công Việc Quá Hạn (${data.criticalOverdueTasks.length})`}
+          headerIcon={<AlertTriangle size={18} color="#ef4444" />}
+          action={
+            <CommonButton
+              size="small"
+              variant="dangerOutline"
+              onClick={() => navigate('/tasks')}
+            >
+              Chi tiết
+            </CommonButton>
+          }
           sx={{
-            p: { xs: 1.75, sm: 2.5 },
-            border: '1px solid #fee2e2',
-            bgcolor: '#fff5f5',
-            borderRadius: '8px',
-            overflow: 'hidden',
             height: '100%',
-            display: 'flex',
-            flexDirection: 'column',
+            borderColor: isDark ? 'rgba(239, 68, 68, 0.4)' : '#fee2e2',
           }}
         >
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <AlertTriangle size={18} color="#ef4444" />
-              <Typography variant="h4" sx={{ fontWeight: 700, fontSize: '0.95rem', color: '#b91c1c' }}>
-                Cảnh Báo Công Việc Quá Hạn ({data.criticalOverdueTasks.length})
-              </Typography>
-            </Box>
-            <Button size="small" onClick={() => navigate('/tasks')} sx={{ color: '#b91c1c', fontWeight: 600 }}>
-              Chi tiết
-            </Button>
-          </Box>
-
           {data.criticalOverdueTasks.length === 0 ? (
-            <Typography variant="body2" sx={{ color: '#64748b', py: 2 }}>
+            <Typography variant="body2" sx={{ color: 'text.secondary', py: 2 }}>
               Không có công việc nào bị quá hạn. Tiến độ rất tốt!
             </Typography>
           ) : (
@@ -59,98 +54,81 @@ export const DashboardAlerts: React.FC<DashboardAlertsProps> = memo(({ data, onS
               sx={{
                 display: 'flex',
                 flexDirection: 'column',
-                gap: 1.5,
+                gap: 1.25,
                 maxHeight: 340,
                 overflowY: 'auto',
-                pr: 1,
-                '&::-webkit-scrollbar': {
-                  width: '5px',
-                },
-                '&::-webkit-scrollbar-track': {
-                  background: 'transparent',
-                },
-                '&::-webkit-scrollbar-thumb': {
-                  background: '#fca5a5',
-                  borderRadius: '4px',
-                },
-                '&::-webkit-scrollbar-thumb:hover': {
-                  background: '#f87171',
-                },
+                pr: 0.5,
               }}
             >
               {data.criticalOverdueTasks.map((task) => (
-                <Paper
+                <Box
                   key={task.taskId}
                   onClick={() => handleTaskClick(task.taskId)}
                   sx={{
                     p: 1.5,
                     borderRadius: '8px',
-                    border: '1px solid #fecaca',
-                    bgcolor: '#ffffff',
+                    border: `1px solid ${isDark ? 'rgba(239, 68, 68, 0.3)' : '#fecaca'}`,
+                    bgcolor: isDark ? '#18191a' : '#f8fafc',
                     cursor: 'pointer',
-                    '&:hover': { bgcolor: '#fff1f2', borderColor: '#f87171' },
-                    transition: 'all 0.15s ease',
+                    '&:hover': {
+                      bgcolor: isDark ? '#3a3b3c' : '#fff1f2',
+                      borderColor: '#f87171',
+                    },
+                    transition: 'border-color 0.15s ease',
                   }}
                 >
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 0.75, gap: 1 }}>
                     <Box sx={{ minWidth: 0, flex: 1 }}>
-                      <Chip
+                      <CommonChip
                         label={task.projectCode}
+                        colorVariant="danger"
                         size="small"
-                        sx={{ height: 20, fontSize: '0.65rem', fontWeight: 700, mr: 1, bgcolor: '#fee2e2', color: '#b91c1c', verticalAlign: 'middle' }}
+                        sx={{ mr: 1, verticalAlign: 'middle', height: 20 }}
                       />
-                      <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#0f172a', wordBreak: 'break-word', display: 'inline' }}>
+                      <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'text.primary', wordBreak: 'break-word', display: 'inline' }}>
                         {task.taskName}
                       </Typography>
                     </Box>
-                    <Chip
+                    <CommonChip
                       label={`Trễ ${task.overdueDays} ngày`}
+                      colorVariant="danger"
                       size="small"
-                      sx={{ bgcolor: '#ef4444', color: '#ffffff', fontWeight: 700, height: 20, fontSize: '0.65rem', flexShrink: 0, whiteSpace: 'nowrap' }}
+                      sx={{ bgcolor: '#ef4444', color: '#ffffff', fontWeight: 700, height: 20, flexShrink: 0 }}
                     />
                   </Box>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1, gap: 1 }}>
-                    <Typography variant="caption" sx={{ color: '#64748b', wordBreak: 'break-word' }}>
+                    <Typography variant="caption" sx={{ color: 'text.secondary', wordBreak: 'break-word' }}>
                       Phụ trách: {task.assigneeNames.join(', ') || 'Chưa gán'}
                     </Typography>
-                    <Typography variant="caption" sx={{ fontWeight: 700, color: '#0284c7', flexShrink: 0 }}>
+                    <Typography variant="caption" sx={{ fontWeight: 700, color: isDark ? '#2d88ff' : '#0284c7', flexShrink: 0 }}>
                       {task.progress}%
                     </Typography>
                   </Box>
-                </Paper>
+                </Box>
               ))}
             </Box>
           )}
-        </Paper>
+        </CommonCard>
       </Grid>
 
       {/* Upcoming Deadlines */}
       <Grid item xs={12} md={6}>
-        <Paper
-          sx={{
-            p: { xs: 1.75, sm: 2.5 },
-            border: '1px solid #e2e8f0',
-            borderRadius: '8px',
-            height: '100%',
-            display: 'flex',
-            flexDirection: 'column',
-            overflow: 'hidden',
-          }}
-        >
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Calendar size={18} color="#0284c7" />
-              <Typography variant="h4" sx={{ fontWeight: 700, fontSize: '0.95rem', color: '#0f172a' }}>
-                Hạn Chót Sắp Tới (7 ngày tới)
-              </Typography>
-            </Box>
-            <Button size="small" onClick={() => navigate('/tasks')} sx={{ fontWeight: 600 }}>
+        <CommonCard
+          title="Hạn Chót Sắp Tới (7 ngày tới)"
+          headerIcon={<Calendar size={18} color={isDark ? '#2d88ff' : '#0284c7'} />}
+          action={
+            <CommonButton
+              size="small"
+              variant="outline"
+              onClick={() => navigate('/tasks')}
+            >
               Chi tiết
-            </Button>
-          </Box>
-
+            </CommonButton>
+          }
+          sx={{ height: '100%' }}
+        >
           {data.upcomingDeadlines.length === 0 ? (
-            <Typography variant="body2" sx={{ color: '#64748b', py: 2 }}>
+            <Typography variant="body2" sx={{ color: 'text.secondary', py: 2 }}>
               Không có deadline nào trong 7 ngày tới.
             </Typography>
           ) : (
@@ -158,68 +136,61 @@ export const DashboardAlerts: React.FC<DashboardAlertsProps> = memo(({ data, onS
               sx={{
                 display: 'flex',
                 flexDirection: 'column',
-                gap: 1.5,
+                gap: 1.25,
                 maxHeight: 340,
                 overflowY: 'auto',
-                pr: 1,
-                '&::-webkit-scrollbar': {
-                  width: '5px',
-                },
-                '&::-webkit-scrollbar-track': {
-                  background: 'transparent',
-                },
-                '&::-webkit-scrollbar-thumb': {
-                  background: '#cbd5e1',
-                  borderRadius: '4px',
-                },
-                '&::-webkit-scrollbar-thumb:hover': {
-                  background: '#94a3b8',
-                },
+                pr: 0.5,
               }}
             >
               {data.upcomingDeadlines.map((task) => (
-                <Paper
+                <Box
                   key={task.taskId}
                   onClick={() => handleTaskClick(task.taskId)}
                   sx={{
                     p: 1.5,
                     borderRadius: '8px',
-                    border: '1px solid #e2e8f0',
-                    bgcolor: '#f8fafc',
+                    border: `1px solid ${theme.palette.divider}`,
+                    bgcolor: isDark ? '#18191a' : '#f8fafc',
                     cursor: 'pointer',
-                    '&:hover': { bgcolor: '#f0f9ff', borderColor: '#38bdf8' },
-                    transition: 'all 0.15s ease',
+                    '&:hover': {
+                      bgcolor: isDark ? '#3a3b3c' : '#f0f9ff',
+                      borderColor: isDark ? '#2d88ff' : '#0284c7',
+                    },
+                    transition: 'border-color 0.15s ease',
                   }}
                 >
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 0.75, gap: 1 }}>
                     <Box sx={{ minWidth: 0, flex: 1 }}>
-                      <Chip
+                      <CommonChip
                         label={task.projectCode}
+                        colorVariant="primary"
                         size="small"
-                        sx={{ height: 20, fontSize: '0.65rem', fontWeight: 700, mr: 1, bgcolor: '#e0f2fe', color: '#0369a1', verticalAlign: 'middle' }}
+                        sx={{ mr: 1, verticalAlign: 'middle', height: 20 }}
                       />
-                      <Typography variant="subtitle2" sx={{ fontWeight: 600, wordBreak: 'break-word', display: 'inline' }}>
+                      <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'text.primary', wordBreak: 'break-word', display: 'inline' }}>
                         {task.taskName}
                       </Typography>
                     </Box>
-                    <Chip
+                    <CommonChip
                       label={task.daysRemaining === 0 ? 'Hôm nay' : `Còn ${task.daysRemaining} ngày`}
+                      colorVariant="warning"
                       size="small"
-                      sx={{ bgcolor: '#fef3c7', color: '#b45309', fontWeight: 700, height: 20, fontSize: '0.65rem', flexShrink: 0, whiteSpace: 'nowrap' }}
+                      sx={{ height: 20, flexShrink: 0 }}
                     />
                   </Box>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1, gap: 1 }}>
-                    <Typography variant="caption" sx={{ color: '#64748b' }}>
+                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>
                       Hạn: {formatDate(task.plannedEndDate)}
                     </Typography>
                     <ProgressBar value={task.progress} height={6} showText />
                   </Box>
-                </Paper>
+                </Box>
               ))}
             </Box>
           )}
-        </Paper>
+        </CommonCard>
       </Grid>
     </Grid>
   );
 });
+

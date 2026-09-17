@@ -41,6 +41,7 @@ import { CardGridSkeleton } from '../components/common/CardGridSkeleton';
 import { ScopeChip } from '../components/common/ScopeChip';
 import { TableSkeleton } from '../components/common/TableSkeleton';
 import { CommonPagination } from '../components/common/CommonPagination';
+import { CommonButton, CommonInput } from '../components/common';
 import { useDebounce } from '../hooks/useDebounce';
 
 export const ProjectsPage: React.FC = () => {
@@ -63,7 +64,7 @@ export const ProjectsPage: React.FC = () => {
 
   // Filters & Pagination
   const [page, setPage] = useState(pageParam);
-  const [rowsPerPage, setRowsPerPage] = useState(viewParam === 'grid' ? 9 : 12);
+  const [rowsPerPage, setRowsPerPage] = useState(viewParam === 'grid' ? 10 : 10);
   const [search, setSearch] = useState(searchParam);
   const [statusFilter, setStatusFilter] = useState(statusParam);
   const [viewMode, setViewMode] = useState<'grid' | 'table'>(viewParam);
@@ -101,15 +102,17 @@ export const ProjectsPage: React.FC = () => {
     setViewMode(val);
     setParam('view', val === 'grid' ? 'grid' : null);
     if (val === 'grid') {
-      if (rowsPerPage === 12 || rowsPerPage === 6) {
-        setRowsPerPage(9);
-        setPage(0);
+      if (rowsPerPage === 20) {
+        setRowsPerPage(15);
+      } else if (rowsPerPage !== 10 && rowsPerPage !== 15 && rowsPerPage !== 20 && rowsPerPage !== 30 && rowsPerPage !== 50) {
+        setRowsPerPage(10);
       }
+      setPage(0);
     } else {
-      if (rowsPerPage === 9) {
-        setRowsPerPage(12);
-        setPage(0);
+      if (rowsPerPage === 15 || rowsPerPage === 30) {
+        setRowsPerPage(10);
       }
+      setPage(0);
     }
   };
 
@@ -220,12 +223,12 @@ export const ProjectsPage: React.FC = () => {
       >
         <Box>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap' }}>
-            <Typography variant="h2" sx={{ fontWeight: 800, fontSize: { xs: '1.15rem', sm: '1.35rem' }, color: '#0f172a' }}>
+            <Typography variant="h2" sx={{ fontWeight: 800, fontSize: { xs: '1.15rem', sm: '1.35rem' }, color: 'text.primary' }}>
               Quản Lý Công Trình & Dự Án
             </Typography>
             <ScopeChip canViewAll={canViewAllProjects} canViewProject={canViewProjectScope} />
           </Box>
-          <Typography variant="body2" sx={{ color: '#64748b', mt: 0.25, fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
+          <Typography variant="body2" sx={{ color: 'text.secondary', mt: 0.25, fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
             {canViewAllProjects
               ? 'Theo dõi tiến độ, phân bổ nguồn lực và trạng thái các dự án xây dựng toàn hệ thống'
               : canViewProjectScope
@@ -235,14 +238,13 @@ export const ProjectsPage: React.FC = () => {
         </Box>
 
         {canCreateProject && (
-          <Button
-            variant="contained"
+          <CommonButton
+            variant="primary"
             startIcon={<Plus size={18} />}
             onClick={handleOpenCreate}
-            sx={{ fontWeight: 700 }}
           >
             Tạo Dự Án Mới
-          </Button>
+          </CommonButton>
         )}
       </Box>
 
@@ -254,30 +256,28 @@ export const ProjectsPage: React.FC = () => {
           alignItems: 'center',
           gap: 1.5,
           flexWrap: 'wrap',
-          border: '1px solid #e2e8f0',
+          border: '1px solid',
+          borderColor: 'divider',
           borderRadius: '8px',
-          bgcolor: '#ffffff',
+          bgcolor: 'background.paper',
           boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
           width: '100%',
           maxWidth: '100%',
         }}
       >
         <Box sx={{ width: { xs: '100%', sm: 300, md: 360 }, minWidth: 0 }}>
-          <TextField
-            size="small"
-            fullWidth
+          <CommonInput
+            isSearch
+            clearable
             placeholder="Tìm theo mã dự án, tên công trình, địa điểm..."
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
               setPage(0);
             }}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <Search size={18} color="#94a3b8" />
-                </InputAdornment>
-              ),
+            onClear={() => {
+              setSearch('');
+              setPage(0);
             }}
           />
         </Box>
@@ -321,12 +321,12 @@ export const ProjectsPage: React.FC = () => {
         isLoading || (isFetching && projects.length === 0) ? (
           <CardGridSkeleton count={rowsPerPage > 6 ? 6 : rowsPerPage} />
         ) : projects.length === 0 ? (
-          <Paper sx={{ p: { xs: 3, sm: 6 }, textAlign: 'center', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+          <Paper sx={{ p: { xs: 3, sm: 6 }, textAlign: 'center', borderRadius: '8px', border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}>
             <FolderKanban size={48} color="#94a3b8" style={{ marginBottom: 12 }} />
-            <Typography variant="h4" sx={{ color: '#475569', fontWeight: 600 }}>
+            <Typography variant="h4" sx={{ color: 'text.secondary', fontWeight: 600 }}>
               Không tìm thấy công trình nào
             </Typography>
-            <Typography variant="body2" sx={{ color: '#94a3b8', mt: 1 }}>
+            <Typography variant="body2" sx={{ color: 'text.secondary', mt: 1 }}>
               Hãy thử thay đổi bộ lọc tìm kiếm hoặc tạo mới dự án đầu tiên.
             </Typography>
           </Paper>
@@ -338,9 +338,14 @@ export const ProjectsPage: React.FC = () => {
                 gridTemplateColumns: {
                   xs: '1fr',
                   sm: 'repeat(2, 1fr)',
-                  lg: 'repeat(3, 1fr)',
+                  md: 'repeat(3, 1fr)',
+                  lg: 'repeat(4, 1fr)',
+                  xl: 'repeat(5, 1fr)',
+                  '@media (min-width: 1400px)': {
+                    gridTemplateColumns: 'repeat(5, 1fr)',
+                  },
                 },
-                gap: { xs: 2, sm: 2.5 },
+                gap: 1.5,
                 width: '100%',
                 p: '2px',
               }}
@@ -360,7 +365,7 @@ export const ProjectsPage: React.FC = () => {
                 />
               ))}
             </Box>
-            <Paper sx={{ border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden', mt: 1 }}>
+            <Paper sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '8px', overflow: 'hidden', mt: 1, bgcolor: 'background.paper' }}>
               <CommonPagination
                 page={page}
                 rowsPerPage={rowsPerPage}
@@ -370,13 +375,13 @@ export const ProjectsPage: React.FC = () => {
                   setRowsPerPage(newRowsPerPage);
                   setPage(0);
                 }}
-                rowsPerPageOptions={[9, 18, 27, 45, 90]}
+                rowsPerPageOptions={[10, 15, 20, 30, 50, 100]}
               />
             </Paper>
           </>
         )
       ) : (
-        <Paper sx={{ border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden', bgcolor: '#ffffff' }}>
+        <Paper sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '8px', overflow: 'hidden', bgcolor: 'background.paper' }}>
           <ProjectTable
             projects={projects}
             loading={isLoading || isFetching}

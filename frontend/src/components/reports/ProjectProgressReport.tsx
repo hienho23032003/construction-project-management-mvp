@@ -64,7 +64,7 @@ export const ProjectProgressReport: React.FC<ProjectProgressReportProps> = memo(
           accessorKey: 'name',
           minWidth: 200,
           sortable: true,
-          cellSx: { fontWeight: 700, color: '#0f172a' },
+          cellSx: { fontWeight: 700, color: 'text.primary' },
         },
         {
           id: 'managerName',
@@ -97,7 +97,7 @@ export const ProjectProgressReport: React.FC<ProjectProgressReportProps> = memo(
                     avatar={
                       <Avatar
                         src={getMediaUrl(m.avatarUrl)}
-                        sx={{ width: 20, height: 20, fontSize: '0.65rem', bgcolor: '#e0f2fe', color: '#0369a1' }}
+                        sx={{ width: 20, height: 20, fontSize: '0.65rem', bgcolor: '#0284c7', color: '#ffffff', fontWeight: 700 }}
                       >
                         {m.fullName.charAt(0)}
                       </Avatar>
@@ -108,8 +108,9 @@ export const ProjectProgressReport: React.FC<ProjectProgressReportProps> = memo(
                       height: 24,
                       fontSize: '0.72rem',
                       whiteSpace: 'nowrap',
-                      bgcolor: '#f8fafc',
-                      border: '1px solid #e2e8f0',
+                      bgcolor: (theme) => theme.palette.mode === 'dark' ? '#141414' : '#f8fafc',
+                      border: '1px solid',
+                      borderColor: 'divider',
                     }}
                   />
                 ))}
@@ -118,7 +119,7 @@ export const ProjectProgressReport: React.FC<ProjectProgressReportProps> = memo(
                     <Chip
                       label={`+${managers.length - 2}`}
                       size="small"
-                      sx={{ height: 24, fontSize: '0.72rem', bgcolor: '#f1f5f9' }}
+                      sx={{ height: 24, fontSize: '0.72rem', bgcolor: 'action.hover' }}
                     />
                   </Tooltip>
                 )}
@@ -174,10 +175,11 @@ export const ProjectProgressReport: React.FC<ProjectProgressReportProps> = memo(
                     fontWeight: 700,
                     fontSize: '0.75rem',
                     cursor: row.totalTasks > 0 ? 'pointer' : 'default',
-                    bgcolor: '#f1f5f9',
-                    color: '#334155',
-                    border: '1px solid #cbd5e1',
-                    '&:hover': row.totalTasks > 0 ? { bgcolor: '#e2e8f0', borderColor: '#94a3b8' } : undefined,
+                    bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.08)' : '#f1f5f9',
+                    color: 'text.primary',
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    '&:hover': row.totalTasks > 0 ? { bgcolor: 'action.hover', borderColor: 'primary.main' } : undefined,
                     transition: 'all 0.15s ease-in-out',
                   }}
                 />
@@ -196,10 +198,10 @@ export const ProjectProgressReport: React.FC<ProjectProgressReportProps> = memo(
                     fontWeight: 700,
                     fontSize: '0.75rem',
                     cursor: row.completedTasks > 0 ? 'pointer' : 'default',
-                    bgcolor: '#ecfdf5',
-                    color: '#059669',
-                    border: '1px solid #a7f3d0',
-                    '&:hover': row.completedTasks > 0 ? { bgcolor: '#d1fae5', borderColor: '#6ee7b7' } : undefined,
+                    bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(16, 185, 129, 0.16)' : '#ecfdf5',
+                    color: (theme) => theme.palette.mode === 'dark' ? '#34d399' : '#059669',
+                    border: (theme) => theme.palette.mode === 'dark' ? '1px solid rgba(52, 211, 153, 0.35)' : '1px solid #a7f3d0',
+                    '&:hover': row.completedTasks > 0 ? { bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(16, 185, 129, 0.25)' : '#d1fae5', borderColor: '#6ee7b7' } : undefined,
                     transition: 'all 0.15s ease-in-out',
                   }}
                 />
@@ -218,10 +220,10 @@ export const ProjectProgressReport: React.FC<ProjectProgressReportProps> = memo(
                     fontWeight: 700,
                     fontSize: '0.75rem',
                     cursor: row.overdueTasks > 0 ? 'pointer' : 'default',
-                    bgcolor: row.overdueTasks > 0 ? '#fef2f2' : '#f8fafc',
-                    color: row.overdueTasks > 0 ? '#dc2626' : '#94a3b8',
-                    border: row.overdueTasks > 0 ? '1px solid #fecaca' : '1px solid #e2e8f0',
-                    '&:hover': row.overdueTasks > 0 ? { bgcolor: '#fee2e2', borderColor: '#f87171' } : undefined,
+                    bgcolor: (theme) => theme.palette.mode === 'dark' ? (row.overdueTasks > 0 ? 'rgba(239, 68, 68, 0.16)' : 'rgba(255, 255, 255, 0.04)') : (row.overdueTasks > 0 ? '#fef2f2' : '#f8fafc'),
+                    color: (theme) => theme.palette.mode === 'dark' ? (row.overdueTasks > 0 ? '#f87171' : '#7b7b7b') : (row.overdueTasks > 0 ? '#dc2626' : '#94a3b8'),
+                    border: (theme) => theme.palette.mode === 'dark' ? (row.overdueTasks > 0 ? '1px solid rgba(248, 113, 113, 0.35)' : '1px solid rgba(255, 255, 255, 0.08)') : (row.overdueTasks > 0 ? '1px solid #fecaca' : '1px solid #e2e8f0'),
+                    '&:hover': row.overdueTasks > 0 ? { bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(239, 68, 68, 0.25)' : '#fee2e2', borderColor: '#f87171' } : undefined,
                     transition: 'all 0.15s ease-in-out',
                   }}
                 />

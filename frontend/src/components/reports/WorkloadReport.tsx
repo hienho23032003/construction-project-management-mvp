@@ -42,11 +42,11 @@ export const WorkloadReport: React.FC<WorkloadReportProps> = memo(
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <Avatar
                 src={getMediaUrl(row.avatarUrl)}
-                sx={{ width: 26, height: 26, fontSize: '0.72rem', bgcolor: '#e0f2fe', color: '#0369a1', fontWeight: 700 }}
+                sx={{ width: 28, height: 28, fontSize: '0.75rem', bgcolor: '#0284c7', color: '#ffffff', fontWeight: 700 }}
               >
                 {row.fullName.charAt(0)}
               </Avatar>
-              <Typography variant="body2" sx={{ fontWeight: 700, color: '#0f172a' }}>
+              <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.primary' }}>
                 {row.fullName}
               </Typography>
             </Box>
@@ -127,9 +127,8 @@ export const WorkloadReport: React.FC<WorkloadReportProps> = memo(
         onRowClick={(row) => onSelectUser?.(row.userId)}
         rowSx={() => ({
           cursor: onSelectUser ? 'pointer' : 'default',
-          transition: 'background-color 0.15s ease',
           '&:hover': {
-            bgcolor: '#f8fafc',
+            bgcolor: 'action.hover',
           },
         })}
         emptyMessage="Không có dữ liệu nhân sự phù hợp"

@@ -51,12 +51,12 @@ const getDayOfWeekText = (date: Date, mode: ViewMode): string => {
   }
 };
 
-const getTaskColor = (task: GanttTask) => {
-  if (task.isOverdue) return { bar: '#ef4444', fill: '#dc2626', bg: '#fee2e2' };
-  if (task.status === 'Completed') return { bar: '#10b981', fill: '#059669', bg: '#d1fae5' };
-  if (task.status === 'InProgress') return { bar: '#0284c7', fill: '#0369a1', bg: '#e0f2fe' };
-  if (task.status === 'OnHold') return { bar: '#f59e0b', fill: '#d97706', bg: '#fef3c7' };
-  return { bar: '#94a3b8', fill: '#64748b', bg: '#f1f5f9' };
+const getTaskColor = (task: GanttTask, isDark: boolean = false) => {
+  if (task.isOverdue) return { bar: '#f87171', fill: '#dc2626', bg: isDark ? 'rgba(239, 68, 68, 0.28)' : '#fee2e2' };
+  if (task.status === 'Completed') return { bar: isDark ? '#34d399' : '#10b981', fill: '#059669', bg: isDark ? 'rgba(16, 185, 129, 0.28)' : '#d1fae5' };
+  if (task.status === 'InProgress') return { bar: isDark ? '#38bdf8' : '#0284c7', fill: '#0369a1', bg: isDark ? 'rgba(2, 132, 199, 0.28)' : '#e0f2fe' };
+  if (task.status === 'OnHold') return { bar: isDark ? '#fbbf24' : '#f59e0b', fill: '#d97706', bg: isDark ? 'rgba(245, 158, 11, 0.28)' : '#fef3c7' };
+  return { bar: '#94a3b8', fill: '#64748b', bg: isDark ? 'rgba(100, 116, 139, 0.28)' : '#f1f5f9' };
 };
 
 interface InteractiveGanttProps {
@@ -68,7 +68,7 @@ interface InteractiveGanttProps {
   filterBar?: React.ReactNode;
 }
 
-export const InteractiveGantt: React.FC<InteractiveGanttProps> = ({
+export const InteractiveGantt: React.FC<InteractiveGanttProps> = React.memo(({
   tasks,
   onTaskClick,
   filterBar,
@@ -108,7 +108,7 @@ export const InteractiveGantt: React.FC<InteractiveGanttProps> = ({
   const { showSuccess, showError } = useToast();
   const [exporting, setExporting] = useState(false);
 
-  const handleExportGantt = async () => {
+  const handleExportGantt = React.useCallback(async () => {
     try {
       setExporting(true);
       await reportApi.downloadReportCsv('tasks', {}, `Gantt_TienDoThiCong_${format(new Date(), 'yyyyMMdd_HHmmss')}.csv`);
@@ -119,41 +119,33 @@ export const InteractiveGantt: React.FC<InteractiveGanttProps> = ({
     } finally {
       setExporting(false);
     }
-  };
+  }, [showSuccess, showError]);
+
+  const isSyncingScroll = useRef(false);
 
   const handleLeftScroll = () => {
-    if (isSyncingLeftScroll.current) {
-      isSyncingLeftScroll.current = false;
-      return;
-    }
+    if (isSyncingScroll.current) return;
     if (leftPanelRef.current && containerRef.current) {
-      if (leftScrollRaf.current !== null) cancelAnimationFrame(leftScrollRaf.current);
-      leftScrollRaf.current = requestAnimationFrame(() => {
-        if (leftPanelRef.current && containerRef.current) {
-          isSyncingRightScroll.current = true;
-          containerRef.current.scrollTop = leftPanelRef.current.scrollTop;
-          scrollPosRef.current.top = leftPanelRef.current.scrollTop;
-        }
-        leftScrollRaf.current = null;
+      isSyncingScroll.current = true;
+      const top = leftPanelRef.current.scrollTop;
+      containerRef.current.scrollTop = top;
+      scrollPosRef.current.top = top;
+      requestAnimationFrame(() => {
+        isSyncingScroll.current = false;
       });
     }
   };
 
   const handleRightScroll = () => {
-    if (isSyncingRightScroll.current) {
-      isSyncingRightScroll.current = false;
-      return;
-    }
+    if (isSyncingScroll.current) return;
     if (leftPanelRef.current && containerRef.current) {
-      if (rightScrollRaf.current !== null) cancelAnimationFrame(rightScrollRaf.current);
-      rightScrollRaf.current = requestAnimationFrame(() => {
-        if (leftPanelRef.current && containerRef.current) {
-          isSyncingLeftScroll.current = true;
-          leftPanelRef.current.scrollTop = containerRef.current.scrollTop;
-          scrollPosRef.current.top = containerRef.current.scrollTop;
-          scrollPosRef.current.left = containerRef.current.scrollLeft;
-        }
-        rightScrollRaf.current = null;
+      isSyncingScroll.current = true;
+      const top = containerRef.current.scrollTop;
+      leftPanelRef.current.scrollTop = top;
+      scrollPosRef.current.top = top;
+      scrollPosRef.current.left = containerRef.current.scrollLeft;
+      requestAnimationFrame(() => {
+        isSyncingScroll.current = false;
       });
     }
   };
@@ -243,7 +235,7 @@ export const InteractiveGantt: React.FC<InteractiveGanttProps> = ({
 
   const userActionsRef = useRef<Map<string, 'collapsed' | 'expanded'>>(new Map());
 
-  const toggleCollapse = (id: string, e: React.MouseEvent) => {
+  const toggleCollapse = React.useCallback((id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     setCollapsedIds((prev) => {
       const next = new Set(prev);
@@ -256,9 +248,9 @@ export const InteractiveGantt: React.FC<InteractiveGanttProps> = ({
       }
       return next;
     });
-  };
+  }, []);
 
-  const collapseAll = () => {
+  const collapseAll = React.useCallback(() => {
     const parentIds = new Set<string>();
     tasks.forEach((t) => {
       if (t.type === 'project' || t.type === 'phase' || tasks.some((c) => c.parentId === t.id)) {
@@ -267,14 +259,14 @@ export const InteractiveGantt: React.FC<InteractiveGanttProps> = ({
       }
     });
     setCollapsedIds(parentIds);
-  };
+  }, [tasks]);
 
-  const expandAll = () => {
+  const expandAll = React.useCallback(() => {
     tasks.forEach((t) => {
       userActionsRef.current.set(t.id, 'expanded');
     });
     setCollapsedIds(new Set());
-  };
+  }, [tasks]);
 
   useEffect(() => {
     if (tasks.length > 0) {
@@ -344,14 +336,14 @@ export const InteractiveGantt: React.FC<InteractiveGanttProps> = ({
     return result;
   }, [tasks, collapsedIds]);
 
-  const scrollToToday = () => {
+  const scrollToToday = React.useCallback(() => {
     const todayIdx = timelineDays.findIndex((d) => isToday(d));
     if (todayIdx >= 0 && containerRef.current) {
       const targetLeft = Math.max(0, todayIdx * columnWidth - 250);
       containerRef.current.scrollLeft = targetLeft;
       scrollPosRef.current.left = targetLeft;
     }
-  };
+  }, [timelineDays, columnWidth]);
 
   useEffect(() => {
     if (!isInitialScrollDone.current && tasks.length > 0 && timelineDays.length > 0) {
@@ -359,7 +351,7 @@ export const InteractiveGantt: React.FC<InteractiveGanttProps> = ({
       isInitialScrollDone.current = true;
       prevMinDateRef.current = minDate;
     }
-  }, [tasks.length, timelineDays]);
+  }, [tasks.length, timelineDays, scrollToToday, minDate]);
 
   useEffect(() => {
     if (isInitialScrollDone.current && containerRef.current) {
@@ -372,20 +364,22 @@ export const InteractiveGantt: React.FC<InteractiveGanttProps> = ({
       prevMinDateRef.current = minDate;
 
       containerRef.current.scrollLeft = scrollPosRef.current.left;
-      containerRef.current.scrollTop = scrollPosRef.current.top;
+      containerRef.current.scrollTop = 0;
+      scrollPosRef.current.top = 0;
       if (leftPanelRef.current) {
-        leftPanelRef.current.scrollTop = scrollPosRef.current.top;
+        leftPanelRef.current.scrollTop = 0;
       }
     }
   }, [tasks, minDate, columnWidth]);
 
   // Tooltip functions
-  const showTooltip = (task: GanttTask, clientX: number, clientY: number) => {
+  const showTooltip = React.useCallback((task: GanttTask, clientX: number, clientY: number) => {
     if (isPanningRef.current || !tooltipRef.current) return;
     const el = tooltipRef.current;
     const s = parseISO(task.start);
     const en = parseISO(task.end);
-    const colors = getTaskColor(task);
+    const isDark = theme.palette.mode === 'dark';
+    const colors = getTaskColor(task, isDark);
     const statusText = getVietnameseStatus(task.status);
 
     if (tooltipTitleRef.current) tooltipTitleRef.current.textContent = task.name;
@@ -416,20 +410,20 @@ export const InteractiveGantt: React.FC<InteractiveGanttProps> = ({
     const posY = Math.min(clientY + 16, window.innerHeight - 180);
     el.style.transform = `translate3d(${posX}px, ${posY}px, 0)`;
     el.style.display = 'block';
-  };
+  }, [theme.palette.mode]);
 
-  const moveTooltip = (clientX: number, clientY: number) => {
+  const moveTooltip = React.useCallback((clientX: number, clientY: number) => {
     if (isPanningRef.current || !tooltipRef.current || tooltipRef.current.style.display === 'none') return;
     const posX = Math.min(clientX + 16, window.innerWidth - 320);
     const posY = Math.min(clientY + 16, window.innerHeight - 180);
     tooltipRef.current.style.transform = `translate3d(${posX}px, ${posY}px, 0)`;
-  };
+  }, []);
 
-  const hideTooltip = () => {
+  const hideTooltip = React.useCallback(() => {
     if (tooltipRef.current) {
       tooltipRef.current.style.display = 'none';
     }
-  };
+  }, []);
 
   const handleSplitterMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -471,7 +465,7 @@ export const InteractiveGantt: React.FC<InteractiveGanttProps> = ({
     window.addEventListener('mouseup', handleSplitterMouseUp);
   };
 
-  const toggleLeftPanel = () => {
+  const toggleLeftPanel = React.useCallback(() => {
     if (isLeftCollapsed) {
       setIsLeftCollapsed(false);
       setLeftWidth(prevLeftWidth.current || 360);
@@ -479,7 +473,7 @@ export const InteractiveGantt: React.FC<InteractiveGanttProps> = ({
       prevLeftWidth.current = leftWidth;
       setIsLeftCollapsed(true);
     }
-  };
+  }, [isLeftCollapsed, leftWidth]);
 
   useEffect(() => {
     return () => {
@@ -632,16 +626,20 @@ export const InteractiveGantt: React.FC<InteractiveGanttProps> = ({
     <Paper
       elevation={0}
       sx={{
-        border: '1px solid #e2e8f0',
+        border: '1px solid',
+        borderColor: 'divider',
         borderRadius: '8px',
         overflow: 'hidden',
-        bgcolor: '#ffffff',
+        bgcolor: 'background.paper',
         display: 'flex',
         flexDirection: 'column',
         height: '100%',
         flexGrow: 1,
         minHeight: 0,
-        boxShadow: '0 4px 20px -2px rgba(0, 0, 0, 0.05)',
+        boxShadow: (theme) =>
+          theme.palette.mode === 'dark'
+            ? '0 4px 20px -2px rgba(0, 0, 0, 0.4)'
+            : '0 4px 20px -2px rgba(0, 0, 0, 0.05)',
       }}
     >
       {/* Top Toolbar */}
@@ -668,7 +666,6 @@ export const InteractiveGantt: React.FC<InteractiveGanttProps> = ({
           width: '100%',
           flexGrow: 1,
           minHeight: 0,
-          height: 'calc(100% - 56px)',
           overflow: 'hidden',
           userSelect: isDraggingSplitter ? 'none' : 'auto',
         }}
@@ -695,9 +692,13 @@ export const InteractiveGantt: React.FC<InteractiveGanttProps> = ({
             width: 8,
             flexShrink: 0,
             cursor: 'col-resize',
-            bgcolor: isDraggingSplitter ? '#0284c7' : '#f1f5f9',
-            borderLeft: '1px solid #e2e8f0',
-            borderRight: '1px solid #e2e8f0',
+            bgcolor: (theme) =>
+              isDraggingSplitter
+                ? theme.palette.primary.main
+                : theme.palette.background.paper,
+            borderLeft: '1px solid',
+            borderRight: '1px solid',
+            borderColor: 'divider',
             position: 'relative',
             zIndex: 25,
             display: 'flex',
@@ -705,7 +706,7 @@ export const InteractiveGantt: React.FC<InteractiveGanttProps> = ({
             justifyContent: 'center',
             userSelect: 'none',
             '&:hover': {
-              bgcolor: '#0284c7',
+              bgcolor: 'primary.main',
               '& .splitter-line': {
                 bgcolor: '#ffffff',
               },
@@ -718,7 +719,7 @@ export const InteractiveGantt: React.FC<InteractiveGanttProps> = ({
               width: 2,
               height: 28,
               borderRadius: 1,
-              bgcolor: isDraggingSplitter ? '#ffffff' : '#94a3b8',
+              bgcolor: isDraggingSplitter ? '#ffffff' : 'text.secondary',
             }}
           />
         </Box>
@@ -734,7 +735,7 @@ export const InteractiveGantt: React.FC<InteractiveGanttProps> = ({
             overflowY: 'auto',
             height: '100%',
             position: 'relative',
-            bgcolor: '#ffffff',
+            bgcolor: 'background.default',
             cursor: 'grab',
             userSelect: 'none',
             pointerEvents: isDraggingSplitter ? 'none' : 'auto',
@@ -748,7 +749,10 @@ export const InteractiveGantt: React.FC<InteractiveGanttProps> = ({
               width: timelineDays.length * columnWidth,
               minWidth: '100%',
               position: 'relative',
-              backgroundImage: 'linear-gradient(to right, #f1f5f9 1px, transparent 1px)',
+              backgroundImage: (theme) =>
+                theme.palette.mode === 'dark'
+                  ? 'linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px)'
+                  : 'linear-gradient(to right, #f1f5f9 1px, transparent 1px)',
               backgroundSize: `${columnWidth}px 100%`,
               backgroundRepeat: 'repeat-x',
             }}
@@ -838,4 +842,6 @@ export const InteractiveGantt: React.FC<InteractiveGanttProps> = ({
       />
     </Paper>
   );
-};
+});
+
+InteractiveGantt.displayName = 'InteractiveGantt';

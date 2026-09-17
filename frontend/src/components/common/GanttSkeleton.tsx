@@ -6,16 +6,16 @@ export const GanttSkeleton: React.FC = () => {
     <Paper
       elevation={0}
       sx={{
-        border: '1px solid #e2e8f0',
+        border: '1px solid',
+        borderColor: 'divider',
         borderRadius: '8px',
         overflow: 'hidden',
-        bgcolor: '#ffffff',
+        bgcolor: 'background.paper',
         display: 'flex',
         flexDirection: 'column',
         height: '100%',
         flexGrow: 1,
         minHeight: 450,
-        boxShadow: '0 4px 20px -2px rgba(0, 0, 0, 0.05)',
       }}
     >
       {/* Top Toolbar Skeleton */}
@@ -29,8 +29,9 @@ export const GanttSkeleton: React.FC = () => {
           alignItems: { xs: 'flex-start', sm: 'center' },
           flexWrap: 'wrap',
           gap: 1.5,
-          borderBottom: '1px solid #e2e8f0',
-          bgcolor: '#f8fafc',
+          borderBottom: '1px solid',
+          borderColor: 'divider',
+          bgcolor: (theme) => theme.palette.mode === 'dark' ? '#141414' : '#f8fafc',
           flexShrink: 0,
         }}
       >
@@ -59,8 +60,9 @@ export const GanttSkeleton: React.FC = () => {
           sx={{
             width: { xs: 240, sm: 360 },
             flexShrink: 0,
-            borderRight: '1px solid #e2e8f0',
-            bgcolor: '#ffffff',
+            borderRight: '1px solid',
+            borderColor: 'divider',
+            bgcolor: 'background.paper',
             display: 'flex',
             flexDirection: 'column',
           }}
@@ -82,7 +84,7 @@ export const GanttSkeleton: React.FC = () => {
           {/* Left Rows */}
           <Box sx={{ flexGrow: 1, p: 1, display: 'flex', flexDirection: 'column', gap: 1.2 }}>
             {/* Project Row 1 */}
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, p: 0.75, bgcolor: '#f1f5f9', borderRadius: '6px' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, p: 0.75, bgcolor: (theme) => theme.palette.mode === 'dark' ? '#141414' : '#f1f5f9', borderRadius: '6px' }}>
               <Skeleton variant="rounded" width={18} height={18} sx={{ borderRadius: '4px' }} />
               <Skeleton variant="text" width="60%" height={22} />
               <Skeleton variant="rounded" width={45} height={18} sx={{ ml: 'auto', borderRadius: '8px' }} />
@@ -110,7 +112,7 @@ export const GanttSkeleton: React.FC = () => {
             </Box>
 
             {/* Project Row 2 */}
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, p: 0.75, bgcolor: '#f1f5f9', borderRadius: '6px', mt: 0.5 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, p: 0.75, bgcolor: (theme) => theme.palette.mode === 'dark' ? '#141414' : '#f1f5f9', borderRadius: '6px', mt: 0.5 }}>
               <Skeleton variant="rounded" width={18} height={18} sx={{ borderRadius: '4px' }} />
               <Skeleton variant="text" width="70%" height={22} />
               <Skeleton variant="rounded" width={45} height={18} sx={{ ml: 'auto', borderRadius: '8px' }} />
@@ -140,7 +142,7 @@ export const GanttSkeleton: React.FC = () => {
         </Box>
 
         {/* Right Panel: Timeline Grid & Horizontal Bars */}
-        <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', bgcolor: '#fafafa' }}>
+        <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', bgcolor: 'background.default' }}>
           {/* Timeline Calendar Header */}
           <Box
             sx={{

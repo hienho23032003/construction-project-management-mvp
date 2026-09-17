@@ -4,17 +4,15 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Button,
-  TextField,
   IconButton,
   Typography,
   Box,
-  InputAdornment,
   Alert,
   Tooltip,
 } from '@mui/material';
 import { X, KeyRound, Eye, EyeOff, RefreshCw, Copy, Check } from 'lucide-react';
 import { User } from '../../types';
+import { CommonButton, CommonInput } from '../common';
 
 interface ResetPasswordModalProps {
   open: boolean;
@@ -32,7 +30,6 @@ export const ResetPasswordModal: React.FC<ResetPasswordModalProps> = ({
   isSubmitting = false,
 }) => {
   const [newPassword, setNewPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(true);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -170,13 +167,11 @@ export const ResetPasswordModal: React.FC<ResetPasswordModalProps> = ({
             </Alert>
           )}
 
-          <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1 }}>
-            Mật khẩu mới <span style={{ color: 'red' }}>*</span>
-          </Typography>
-
-          <TextField
+          <CommonInput
+            label="Mật khẩu mới"
+            required
+            isPassword
             fullWidth
-            type={showPassword ? 'text' : 'password'}
             value={newPassword}
             onChange={(e) => {
               setNewPassword(e.target.value);
@@ -184,45 +179,29 @@ export const ResetPasswordModal: React.FC<ResetPasswordModalProps> = ({
             }}
             placeholder="Nhập mật khẩu mới (tối thiểu 6 ký tự)..."
             disabled={isSubmitting}
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton
-                    size="small"
-                    onClick={() => setShowPassword(!showPassword)}
-                    edge="end"
-                    tabIndex={-1}
-                  >
-                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                  </IconButton>
-                </InputAdornment>
-              ),
-            }}
           />
 
           <Box sx={{ display: 'flex', gap: 1.5, mt: 1.5 }}>
-            <Button
-              variant="outlined"
+            <CommonButton
+              variant="outline"
               size="small"
               startIcon={<RefreshCw size={15} />}
               onClick={generateRandomPassword}
               disabled={isSubmitting}
-              sx={{ textTransform: 'none', borderRadius: 1.5 }}
             >
               Tạo mật khẩu ngẫu nhiên
-            </Button>
+            </CommonButton>
             {newPassword && (
               <Tooltip title={copied ? 'Đã sao chép!' : 'Sao chép mật khẩu'}>
-                <Button
-                  variant="outlined"
+                <CommonButton
+                  variant="outline"
                   size="small"
                   color={copied ? 'success' : 'inherit'}
                   startIcon={copied ? <Check size={15} /> : <Copy size={15} />}
                   onClick={handleCopy}
-                  sx={{ textTransform: 'none', borderRadius: 1.5 }}
                 >
                   {copied ? 'Đã sao chép' : 'Sao chép'}
-                </Button>
+                </CommonButton>
               </Tooltip>
             )}
           </Box>
@@ -241,18 +220,17 @@ export const ResetPasswordModal: React.FC<ResetPasswordModalProps> = ({
             gap: 1,
           }}
         >
-          <Button onClick={handleClose} disabled={isSubmitting} sx={{ textTransform: 'none' }}>
+          <CommonButton onClick={handleClose} variant="secondary" disabled={isSubmitting}>
             Hủy
-          </Button>
-          <Button
+          </CommonButton>
+          <CommonButton
             type="submit"
-            variant="contained"
-            color="primary"
+            variant="primary"
             disabled={isSubmitting || !newPassword}
-            sx={{ textTransform: 'none', fontWeight: 600, px: 3, borderRadius: 2 }}
+            loading={isSubmitting}
           >
-            {isSubmitting ? 'Đang lưu...' : 'Xác nhận đặt lại'}
-          </Button>
+            Xác nhận đặt lại
+          </CommonButton>
         </DialogActions>
       </form>
     </Dialog>

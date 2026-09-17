@@ -23,7 +23,7 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({ value, height = 8, sho
           sx={{
             height,
             borderRadius: height / 2,
-            backgroundColor: '#e2e8f0',
+            backgroundColor: (theme) => theme.palette.mode === 'dark' ? '#3a3b3c' : '#e2e8f0',
             '& .MuiLinearProgress-bar': {
               backgroundColor: color,
               borderRadius: height / 2,
@@ -32,7 +32,7 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({ value, height = 8, sho
         />
       </Box>
       {showText && (
-        <Typography variant="body2" sx={{ minWidth: 40, fontWeight: 600, fontSize: '0.8rem', color: '#334155' }}>
+        <Typography variant="body2" sx={{ minWidth: 40, fontWeight: 600, fontSize: '0.8rem', color: 'text.secondary' }}>
           {clamped}%
         </Typography>
       )}

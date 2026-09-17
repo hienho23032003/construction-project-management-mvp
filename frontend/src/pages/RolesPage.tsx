@@ -35,14 +35,9 @@ import {
 } from 'lucide-react';
 import { ToggleButtonGroup, ToggleButton } from '@mui/material';
 import { RoleItem } from '../types';
-import {
-  useRolesQuery,
-  useCreateRoleMutation,
-  useUpdateRoleMutation,
-  useDeleteRoleMutation,
-  usePermissionsMatrixQuery,
-} from '../hooks/useRoles';
+import { useRolesQuery, useCreateRoleMutation, useUpdateRoleMutation, useDeleteRoleMutation, usePermissionsMatrixQuery } from '../hooks/useRoles';
 import { usePermission } from '../hooks/usePermission';
+import { CommonButton, CommonInput, CommonChip } from '../components/common';
 import { PERMISSIONS } from '../constants/permissions';
 import { RoleModal, RoleFormData } from '../components/roles/RoleModal';
 import { RoleTable } from '../components/roles/RoleTable';
@@ -178,10 +173,10 @@ export const RolesPage: React.FC = () => {
               <Settings size={26} />
             </Box>
             <Box>
-              <Typography variant="h5" sx={{ fontWeight: 800, color: '#0f172a', fontSize: { xs: '1.15rem', sm: '1.35rem' } }}>
+              <Typography variant="h5" sx={{ fontWeight: 800, color: 'text.primary', fontSize: { xs: '1.15rem', sm: '1.35rem' } }}>
                 Phân Quyền & Quản Lý Vai Trò
               </Typography>
-              <Typography variant="body2" sx={{ color: '#64748b', fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
+              <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
                 Tự định nghĩa các vai trò, thiết lập ma trận quyền hạn cho từng chức năng và gắn vai trò cho nhân sự
               </Typography>
             </Box>
@@ -189,23 +184,14 @@ export const RolesPage: React.FC = () => {
         </Box>
 
         {canManageRoles && (
-          <Button
-            variant="contained"
+          <CommonButton
+            variant="primary"
             startIcon={<Plus size={18} />}
             onClick={handleOpenCreate}
-            sx={{
-              bgcolor: '#0284c7',
-              '&:hover': { bgcolor: '#0369a1' },
-              borderRadius: '8px',
-              px: 2.5,
-              py: 1,
-              fontWeight: 600,
-              boxShadow: '0 4px 12px rgba(2, 132, 199, 0.25)',
-              whiteSpace: 'nowrap',
-            }}
+            sx={{ whiteSpace: 'nowrap' }}
           >
             Thêm Vai Trò Mới
-          </Button>
+          </CommonButton>
         )}
       </Box>
 
@@ -215,10 +201,11 @@ export const RolesPage: React.FC = () => {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          bgcolor: '#ffffff',
+          bgcolor: 'background.paper',
           p: { xs: 1.5, sm: 2 },
           borderRadius: '8px',
-          border: '1px solid #e2e8f0',
+          border: '1px solid',
+          borderColor: 'divider',
           boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)',
           flexWrap: 'wrap',
           gap: 1.5,
@@ -226,23 +213,19 @@ export const RolesPage: React.FC = () => {
           maxWidth: '100%',
         }}
       >
-        <TextField
+        <CommonInput
           size="small"
           placeholder="Tìm kiếm vai trò theo tên, mã hoặc mô tả..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
+          isSearch
+          clearable
+          onClear={() => setSearch('')}
           sx={{ width: { xs: '100%', sm: 320, md: 360 } }}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <Search size={18} color="#94a3b8" />
-              </InputAdornment>
-            ),
-          }}
         />
 
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, ml: { xs: 0, sm: 'auto' } }}>
-          <Typography variant="caption" sx={{ color: '#66594d', fontWeight: 600, display: { xs: 'none', sm: 'block' } }}>
+          <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, display: { xs: 'none', sm: 'block' } }}>
             Tổng cộng: {filteredRoles.length} vai trò
           </Typography>
 
@@ -272,20 +255,21 @@ export const RolesPage: React.FC = () => {
           sx={{
             p: { xs: 4, sm: 8 },
             textAlign: 'center',
-            bgcolor: '#ffffff',
+            bgcolor: 'background.paper',
             borderRadius: '8px',
-            border: '1px solid #e2e8f0',
+            border: '1px solid',
+            borderColor: 'divider',
           }}
         >
-          <Typography variant="h6" sx={{ color: '#475569', fontWeight: 700 }}>
+          <Typography variant="h6" sx={{ color: 'text.primary', fontWeight: 700 }}>
             Không tìm thấy vai trò nào
           </Typography>
-          <Typography variant="body2" sx={{ color: '#94a3b8', mt: 0.5 }}>
+          <Typography variant="body2" sx={{ color: 'text.secondary', mt: 0.5 }}>
             Thử tìm kiếm với từ khóa khác hoặc tạo mới vai trò.
           </Typography>
         </Box>
       ) : viewMode === 'table' ? (
-        <Paper sx={{ border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden', bgcolor: '#ffffff', width: '100%', maxWidth: '100%' }}>
+        <Paper sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '8px', overflow: 'hidden', bgcolor: 'background.paper', width: '100%', maxWidth: '100%' }}>
           <RoleTable
             roles={filteredRoles}
             getRoleModuleTags={getRoleModuleTags}
@@ -309,10 +293,12 @@ export const RolesPage: React.FC = () => {
                     display: 'flex',
                     flexDirection: 'column',
                     borderRadius: '8px',
-                    border: '1px solid #e2e8f0',
-                    transition: 'all 0.2s ease-in-out',
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    bgcolor: 'background.paper',
+                    transition: 'transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease',
                     '&:hover': {
-                      borderColor: '#38bdf8',
+                      borderColor: 'primary.main',
                       boxShadow: '0 8px 24px rgba(0,0,0,0.06)',
                       transform: 'translateY(-2px)',
                     },
@@ -337,7 +323,7 @@ export const RolesPage: React.FC = () => {
                           variant="caption"
                           sx={{
                             fontFamily: 'monospace',
-                            color: '#64748b',
+                            color: 'text.secondary',
                             fontWeight: 600,
                             fontSize: '0.72rem',
                           }}
@@ -352,8 +338,8 @@ export const RolesPage: React.FC = () => {
                             label="Hệ Thống"
                             size="small"
                             sx={{
-                              bgcolor: '#f1f5f9',
-                              color: '#475569',
+                              bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(148, 163, 184, 0.15)' : '#f1f5f9',
+                              color: 'text.secondary',
                               fontWeight: 600,
                               fontSize: '0.7rem',
                             }}
@@ -364,7 +350,7 @@ export const RolesPage: React.FC = () => {
                             label="Tùy Chỉnh"
                             size="small"
                             sx={{
-                              bgcolor: '#fdf4ff',
+                              bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(168, 85, 247, 0.15)' : '#fdf4ff',
                               color: '#a855f7',
                               fontWeight: 600,
                               fontSize: '0.7rem',
@@ -378,7 +364,7 @@ export const RolesPage: React.FC = () => {
                     <Typography
                       variant="body2"
                       sx={{
-                        color: '#64748b',
+                        color: 'text.secondary',
                         fontSize: '0.8125rem',
                         mb: 2,
                         minHeight: 38,
@@ -395,7 +381,7 @@ export const RolesPage: React.FC = () => {
 
                     {/* Assigned Users Count & Total Perms */}
                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, color: '#475569' }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, color: 'text.secondary' }}>
                         <Users size={16} color="#0284c7" />
                         <Typography variant="body2" sx={{ fontWeight: 600, fontSize: '0.8125rem' }}>
                           {role.userCount} nhân sự
@@ -405,8 +391,11 @@ export const RolesPage: React.FC = () => {
                         label={isSuperAdminRole ? 'Toàn Quyền Hệ Thống' : `${role.permissions.length} quyền`}
                         size="small"
                         sx={{
-                          bgcolor: isSuperAdminRole ? '#dcfce7' : '#e0f2fe',
-                          color: isSuperAdminRole ? '#15803d' : '#0369a1',
+                          bgcolor: (theme) =>
+                            theme.palette.mode === 'dark'
+                              ? isSuperAdminRole ? 'rgba(34, 197, 94, 0.2)' : 'rgba(56, 189, 248, 0.2)'
+                              : isSuperAdminRole ? '#dcfce7' : '#e0f2fe',
+                          color: isSuperAdminRole ? '#22c55e' : '#38bdf8',
                           fontWeight: 700,
                           fontSize: '0.72rem',
                         }}
@@ -415,7 +404,7 @@ export const RolesPage: React.FC = () => {
 
                     {/* Module Coverage Badges */}
                     <Box sx={{ flexGrow: 1, mb: 2 }}>
-                      <Typography variant="caption" sx={{ color: '#94a3b8', fontWeight: 600, display: 'block', mb: 0.8 }}>
+                      <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, display: 'block', mb: 0.8 }}>
                         CHỨC NĂNG ĐƯỢC CẤP QUYỀN:
                       </Typography>
                       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.6 }}>
@@ -424,10 +413,15 @@ export const RolesPage: React.FC = () => {
                             icon={<CheckCircle2 size={12} />}
                             label="Tất cả module & chức năng"
                             size="small"
-                            sx={{ bgcolor: '#f0fdf4', color: '#16a34a', fontSize: '0.72rem', fontWeight: 600 }}
+                            sx={{
+                              bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(34, 197, 94, 0.15)' : '#f0fdf4',
+                              color: '#22c55e',
+                              fontSize: '0.72rem',
+                              fontWeight: 600,
+                            }}
                           />
                         ) : moduleTags.length === 0 ? (
-                          <Typography variant="caption" sx={{ color: '#cbd5e1', fontStyle: 'italic' }}>
+                          <Typography variant="caption" sx={{ color: 'text.disabled', fontStyle: 'italic' }}>
                             Chưa có quyền nào được gán
                           </Typography>
                         ) : (
@@ -437,9 +431,10 @@ export const RolesPage: React.FC = () => {
                               label={`${tag.name} (${tag.count}/${tag.total})`}
                               size="small"
                               sx={{
-                                bgcolor: '#f8fafc',
-                                border: '1px solid #e2e8f0',
-                                color: '#334155',
+                                bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(148, 163, 184, 0.12)' : '#f8fafc',
+                                border: '1px solid',
+                                borderColor: 'divider',
+                                color: 'text.primary',
                                 fontSize: '0.7rem',
                                 fontWeight: 500,
                               }}
@@ -450,7 +445,7 @@ export const RolesPage: React.FC = () => {
                     </Box>
 
                     {/* Actions */}
-                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', pt: 1, borderTop: '1px solid #f1f5f9' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', pt: 1, borderTop: '1px solid', borderColor: 'divider' }}>
                       <Button
                         size="small"
                         startIcon={<Edit2 size={14} />}
@@ -460,7 +455,6 @@ export const RolesPage: React.FC = () => {
                           textTransform: 'none',
                           fontWeight: 600,
                           fontSize: '0.8rem',
-                          color: '#0284c7',
                           borderRadius: '8px',
                         }}
                       >
@@ -472,7 +466,7 @@ export const RolesPage: React.FC = () => {
                           <IconButton
                             size="small"
                             onClick={() => handleOpenDelete(role)}
-                            sx={{ color: '#ef4444', '&:hover': { bgcolor: '#fef2f2' } }}
+                            sx={{ color: '#ef4444', '&:hover': { bgcolor: 'rgba(239, 68, 68, 0.1)' } }}
                           >
                             <Trash2 size={16} />
                           </IconButton>
@@ -516,15 +510,15 @@ export const RolesPage: React.FC = () => {
             onClick={() => setDeleteConfirmOpen(false)}
             size="small"
             sx={{
-              color: '#94a3b8',
-              '&:hover': { color: '#0f172a', bgcolor: '#f1f5f9' },
+              color: 'text.secondary',
+              '&:hover': { color: 'text.primary', bgcolor: 'action.hover' },
             }}
           >
             <X size={18} />
           </IconButton>
         </DialogTitle>
         <DialogContent>
-          <Typography variant="body2" sx={{ color: '#475569' }}>
+          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
             Bạn có chắc chắn muốn xóa vai trò <strong>"{roleToDelete?.name}"</strong>? Các nhân sự đang được gán vai trò này sẽ bị hủy liên kết.
           </Typography>
         </DialogContent>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Typography } from '@mui/material';
+import { Box, Typography, useTheme } from '@mui/material';
 import { isToday } from 'date-fns';
 import { ViewMode } from './GanttToolbar';
 
@@ -18,33 +18,36 @@ interface GanttTimelineHeaderProps {
   getDayOfWeekText: (date: Date, mode: ViewMode) => string;
 }
 
-export const GanttTimelineHeader: React.FC<GanttTimelineHeaderProps> = ({
+export const GanttTimelineHeader: React.FC<GanttTimelineHeaderProps> = React.memo(({
   monthGroups,
   timelineDays,
   columnWidth,
   viewMode,
   getDayOfWeekText,
 }) => {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
+
   return (
     <Box
       sx={{
         position: 'sticky',
         top: 0,
         zIndex: 15,
-        bgcolor: '#ffffff',
-        borderBottom: '1px solid #cbd5e1',
-        boxShadow: '0 2px 4px rgba(0,0,0,0.03)',
+        bgcolor: 'background.paper',
+        borderBottom: `1px solid ${theme.palette.divider}`,
+        boxShadow: isDark ? '0 2px 4px rgba(0,0,0,0.4)' : '0 2px 4px rgba(0,0,0,0.03)',
       }}
     >
       {/* Tier 1: Grouped Month Header */}
-      <Box sx={{ height: 26, display: 'flex', borderBottom: '1px solid #e2e8f0', bgcolor: '#f1f5f9' }}>
+      <Box sx={{ height: 26, display: 'flex', borderBottom: `1px solid ${theme.palette.divider}`, bgcolor: isDark ? '#18191a' : '#f1f5f9' }}>
         {monthGroups.map((mg, i) => (
           <Box
             key={i}
             sx={{
               width: mg.daysCount * columnWidth,
               minWidth: mg.daysCount * columnWidth,
-              borderRight: '1px solid #cbd5e1',
+              borderRight: `1px solid ${theme.palette.divider}`,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -54,7 +57,7 @@ export const GanttTimelineHeader: React.FC<GanttTimelineHeaderProps> = ({
               whiteSpace: 'nowrap',
             }}
           >
-            <Typography variant="caption" sx={{ fontWeight: 800, fontSize: '0.75rem', color: '#0369a1' }}>
+            <Typography variant="caption" sx={{ fontWeight: 800, fontSize: '0.75rem', color: isDark ? '#2d88ff' : '#0369a1' }}>
               Tháng {mg.monthStr}
             </Typography>
           </Box>
@@ -62,7 +65,7 @@ export const GanttTimelineHeader: React.FC<GanttTimelineHeaderProps> = ({
       </Box>
 
       {/* Tier 2: Date Columns (Upper Line: Thứ, Lower Line: Ngày, Centered) */}
-      <Box sx={{ height: 38, display: 'flex', bgcolor: '#f8fafc' }}>
+      <Box sx={{ height: 38, display: 'flex', bgcolor: isDark ? '#242526' : '#f8fafc' }}>
         {timelineDays.map((date, idx) => {
           const today = isToday(date);
           const dayOfWeek = date.getDay();
@@ -76,13 +79,21 @@ export const GanttTimelineHeader: React.FC<GanttTimelineHeaderProps> = ({
               sx={{
                 width: columnWidth,
                 minWidth: columnWidth,
-                borderRight: '1px solid #e2e8f0',
+                borderRight: `1px solid ${theme.palette.divider}`,
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center',
                 textAlign: 'center',
-                bgcolor: today ? '#e0f2fe' : isWeekend ? '#f1f5f9' : 'transparent',
+                bgcolor: today
+                  ? isDark
+                    ? 'rgba(56, 189, 248, 0.18)'
+                    : '#e0f2fe'
+                  : isWeekend
+                  ? isDark
+                    ? 'rgba(255, 255, 255, 0.02)'
+                    : '#f1f5f9'
+                  : 'transparent',
                 py: 0.25,
                 overflow: 'hidden',
                 userSelect: 'none',
@@ -96,7 +107,7 @@ export const GanttTimelineHeader: React.FC<GanttTimelineHeaderProps> = ({
                     sx={{
                       fontWeight: today ? 800 : isWeekend ? 600 : 600,
                       fontSize: viewMode === 'Week' ? '0.62rem' : '0.65rem',
-                      color: today ? '#0284c7' : isWeekend ? '#ef4444' : '#64748b',
+                      color: today ? (isDark ? '#38bdf8' : '#0284c7') : isWeekend ? '#ef4444' : 'text.secondary',
                       lineHeight: 1.1,
                       textAlign: 'center',
                       whiteSpace: 'nowrap',
@@ -113,7 +124,7 @@ export const GanttTimelineHeader: React.FC<GanttTimelineHeaderProps> = ({
                       sx={{
                         fontWeight: today ? 800 : 700,
                         fontSize: '0.72rem',
-                        color: today ? '#0284c7' : isWeekend ? '#ef4444' : '#0f172a',
+                        color: today ? (isDark ? '#38bdf8' : '#0284c7') : isWeekend ? '#ef4444' : 'text.primary',
                         lineHeight: 1.1,
                         textAlign: 'center',
                         display: 'block',
@@ -130,4 +141,6 @@ export const GanttTimelineHeader: React.FC<GanttTimelineHeaderProps> = ({
       </Box>
     </Box>
   );
-};
+});
+
+GanttTimelineHeader.displayName = 'GanttTimelineHeader';

@@ -6,3 +6,4 @@ export * from './colors';
 export * from './messages';
 export * from './roles';
 export * from './permissions';
+export * from './router-paths';

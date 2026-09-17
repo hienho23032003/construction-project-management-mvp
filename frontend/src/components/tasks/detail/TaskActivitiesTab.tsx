@@ -164,12 +164,13 @@ export const TaskActivitiesTab: React.FC<TaskActivitiesTabProps> = ({
                 sx={{
                   p: 2,
                   borderRadius: '8px',
-                  border: '1px solid #e2e8f0',
-                  bgcolor: '#ffffff',
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  bgcolor: 'background.paper',
                   boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
                   transition: 'all 0.2s ease',
                   '&:hover': {
-                    borderColor: '#cbd5e1',
+                    borderColor: 'primary.main',
                     boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
                   },
                 }}
@@ -190,7 +191,7 @@ export const TaskActivitiesTab: React.FC<TaskActivitiesTabProps> = ({
                     >
                       {act.userName ? act.userName.charAt(0) : 'U'}
                     </Avatar>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#0f172a', fontSize: '0.85rem' }}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'text.primary', fontSize: '0.85rem' }}>
                       {act.userName || 'Hệ thống'}
                     </Typography>
                     <Chip
@@ -208,15 +209,15 @@ export const TaskActivitiesTab: React.FC<TaskActivitiesTabProps> = ({
                   </Box>
 
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                    <Clock size={12} color="#94a3b8" />
-                    <Typography variant="caption" sx={{ color: '#94a3b8', fontSize: '0.72rem' }}>
+                    <Clock size={12} color="#7b7b7b" />
+                    <Typography variant="caption" sx={{ color: 'text.disabled', fontSize: '0.72rem' }}>
                       {formatDateTime(act.createdAt)}
                     </Typography>
                   </Box>
                 </Box>
 
                 {/* Details Message */}
-                <Typography variant="body2" sx={{ color: '#334155', fontSize: '0.85rem', mb: act.oldValue || act.newValue ? 1 : 0 }}>
+                <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '0.85rem', mb: act.oldValue || act.newValue ? 1 : 0 }}>
                   {cleanDetails(act.details)}
                 </Typography>
 
@@ -229,13 +230,14 @@ export const TaskActivitiesTab: React.FC<TaskActivitiesTabProps> = ({
                       gap: 1,
                       flexWrap: 'wrap',
                       p: 1,
-                      bgcolor: '#f8fafc',
+                      bgcolor: (theme) => theme.palette.mode === 'dark' ? '#141414' : '#f8fafc',
                       borderRadius: '6px',
-                      border: '1px solid #f1f5f9',
+                      border: '1px solid',
+                      borderColor: 'divider',
                       mt: 0.75,
                     }}
                   >
-                    <Typography variant="caption" sx={{ fontWeight: 600, color: '#64748b' }}>
+                    <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary' }}>
                       Thay đổi:
                     </Typography>
                     <Chip

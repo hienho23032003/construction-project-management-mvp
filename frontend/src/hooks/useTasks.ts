@@ -250,6 +250,32 @@ export const useUpdateTaskDatesMutation = () => {
   });
 };
 
+export const useUpdateTaskPriorityMutation = () => {
+  const queryClient = useQueryClient();
+  const { showSuccess, showError } = useToast();
+
+  return useMutation({
+    mutationFn: ({ id, priority }: { id: string; priority: string }) =>
+      taskApi.updatePriority(id, priority),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['task-detail'] });
+      if (variables?.id) {
+        queryClient.invalidateQueries({ queryKey: ['task-detail', variables.id] });
+      }
+      queryClient.invalidateQueries({ queryKey: ['gantt-data'] });
+      queryClient.invalidateQueries({ queryKey: ['task-activities'] });
+      queryClient.invalidateQueries({ queryKey: ['project'] });
+      queryClient.invalidateQueries({ queryKey: ['project-task-tree'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      showSuccess('Cập nhật mức độ ưu tiên thành công!');
+    },
+    onError: (err: any) => {
+      showError(err.response?.data?.message || err.message || 'Cập nhật mức độ ưu tiên thất bại');
+    },
+  });
+};
+
 export const useDeleteTaskMutation = () => {
   const queryClient = useQueryClient();
   const { showSuccess, showError } = useToast();

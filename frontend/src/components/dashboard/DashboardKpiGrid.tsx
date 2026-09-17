@@ -39,10 +39,10 @@ export const DashboardKpiGrid: React.FC<DashboardKpiGridProps> = memo(({ data })
       {kpis.map((kpi, idx) => {
         const Icon = kpi.icon;
         return (
-          <Card key={idx} sx={{ border: '1px solid #e2e8f0', boxShadow: 'none', borderRadius: '8px' }}>
+          <Card key={idx} sx={{ border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper', boxShadow: 'none', borderRadius: '8px' }}>
             <CardContent sx={{ p: { xs: 1.5, sm: 2 }, '&:last-child': { pb: { xs: 1.5, sm: 2 } } }}>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-                <Typography variant="body2" sx={{ color: '#64748b', fontWeight: 600, fontSize: { xs: '0.72rem', sm: '0.8rem' } }} noWrap>
+                <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600, fontSize: { xs: '0.72rem', sm: '0.8rem' } }} noWrap>
                   {kpi.title}
                 </Typography>
                 <Box
@@ -50,7 +50,7 @@ export const DashboardKpiGrid: React.FC<DashboardKpiGridProps> = memo(({ data })
                     width: 28,
                     height: 28,
                     borderRadius: '6px',
-                    bgcolor: kpi.bg,
+                    bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.08)' : kpi.bg,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -61,7 +61,7 @@ export const DashboardKpiGrid: React.FC<DashboardKpiGridProps> = memo(({ data })
                   <Icon size={16} />
                 </Box>
               </Box>
-              <Typography variant="h2" sx={{ fontWeight: 800, fontSize: { xs: '1.25rem', sm: '1.5rem' }, color: '#0f172a' }}>
+              <Typography variant="h2" sx={{ fontWeight: 800, fontSize: { xs: '1.25rem', sm: '1.5rem' }, color: 'text.primary' }}>
                 {kpi.value}
               </Typography>
             </CardContent>

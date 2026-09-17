@@ -45,6 +45,7 @@ import {
   useUpdateTaskMutation,
   useUpdateTaskStatusMutation,
   useUpdateTaskProgressMutation,
+  useUpdateTaskPriorityMutation,
   useDeleteTaskMutation,
   useGanttDataQuery,
   useTaskDetailQuery,
@@ -166,6 +167,7 @@ export const ProjectDetailPage: React.FC = () => {
   const updateTaskMutation = useUpdateTaskMutation();
   const updateStatusMutation = useUpdateTaskStatusMutation();
   const updateProgressMutation = useUpdateTaskProgressMutation();
+  const updatePriorityMutation = useUpdateTaskPriorityMutation();
   const deleteTaskMutation = useDeleteTaskMutation();
   const addMemberMutation = useAddProjectMemberMutation(id);
   const removeMemberMutation = useRemoveProjectMemberMutation(id);
@@ -256,6 +258,14 @@ export const ProjectDetailPage: React.FC = () => {
     setRemoveMemberUserId(null);
   };
 
+  const handleBack = () => {
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate('/projects');
+    }
+  };
+
   usePresenceHeartbeat({
     projectId: id,
     enabled: Boolean(id),
@@ -278,13 +288,13 @@ export const ProjectDetailPage: React.FC = () => {
             variant="outlined"
             size="small"
             startIcon={<ArrowLeft size={16} />}
-            onClick={() => navigate('/projects')}
-            sx={{ fontWeight: 600, color: '#475569', borderColor: '#cbd5e1' }}
+            onClick={handleBack}
+            sx={{ fontWeight: 600, color: 'text.secondary', borderColor: 'divider' }}
           >
             Quay Lại
           </Button>
           <Chip label={project.code} sx={{ bgcolor: '#0284c7', color: '#ffffff', fontWeight: 800 }} />
-          <Typography variant="h2" sx={{ fontWeight: 800, fontSize: { xs: '1.1rem', sm: '1.3rem' }, color: '#0f172a' }}>
+          <Typography variant="h2" sx={{ fontWeight: 800, fontSize: { xs: '1.1rem', sm: '1.3rem' }, color: 'text.primary' }}>
             {project.name}
           </Typography>
           <StatusChip status={project.status} isOverdue={project.isOverdue} />
@@ -306,7 +316,7 @@ export const ProjectDetailPage: React.FC = () => {
       </Box>
 
       {/* Tabs */}
-      <Paper sx={{ border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden', width: '100%', maxWidth: '100%' }}>
+      <Paper sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '8px', bgcolor: 'background.paper', overflow: 'hidden', width: '100%', maxWidth: '100%' }}>
         <Tabs
           value={activeTab}
           onChange={handleTabChange}
@@ -314,8 +324,9 @@ export const ProjectDetailPage: React.FC = () => {
           scrollButtons="auto"
           allowScrollButtonsMobile
           sx={{
-            borderBottom: '1px solid #e2e8f0',
-            bgcolor: '#f8fafc',
+            borderBottom: '1px solid',
+            borderColor: 'divider',
+            bgcolor: (theme) => theme.palette.mode === 'dark' ? '#242526' : '#f8fafc',
             px: { xs: 1, sm: 1.5 },
             minHeight: 40,
             '& .MuiTabs-flexContainer': {
@@ -349,8 +360,10 @@ export const ProjectDetailPage: React.FC = () => {
             canDeleteTask={canDeleteTask}
             canUpdateStatus={canUpdateStatus}
             canUpdateProgress={canUpdateProgress}
+            canUpdatePriority={canEditTask || canUpdateStatus}
             onStatusChange={(taskId, status) => updateStatusMutation.mutate({ id: taskId, status })}
             onProgressChange={(taskId, progress) => updateProgressMutation.mutate({ id: taskId, progress })}
+            onPriorityChange={(taskId, priority) => updatePriorityMutation.mutate({ id: taskId, priority })}
             onCreateSubTask={handleOpenCreateTask}
             onEditTask={handleOpenEditTask}
             onDeleteTask={(taskId) => setDeleteTaskId(taskId)}

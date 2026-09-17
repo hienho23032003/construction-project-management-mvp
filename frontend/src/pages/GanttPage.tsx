@@ -248,7 +248,7 @@ export const GanttPage: React.FC = () => {
   };
 
   const filterBar = (
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', width: { xs: '100%', lg: 'auto' } }}>
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, flexWrap: { xs: 'wrap', lg: 'nowrap' }, width: { xs: '100%', lg: 'auto' } }}>
       <Autocomplete
         size="small"
         options={[{ id: 'ALL', code: 'ALL', name: 'Tất cả công trình (Tổng quan)' }, ...projects]}
@@ -265,27 +265,27 @@ export const GanttPage: React.FC = () => {
             {...params}
             placeholder="Chọn dự án..."
             sx={{
-              bgcolor: '#ffffff',
-              '& .MuiOutlinedInput-root': { height: 32, fontSize: '0.8rem' },
+              bgcolor: 'background.paper',
+              '& .MuiOutlinedInput-root': { height: 30, fontSize: '0.78rem' },
             }}
           />
         )}
-        sx={{ width: { xs: '100%', sm: 240, md: 280 } }}
+        sx={{ width: { xs: '100%', sm: 180, md: 240, xl: 260 }, flexGrow: { xs: 1, sm: 0 } }}
       />
 
-      <FormControl size="small" sx={{ width: { xs: '100%', sm: 160 }, minWidth: { xs: '100%', sm: 160 } }}>
+      <FormControl size="small" sx={{ width: { xs: '100%', sm: 140, md: 160 }, minWidth: { xs: '100%', sm: 140 }, flexGrow: { xs: 1, sm: 0 } }}>
         <Select
           value={selectedStatus}
           onChange={(e) => handleStatusChange(e.target.value)}
           displayEmpty
           sx={{
-            height: 32,
-            bgcolor: '#ffffff',
-            fontSize: '0.8rem',
+            height: 30,
+            bgcolor: 'background.paper',
+            fontSize: '0.78rem',
           }}
         >
           <MenuItem value="ALL">Tất cả trạng thái</MenuItem>
-          <MenuItem value="ACTIVE_ONLY">Chưa xong (Đang & Chưa làm)</MenuItem>
+          <MenuItem value="ACTIVE_ONLY">Chưa xong</MenuItem>
           <MenuItem value="InProgress">Đang thực hiện</MenuItem>
           <MenuItem value="NotStarted">Chưa bắt đầu</MenuItem>
           <MenuItem value="Completed">Hoàn thành</MenuItem>
@@ -294,7 +294,7 @@ export const GanttPage: React.FC = () => {
         </Select>
       </FormControl>
 
-      <Box sx={{ width: { xs: '100%', sm: 240 } }}>
+      <Box sx={{ width: { xs: '100%', sm: 220, md: 260 }, flexShrink: 0, flexGrow: { xs: 1, sm: 0 } }}>
         <CommonDateRangePicker
           fromDate={fromDate}
           toDate={toDate}
@@ -315,7 +315,14 @@ export const GanttPage: React.FC = () => {
         <Chip
           label={`${tasksList.filter((t) => t.type !== 'project').length} việc`}
           size="small"
-          sx={{ bgcolor: '#e0f2fe', color: '#0369a1', fontWeight: 700, height: 26, fontSize: '0.75rem' }}
+          sx={{
+            bgcolor: (theme) => (theme.palette.mode === 'dark' ? 'rgba(45, 136, 255, 0.15)' : '#e0f2fe'),
+            color: (theme) => (theme.palette.mode === 'dark' ? '#2d88ff' : '#0369a1'),
+            fontWeight: 700,
+            height: 24,
+            fontSize: '0.72rem',
+            flexShrink: 0,
+          }}
         />
       )}
     </Box>
@@ -335,7 +342,7 @@ export const GanttPage: React.FC = () => {
         height: {
           xs: 'calc(100vh - 175px)',
           sm: 'calc(100vh - 150px)',
-          md: 'calc(100vh - 132px)',
+          md: 'calc(100vh - 100px)',
         },
         minHeight: 520,
         width: '100%',
@@ -358,12 +365,12 @@ export const GanttPage: React.FC = () => {
       >
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25, flexWrap: 'wrap' }}>
-            <Typography variant="h2" sx={{ fontWeight: 800, fontSize: { xs: '1.15rem', sm: '1.35rem' }, color: '#0f172a' }}>
+            <Typography variant="h2" sx={{ fontWeight: 800, fontSize: { xs: '1.15rem', sm: '1.35rem' }, color: 'text.primary' }}>
               Biểu Đồ Tiến Độ Gantt
             </Typography>
             <ScopeChip canViewAll={canViewAll} canViewProject={canViewProject} />
           </Box>
-          <Typography variant="body2" sx={{ color: '#64748b', fontSize: { xs: '0.78rem', sm: '0.875rem' } }}>
+          <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: { xs: '0.78rem', sm: '0.875rem' } }}>
             Theo dõi dòng thời gian thi công, phân rã cây công việc (WBS) và giám sát tiến độ thực tế
           </Typography>
         </Box>
@@ -392,8 +399,9 @@ export const GanttPage: React.FC = () => {
             display: 'flex',
             flexDirection: 'column',
             borderRadius: '8px',
-            border: '1px solid #e2e8f0',
-            bgcolor: '#ffffff',
+            border: '1px solid',
+            borderColor: 'divider',
+            bgcolor: 'background.paper',
             overflow: 'hidden',
           }}
         >
@@ -402,8 +410,9 @@ export const GanttPage: React.FC = () => {
             sx={{
               p: 1.25,
               px: 2,
-              borderBottom: '1px solid #e2e8f0',
-              bgcolor: '#f8fafc',
+              borderBottom: '1px solid',
+              borderColor: 'divider',
+              bgcolor: (theme) => (theme.palette.mode === 'dark' ? '#242526' : '#f8fafc'),
               display: 'flex',
               alignItems: 'center',
               flexWrap: 'wrap',
@@ -425,10 +434,10 @@ export const GanttPage: React.FC = () => {
             }}
           >
             <EmptyStateIllustration width={154} height={121} />
-            <Typography variant="h6" sx={{ fontWeight: 700, color: '#334155', mt: 1 }}>
+            <Typography variant="h6" sx={{ fontWeight: 700, color: 'text.primary', mt: 1 }}>
               Không có công việc nào trong khoảng thời gian này
             </Typography>
-            <Typography variant="body2" sx={{ color: '#64748b', maxWidth: 460 }}>
+            <Typography variant="body2" sx={{ color: 'text.secondary', maxWidth: 460 }}>
               Không tìm thấy dữ liệu tiến độ phù hợp với bộ lọc hiện tại. Hãy thử chọn khoảng thời gian khác (hoặc "Tất cả thời gian") hoặc thay đổi bộ lọc trạng thái.
             </Typography>
             <Button

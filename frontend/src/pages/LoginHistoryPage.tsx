@@ -20,6 +20,7 @@ import {
 } from '@mui/material';
 import { CommonTable, ColumnDef } from '../components/common/CommonTable';
 import { CommonDateRangePicker } from '../components/common/CommonDateRangePicker';
+import { CommonButton, CommonInput, CommonChip } from '../components/common';
 import {
   History,
   Search,
@@ -144,7 +145,7 @@ export const LoginHistoryPage: React.FC = () => {
                 sx={{
                   fontWeight: 700,
                   fontSize: '0.85rem',
-                  color: '#0f172a',
+                  color: 'text.primary',
                   whiteSpace: 'nowrap',
                 }}
               >
@@ -153,7 +154,7 @@ export const LoginHistoryPage: React.FC = () => {
               <Typography
                 variant="caption"
                 sx={{
-                  color: '#64748b',
+                  color: 'text.secondary',
                   fontSize: '0.75rem',
                   display: 'block',
                   whiteSpace: 'nowrap',
@@ -173,11 +174,11 @@ export const LoginHistoryPage: React.FC = () => {
           <Box sx={{ whiteSpace: 'nowrap' }}>
             <Typography
               variant="body2"
-              sx={{ fontWeight: 600, color: '#0f172a', fontSize: '0.8125rem', whiteSpace: 'nowrap' }}
+              sx={{ fontWeight: 600, color: 'text.primary', fontSize: '0.8125rem', whiteSpace: 'nowrap' }}
             >
               {formatDateTime(row.loginTime, 'HH:mm:ss')}
             </Typography>
-            <Typography variant="caption" sx={{ color: '#64748b', whiteSpace: 'nowrap' }}>
+            <Typography variant="caption" sx={{ color: 'text.secondary', whiteSpace: 'nowrap' }}>
               {formatDateTime(row.loginTime, 'dd/MM/yyyy')}
             </Typography>
           </Box>
@@ -195,8 +196,8 @@ export const LoginHistoryPage: React.FC = () => {
                 label="Đang trực tuyến"
                 size="small"
                 sx={{
-                  bgcolor: '#dcfce7',
-                  color: '#15803d',
+                  bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(34, 197, 94, 0.2)' : '#dcfce7',
+                  color: (theme) => theme.palette.mode === 'dark' ? '#4ade80' : '#15803d',
                   fontWeight: 700,
                   fontSize: '0.72rem',
                   whiteSpace: 'nowrap',
@@ -209,17 +210,17 @@ export const LoginHistoryPage: React.FC = () => {
               <Box sx={{ whiteSpace: 'nowrap' }}>
                 <Typography
                   variant="body2"
-                  sx={{ fontWeight: 600, color: '#0f172a', fontSize: '0.8125rem', whiteSpace: 'nowrap' }}
+                  sx={{ fontWeight: 600, color: 'text.primary', fontSize: '0.8125rem', whiteSpace: 'nowrap' }}
                 >
                   {formatDateTime(row.logoutTime, 'HH:mm:ss')}
                 </Typography>
-                <Typography variant="caption" sx={{ color: '#64748b', whiteSpace: 'nowrap' }}>
+                <Typography variant="caption" sx={{ color: 'text.secondary', whiteSpace: 'nowrap' }}>
                   {formatDateTime(row.logoutTime, 'dd/MM/yyyy')}
                 </Typography>
               </Box>
             );
           }
-          return <Typography variant="caption" sx={{ color: '#94a3b8', whiteSpace: 'nowrap' }}>-</Typography>;
+          return <Typography variant="caption" sx={{ color: 'text.disabled', whiteSpace: 'nowrap' }}>-</Typography>;
         },
       },
       {
@@ -230,12 +231,12 @@ export const LoginHistoryPage: React.FC = () => {
           const isActive = row.status === 'Active';
           return (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, whiteSpace: 'nowrap' }}>
-              <Clock size={15} color={isActive ? '#16a34a' : '#64748b'} />
+              <Clock size={15} color={isActive ? '#22c55e' : '#7b7b7b'} />
               <Typography
                 variant="body2"
                 sx={{
                   fontWeight: 600,
-                  color: isActive ? '#15803d' : '#0f172a',
+                  color: isActive ? '#22c55e' : 'text.primary',
                   fontSize: '0.8125rem',
                   whiteSpace: 'nowrap',
                 }}
@@ -252,11 +253,11 @@ export const LoginHistoryPage: React.FC = () => {
         minWidth: 180,
         cell: ({ row }) => (
           <Box sx={{ whiteSpace: 'nowrap' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, mb: 0.3 }}>
+            <Box range-start sx={{ display: 'flex', alignItems: 'center', gap: 0.8, mb: 0.3 }}>
               <Globe size={14} color="#0284c7" />
               <Typography
                 variant="body2"
-                sx={{ fontFamily: 'monospace', fontSize: '0.8rem', color: '#0f172a', whiteSpace: 'nowrap' }}
+                sx={{ fontFamily: 'monospace', fontSize: '0.8rem', color: 'text.primary', whiteSpace: 'nowrap' }}
               >
                 {row.ipAddress || '127.0.0.1'}
               </Typography>
@@ -266,7 +267,7 @@ export const LoginHistoryPage: React.FC = () => {
               <Typography
                 variant="caption"
                 sx={{
-                  color: '#64748b',
+                  color: 'text.secondary',
                   fontSize: '0.72rem',
                   whiteSpace: 'nowrap',
                   display: 'block',
@@ -291,8 +292,8 @@ export const LoginHistoryPage: React.FC = () => {
                 label="Hoạt Động"
                 size="small"
                 sx={{
-                  bgcolor: '#dcfce7',
-                  color: '#166534',
+                  bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(52, 211, 153, 0.16)' : '#dcfce7',
+                  color: (theme) => theme.palette.mode === 'dark' ? '#34d399' : '#166534',
                   fontWeight: 700,
                   fontSize: '0.72rem',
                   whiteSpace: 'nowrap',
@@ -306,8 +307,8 @@ export const LoginHistoryPage: React.FC = () => {
                 label="Đã Đăng Xuất"
                 size="small"
                 sx={{
-                  bgcolor: '#f1f5f9',
-                  color: '#475569',
+                  bgcolor: (theme) => theme.palette.mode === 'dark' ? '#222222' : '#f1f5f9',
+                  color: (theme) => theme.palette.mode === 'dark' ? '#b4b4b4' : '#475569',
                   fontWeight: 600,
                   fontSize: '0.72rem',
                   whiteSpace: 'nowrap',
@@ -320,8 +321,8 @@ export const LoginHistoryPage: React.FC = () => {
               label="Hết Hạn"
               size="small"
               sx={{
-                bgcolor: '#fef3c7',
-                color: '#b45309',
+                bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(251, 191, 36, 0.16)' : '#fef3c7',
+                color: (theme) => theme.palette.mode === 'dark' ? '#fbbf24' : '#b45309',
                 fontWeight: 600,
                 fontSize: '0.72rem',
                 whiteSpace: 'nowrap',
@@ -362,10 +363,10 @@ export const LoginHistoryPage: React.FC = () => {
               <History size={26} />
             </Box>
             <Box>
-              <Typography variant="h5" sx={{ fontWeight: 800, color: '#0f172a', fontSize: { xs: '1.15rem', sm: '1.35rem' } }}>
+              <Typography variant="h5" sx={{ fontWeight: 800, color: 'text.primary', fontSize: { xs: '1.15rem', sm: '1.35rem' } }}>
                 Lịch Sử Đăng Nhập & Đăng Xuất
               </Typography>
-              <Typography variant="body2" sx={{ color: '#64748b', fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
+              <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
                 Theo dõi phiên làm việc, thời gian truy cập thực tế, trạng thái trực tuyến và bảo mật đăng nhập
               </Typography>
             </Box>
@@ -376,9 +377,10 @@ export const LoginHistoryPage: React.FC = () => {
               onClick={handleRefresh}
               disabled={isFetching}
               sx={{
-                bgcolor: '#ffffff',
-                border: '1px solid #e2e8f0',
-                '&:hover': { bgcolor: '#f1f5f9' },
+                bgcolor: 'background.paper',
+                border: '1px solid',
+                borderColor: 'divider',
+                '&:hover': { bgcolor: 'action.hover' },
               }}
             >
               <RefreshCw size={18} color="#0284c7" className={isFetching ? 'animate-spin' : ''} />
@@ -400,14 +402,15 @@ export const LoginHistoryPage: React.FC = () => {
             variant="outlined"
             sx={{
               borderRadius: '8px',
-              bgcolor: '#ffffff',
-              border: '1px solid #e2e8f0',
+              bgcolor: 'background.paper',
+              border: '1px solid',
+              borderColor: 'divider',
               boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
             }}
           >
             <CardContent sx={{ p: { xs: 1.5, sm: 2.5 } }}>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-                <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 600, textTransform: 'uppercase', fontSize: { xs: '0.68rem', sm: '0.75rem' } }} noWrap>
+                <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, textTransform: 'uppercase', fontSize: { xs: '0.68rem', sm: '0.75rem' } }} noWrap>
                   Đang Trực Tuyến
                 </Typography>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
@@ -423,10 +426,10 @@ export const LoginHistoryPage: React.FC = () => {
                   <Radio size={14} color="#22c55e" />
                 </Box>
               </Box>
-              <Typography variant="h4" sx={{ fontWeight: 800, color: '#15803d', fontSize: { xs: '1.25rem', sm: '1.5rem' } }}>
+              <Typography variant="h4" sx={{ fontWeight: 800, color: '#22c55e', fontSize: { xs: '1.25rem', sm: '1.5rem' } }}>
                 {stats?.activeOnlineUsers ?? 0}
               </Typography>
-              <Typography variant="caption" sx={{ color: '#16a34a', display: 'block', mt: 0.5, fontWeight: 500, fontSize: '0.7rem' }} noWrap>
+              <Typography variant="caption" sx={{ color: '#22c55e', display: 'block', mt: 0.5, fontWeight: 500, fontSize: '0.7rem' }} noWrap>
                 Đang có phiên hoạt động
               </Typography>
             </CardContent>
@@ -436,22 +439,23 @@ export const LoginHistoryPage: React.FC = () => {
             variant="outlined"
             sx={{
               borderRadius: '8px',
-              bgcolor: '#ffffff',
-              border: '1px solid #e2e8f0',
+              bgcolor: 'background.paper',
+              border: '1px solid',
+              borderColor: 'divider',
               boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
             }}
           >
             <CardContent sx={{ p: { xs: 1.5, sm: 2.5 } }}>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-                <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 600, textTransform: 'uppercase', fontSize: { xs: '0.68rem', sm: '0.75rem' } }} noWrap>
+                <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, textTransform: 'uppercase', fontSize: { xs: '0.68rem', sm: '0.75rem' } }} noWrap>
                   Tổng Phiên Đăng Nhập
                 </Typography>
                 <ShieldCheck size={18} color="#0284c7" />
               </Box>
-              <Typography variant="h4" sx={{ fontWeight: 800, color: '#0f172a', fontSize: { xs: '1.25rem', sm: '1.5rem' } }}>
+              <Typography variant="h4" sx={{ fontWeight: 800, color: 'text.primary', fontSize: { xs: '1.25rem', sm: '1.5rem' } }}>
                 {stats?.totalSessions ?? 0}
               </Typography>
-              <Typography variant="caption" sx={{ color: '#64748b', display: 'block', mt: 0.5, fontSize: '0.7rem' }} noWrap>
+              <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mt: 0.5, fontSize: '0.7rem' }} noWrap>
                 Lượt truy cập ghi nhận
               </Typography>
             </CardContent>
@@ -461,22 +465,23 @@ export const LoginHistoryPage: React.FC = () => {
             variant="outlined"
             sx={{
               borderRadius: '8px',
-              bgcolor: '#ffffff',
-              border: '1px solid #e2e8f0',
+              bgcolor: 'background.paper',
+              border: '1px solid',
+              borderColor: 'divider',
               boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
             }}
           >
             <CardContent sx={{ p: { xs: 1.5, sm: 2.5 } }}>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-                <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 600, textTransform: 'uppercase', fontSize: { xs: '0.68rem', sm: '0.75rem' } }} noWrap>
-                  Đăng Xuất Hôm Nay
+                <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, textTransform: 'uppercase', fontSize: { xs: '0.68rem', sm: '0.75rem' } }} noWrap>
+                  Đang Xuất Hôm Nay
                 </Typography>
                 <LogOut size={18} color="#f59e0b" />
               </Box>
-              <Typography variant="h4" sx={{ fontWeight: 800, color: '#b45309', fontSize: { xs: '1.25rem', sm: '1.5rem' } }}>
+              <Typography variant="h4" sx={{ fontWeight: 800, color: '#f59e0b', fontSize: { xs: '1.25rem', sm: '1.5rem' } }}>
                 {stats?.loggedOutToday ?? 0}
               </Typography>
-              <Typography variant="caption" sx={{ color: '#64748b', display: 'block', mt: 0.5, fontSize: '0.7rem' }} noWrap>
+              <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mt: 0.5, fontSize: '0.7rem' }} noWrap>
                 Phiên hoàn tất trong ngày
               </Typography>
             </CardContent>
@@ -486,22 +491,23 @@ export const LoginHistoryPage: React.FC = () => {
             variant="outlined"
             sx={{
               borderRadius: '8px',
-              bgcolor: '#ffffff',
-              border: '1px solid #e2e8f0',
+              bgcolor: 'background.paper',
+              border: '1px solid',
+              borderColor: 'divider',
               boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
             }}
           >
             <CardContent sx={{ p: { xs: 1.5, sm: 2.5 } }}>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-                <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 600, textTransform: 'uppercase', fontSize: { xs: '0.68rem', sm: '0.75rem' } }} noWrap>
+                <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, textTransform: 'uppercase', fontSize: { xs: '0.68rem', sm: '0.75rem' } }} noWrap>
                   Thời Lượng TB
                 </Typography>
                 <Clock size={18} color="#8b5cf6" />
               </Box>
-              <Typography variant="h4" sx={{ fontWeight: 800, color: '#6d28d9', fontSize: { xs: '1.25rem', sm: '1.5rem' } }}>
+              <Typography variant="h4" sx={{ fontWeight: 800, color: '#a855f7', fontSize: { xs: '1.25rem', sm: '1.5rem' } }}>
                 {stats?.avgSessionMinutes ? `${Math.round(stats.avgSessionMinutes)}m` : '0m'}
               </Typography>
-              <Typography variant="caption" sx={{ color: '#64748b', display: 'block', mt: 0.5, fontSize: '0.7rem' }} noWrap>
+              <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mt: 0.5, fontSize: '0.7rem' }} noWrap>
                 Thời gian mỗi phiên
               </Typography>
             </CardContent>
@@ -513,7 +519,9 @@ export const LoginHistoryPage: React.FC = () => {
           sx={{
             p: { xs: 1.5, sm: 2 },
             borderRadius: '8px',
-            border: '1px solid #e2e8f0',
+            border: '1px solid',
+            borderColor: 'divider',
+            bgcolor: 'background.paper',
             width: '100%',
             display: 'flex',
             alignItems: 'center',
@@ -521,7 +529,7 @@ export const LoginHistoryPage: React.FC = () => {
             flexWrap: 'wrap',
           }}
         >
-          <TextField
+          <CommonInput
             size="small"
             placeholder="Tìm kiếm nhân sự, email, IP..."
             value={search}
@@ -529,12 +537,11 @@ export const LoginHistoryPage: React.FC = () => {
               setSearch(e.target.value);
               setPageIndex(1);
             }}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <Search size={18} color="#94a3b8" />
-                </InputAdornment>
-              ),
+            isSearch
+            clearable
+            onClear={() => {
+              setSearch('');
+              setPageIndex(1);
             }}
             sx={{ width: { xs: '100%', sm: 220, md: 320 } }}
           />
@@ -590,10 +597,9 @@ export const LoginHistoryPage: React.FC = () => {
           </Box>
 
           {(search || selectedUser || status || fromDate || toDate) && (
-            <Button
-              variant="text"
+            <CommonButton
+              variant="ghost"
               size="small"
-              color="inherit"
               startIcon={<X size={15} />}
               onClick={() => {
                 setSearch('');
@@ -604,16 +610,13 @@ export const LoginHistoryPage: React.FC = () => {
                 setPageIndex(1);
               }}
               sx={{
-                textTransform: 'none',
                 color: '#64748b',
-                fontSize: '0.8125rem',
-                fontWeight: 600,
                 whiteSpace: 'nowrap',
                 ml: { xs: 0, sm: 'auto', md: 0 },
               }}
             >
-              Xóa tất cả bộ lọc
-            </Button>
+              Đặt lại
+            </CommonButton>
           )}
         </Paper>
 
@@ -629,7 +632,7 @@ export const LoginHistoryPage: React.FC = () => {
           }}
           rowKey="id"
           rowSx={(session: UserLoginSession) => ({
-            bgcolor: session.status === 'Active' ? 'rgba(240, 253, 244, 0.4)' : 'inherit',
+            bgcolor: session.status === 'Active' ? (theme: any) => (theme.palette.mode === 'dark' ? 'rgba(34, 197, 94, 0.08)' : 'rgba(240, 253, 244, 0.4)') : 'inherit',
           })}
           maxHeight="calc(100vh - 360px)"
           minWidth={{ xs: 780, md: '100%' }}

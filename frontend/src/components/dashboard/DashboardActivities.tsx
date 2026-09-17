@@ -5,6 +5,7 @@ import {
   Typography,
   Avatar,
   Chip,
+  useTheme,
 } from '@mui/material';
 import { Activity, Clock } from 'lucide-react';
 import { DashboardSummary } from '../../types';
@@ -20,6 +21,8 @@ interface DashboardActivitiesProps {
 }
 
 export const DashboardActivities: React.FC<DashboardActivitiesProps> = memo(({ data, canViewAll = false, canViewProject = false, onSelectTask }) => {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
   const [page, setPage] = useState<number>(0);
   const [rowsPerPage, setRowsPerPage] = useState<number>(5);
 
@@ -37,8 +40,8 @@ export const DashboardActivities: React.FC<DashboardActivitiesProps> = memo(({ d
         cell: ({ row }) => {
           const formattedTime = formatDateTime(row.createdAt);
           return (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, color: '#475569', fontSize: '0.8125rem', whiteSpace: 'nowrap' }}>
-              <Clock size={13} color="#94a3b8" />
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, color: 'text.secondary', fontSize: '0.8125rem', whiteSpace: 'nowrap' }}>
+              <Clock size={13} color={isDark ? '#94a3b8' : '#94a3b8'} />
               <span>{formattedTime}</span>
             </Box>
           );
@@ -64,7 +67,7 @@ export const DashboardActivities: React.FC<DashboardActivitiesProps> = memo(({ d
             </Avatar>
             <Typography
               variant="body2"
-              sx={{ fontWeight: 600, fontSize: '0.8125rem', color: '#0f172a', whiteSpace: 'nowrap' }}
+              sx={{ fontWeight: 600, fontSize: '0.8125rem', color: 'text.primary', whiteSpace: 'nowrap' }}
             >
               {row.userName || '-'}
             </Typography>
@@ -85,8 +88,9 @@ export const DashboardActivities: React.FC<DashboardActivitiesProps> = memo(({ d
                   fontWeight: 700,
                   fontSize: '0.75rem',
                   height: 22,
-                  bgcolor: '#e0f2fe',
-                  color: '#0369a1',
+                  bgcolor: isDark ? 'rgba(56, 189, 248, 0.15)' : '#e0f2fe',
+                  color: isDark ? '#38bdf8' : '#0369a1',
+                  border: isDark ? '1px solid rgba(56, 189, 248, 0.3)' : 'none',
                   width: 'fit-content',
                   mb: row.projectName ? 0.3 : 0,
                 }}
@@ -95,9 +99,12 @@ export const DashboardActivities: React.FC<DashboardActivitiesProps> = memo(({ d
                 <Typography
                   variant="caption"
                   sx={{
-                    color: '#64748b',
+                    color: 'text.secondary',
                     fontSize: '0.75rem',
                     whiteSpace: 'nowrap',
+                    maxWidth: 180,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
                   }}
                   title={row.projectName}
                 >
@@ -106,103 +113,112 @@ export const DashboardActivities: React.FC<DashboardActivitiesProps> = memo(({ d
               )}
             </Box>
           ) : (
-            <Typography variant="body2" sx={{ color: '#94a3b8', whiteSpace: 'nowrap' }}>
+            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
               -
             </Typography>
           ),
       },
       {
-        id: 'task',
+        id: 'taskName',
         header: 'Hạng Mục / Công Việc',
         minWidth: 200,
         cell: ({ row }) =>
           row.taskName ? (
             <Typography
               variant="body2"
-              onClick={() => row.taskId && onSelectTask && onSelectTask(row.taskId)}
               sx={{
                 fontWeight: 600,
                 fontSize: '0.8125rem',
-                color: row.taskId && onSelectTask ? '#0284c7' : '#334155',
-                cursor: row.taskId && onSelectTask ? 'pointer' : 'default',
-                '&:hover': row.taskId && onSelectTask ? { textDecoration: 'underline' } : {},
+                color: row.taskId && onSelectTask ? (isDark ? '#38bdf8' : '#0284c7') : 'text.primary',
                 whiteSpace: 'nowrap',
+                maxWidth: 220,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                cursor: row.taskId && onSelectTask ? 'pointer' : 'default',
+                '&:hover': {
+                  textDecoration: row.taskId && onSelectTask ? 'underline' : 'none',
+                },
               }}
               title={row.taskName}
             >
               {row.taskName}
             </Typography>
           ) : (
-            <Typography variant="body2" sx={{ color: '#94a3b8', whiteSpace: 'nowrap' }}>
+            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
               -
             </Typography>
           ),
       },
       {
-        id: 'details',
+        id: 'content',
         header: 'Nội Dung & Biến Động',
-        minWidth: 260,
-        cell: ({ row }) => {
-          const raw = row.details || row.actionName || row.action || '-';
-          const clean = typeof raw === 'string'
-            ? raw.replace(/:\s*['"]?[\w\d_-]+['"]?\s*(->|→|➔|-->)\s*['"]?[\w\d_-]+['"]?/gi, '').trim()
-            : raw;
-          return (
-            <Typography
-              variant="body2"
-              sx={{
-                fontSize: '0.8125rem',
-                color: '#1e293b',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {clean}
-            </Typography>
-          );
-        },
+        minWidth: 250,
+        cell: ({ row }) => (
+          <Typography
+            variant="body2"
+            sx={{
+              fontSize: '0.8125rem',
+              color: 'text.secondary',
+              lineHeight: 1.4,
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              maxWidth: 320,
+            }}
+            title={row.content || row.title}
+          >
+            {row.content || row.title || 'Cập nhật tiến độ / trạng thái công việc'}
+          </Typography>
+        ),
       },
     ],
-    [onSelectTask]
+    [onSelectTask, isDark]
   );
 
   return (
     <Paper
+      elevation={0}
       sx={{
-        border: '1px solid #e2e8f0',
+        border: `1px solid ${theme.palette.divider}`,
         borderRadius: '8px',
         overflow: 'hidden',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+        bgcolor: 'background.paper',
+        boxShadow: isDark
+          ? '0 4px 20px -2px rgba(0, 0, 0, 0.4)'
+          : '0 4px 20px -2px rgba(0, 0, 0, 0.05)',
       }}
     >
-      {/* Header */}
+      {/* Header bar */}
       <Box
         sx={{
+          p: { xs: 1.75, sm: 2 },
+          px: { xs: 2, sm: 2.5 },
           display: 'flex',
-          alignItems: 'center',
           justifyContent: 'space-between',
-          p: 2,
-          borderBottom: '1px solid #e2e8f0',
-          bgcolor: '#ffffff',
+          alignItems: 'center',
           flexWrap: 'wrap',
-          gap: 1,
+          gap: 1.5,
+          borderBottom: `1px solid ${theme.palette.divider}`,
+          bgcolor: 'background.paper',
         }}
       >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
           <Box
             sx={{
-              width: 32,
-              height: 32,
-              borderRadius: '8px',
-              bgcolor: '#e0f2fe',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#0284c7',
+              p: 0.75,
+              borderRadius: '8px',
+              bgcolor: isDark ? 'rgba(56, 189, 248, 0.12)' : '#f0f9ff',
+              color: isDark ? '#38bdf8' : '#0284c7',
             }}
           >
             <Activity size={18} />
           </Box>
-          <Typography variant="h4" sx={{ fontWeight: 700, fontSize: '1rem', color: '#0f172a' }}>
+          <Typography variant="h4" sx={{ fontWeight: 700, fontSize: '1rem', color: 'text.primary' }}>
             {canViewAll
               ? 'Nhật Ký Hoạt Động & Biến Động Toàn Hệ Thống'
               : canViewProject
@@ -216,10 +232,16 @@ export const DashboardActivities: React.FC<DashboardActivitiesProps> = memo(({ d
             size="small"
             sx={{
               fontWeight: 600,
-              bgcolor: canViewAll ? '#eff6ff' : '#f8fafc',
-              color: canViewAll ? '#1d4ed8' : '#475569',
+              bgcolor: canViewAll
+                ? isDark
+                  ? 'rgba(56, 189, 248, 0.15)'
+                  : '#eff6ff'
+                : isDark
+                ? 'rgba(255, 255, 255, 0.05)'
+                : '#f8fafc',
+              color: canViewAll ? (isDark ? '#38bdf8' : '#1d4ed8') : 'text.secondary',
               border: '1px solid',
-              borderColor: canViewAll ? '#bfdbfe' : '#e2e8f0',
+              borderColor: canViewAll ? (isDark ? 'rgba(56, 189, 248, 0.3)' : '#bfdbfe') : theme.palette.divider,
               fontSize: '0.72rem',
             }}
           />
@@ -228,9 +250,9 @@ export const DashboardActivities: React.FC<DashboardActivitiesProps> = memo(({ d
             size="small"
             sx={{
               fontWeight: 700,
-              bgcolor: '#f0f9ff',
-              color: '#0284c7',
-              border: '1px solid #bae6fd',
+              bgcolor: isDark ? 'rgba(56, 189, 248, 0.12)' : '#f0f9ff',
+              color: isDark ? '#38bdf8' : '#0284c7',
+              border: `1px solid ${isDark ? 'rgba(56, 189, 248, 0.3)' : '#bae6fd'}`,
               fontSize: '0.75rem',
             }}
           />
@@ -258,9 +280,8 @@ export const DashboardActivities: React.FC<DashboardActivitiesProps> = memo(({ d
         }}
         rowSx={(row: any) => ({
           cursor: row.taskId && onSelectTask ? 'pointer' : 'default',
-          transition: 'background-color 0.15s ease',
           '&:hover': {
-            bgcolor: row.taskId && onSelectTask ? '#f0f9ff !important' : undefined,
+            bgcolor: row.taskId && onSelectTask ? (isDark ? 'rgba(56, 189, 248, 0.1) !important' : '#f0f9ff !important') : undefined,
           },
         })}
         pagination={{

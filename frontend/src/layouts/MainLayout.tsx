@@ -24,9 +24,8 @@ export const MainLayout: React.FC = () => {
     : collapsed
     ? COLLAPSED_DRAWER_WIDTH
     : EXPANDED_DRAWER_WIDTH;
-
   return (
-    <Box sx={{ display: 'flex', height: '100vh', maxHeight: '100vh', bgcolor: '#f8fafc', width: '100vw', maxWidth: '100vw', overflow: 'hidden' }}>
+    <Box sx={{ display: 'flex', height: '100vh', maxHeight: '100vh', bgcolor: 'background.default', color: 'text.primary', width: '100vw', maxWidth: '100vw', overflow: 'hidden' }}>
       {/* Sidebar Navigation */}
       <SidebarNav
         mobileOpen={mobileOpen}
@@ -85,7 +84,9 @@ export const MainLayout: React.FC = () => {
             boxSizing: 'border-box',
           }}
         >
-          <Outlet />
+          <React.Suspense fallback={null}>
+            <Outlet />
+          </React.Suspense>
         </Box>
 
         {/* Mobile Bottom Navigation Bar */}

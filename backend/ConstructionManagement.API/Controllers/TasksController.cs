@@ -100,6 +100,16 @@ public class TasksController : BaseApiController
         return Ok(result);
     }
 
+    // Direct Priority Update
+    [HttpPatch("{id}/priority")]
+    [HttpPut("{id}/priority")]
+    public async Task<IActionResult> UpdatePriority(Guid id, [FromBody] UpdateTaskPriorityRequest request)
+    {
+        var result = await _taskService.UpdatePriorityAsync(id, request, CurrentUserId);
+        if (!result.Success) return BadRequest(result);
+        return Ok(result);
+    }
+
     // Gantt Drag & Drop Dates Update (Supervisor / Manager / Admin)
     [HttpPatch("{id}/dates")]
     [HttpPut("{id}/dates")]

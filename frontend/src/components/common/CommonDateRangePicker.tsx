@@ -7,6 +7,7 @@ import {
   IconButton,
   Divider,
   Paper,
+  useTheme,
 } from '@mui/material';
 import {
   Calendar as CalendarIcon,
@@ -163,6 +164,8 @@ export const CommonDateRangePicker: React.FC<CommonDateRangePickerProps> = ({
   customPresets = DEFAULT_DATE_PRESETS,
   sx,
 }) => {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const open = Boolean(anchorEl);
 
@@ -350,9 +353,9 @@ export const CommonDateRangePicker: React.FC<CommonDateRangePickerProps> = ({
               onClick={handlePrevMonth}
               sx={{
                 p: 0.5,
-                color: '#64748b',
+                color: 'text.secondary',
                 borderRadius: '6px',
-                '&:hover': { bgcolor: '#f1f5f9', color: '#0f172a' },
+                '&:hover': { bgcolor: 'action.hover', color: 'text.primary' },
               }}
             >
               <ChevronLeft size={18} />
@@ -361,7 +364,7 @@ export const CommonDateRangePicker: React.FC<CommonDateRangePickerProps> = ({
             <Box sx={{ width: 28 }} />
           )}
 
-          <Typography sx={{ fontWeight: 700, fontSize: '0.9rem', color: '#0f172a' }}>
+          <Typography sx={{ fontWeight: 700, fontSize: '0.9rem', color: 'text.primary' }}>
             {`Tháng ${format(monthDate, 'M, yyyy')}`}
           </Typography>
 
@@ -371,9 +374,9 @@ export const CommonDateRangePicker: React.FC<CommonDateRangePickerProps> = ({
               onClick={handleNextMonth}
               sx={{
                 p: 0.5,
-                color: '#64748b',
+                color: 'text.secondary',
                 borderRadius: '6px',
-                '&:hover': { bgcolor: '#f1f5f9', color: '#0f172a' },
+                '&:hover': { bgcolor: 'action.hover', color: 'text.primary' },
               }}
             >
               <ChevronRight size={18} />
@@ -391,7 +394,7 @@ export const CommonDateRangePicker: React.FC<CommonDateRangePickerProps> = ({
               sx={{
                 fontSize: '0.72rem',
                 fontWeight: 600,
-                color: idx === 0 ? '#ef4444' : '#64748b',
+                color: idx === 0 ? '#ef4444' : 'text.secondary',
                 py: 0.25,
               }}
             >
@@ -447,7 +450,7 @@ export const CommonDateRangePicker: React.FC<CommonDateRangePickerProps> = ({
                           bottom: 2,
                           left: isRangeStart ? '50%' : 0,
                           right: isRangeEnd ? '50%' : 0,
-                          bgcolor: '#e0f2fe',
+                          bgcolor: isDark ? 'rgba(45, 136, 255, 0.2)' : '#e0f2fe',
                           zIndex: 0,
                           borderRadius:
                             isRangeStart && isRangeEnd
@@ -483,10 +486,10 @@ export const CommonDateRangePicker: React.FC<CommonDateRangePickerProps> = ({
                       isStart || isEnd || isRangeStart || isRangeEnd
                         ? '#ffffff'
                         : inRange
-                        ? '#0369a1'
+                        ? '#0284c7'
                         : dayOfWeek === 0
                         ? '#ef4444'
-                        : '#1e293b',
+                        : 'text.primary',
                     bgcolor:
                       isStart || isEnd || isRangeStart || isRangeEnd
                         ? '#0284c7'
@@ -522,10 +525,11 @@ export const CommonDateRangePicker: React.FC<CommonDateRangePickerProps> = ({
         <Typography
           variant="caption"
           sx={{
-            color: '#64748b',
-            fontWeight: 600,
+            color: 'text.secondary',
+            fontWeight: 700,
             mb: 0.5,
             fontSize: '0.75rem',
+            letterSpacing: '0.01em',
           }}
         >
           {label}
@@ -543,8 +547,8 @@ export const CommonDateRangePicker: React.FC<CommonDateRangePickerProps> = ({
           px: 1.5,
           py: size === 'small' ? '7px' : '9px',
           borderRadius: '8px',
-          borderColor: open ? '#38bdf8' : hasValue ? '#93c5fd' : '#cbd5e1',
-          bgcolor: open ? '#f0f9ff' : hasValue ? '#f8fafc' : '#ffffff',
+          borderColor: open ? '#38bdf8' : 'divider',
+          bgcolor: open ? (theme) => theme.palette.mode === 'dark' ? 'rgba(56, 189, 248, 0.12)' : '#f0f9ff' : 'background.paper',
           cursor: disabled ? 'not-allowed' : 'pointer',
           opacity: disabled ? 0.6 : 1,
           transition: 'all 0.2s ease-in-out',
@@ -552,30 +556,30 @@ export const CommonDateRangePicker: React.FC<CommonDateRangePickerProps> = ({
             ? '0 0 0 3px rgba(56, 189, 248, 0.15)'
             : '0 1px 2px rgba(0,0,0,0.03)',
           '&:hover': {
-            borderColor: disabled ? '#cbd5e1' : '#0284c7',
-            bgcolor: disabled ? '#ffffff' : '#f8fafc',
+            borderColor: disabled ? 'divider' : '#0284c7',
+            bgcolor: disabled ? 'background.paper' : 'action.hover',
           },
         }}
       >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0, overflow: 'hidden' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, minWidth: 0, overflow: 'hidden' }}>
           <Box
             sx={{
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: hasValue ? '#0284c7' : '#64748b',
+              color: hasValue ? (isDark ? '#2d88ff' : '#0284c7') : (isDark ? '#71767b' : '#94a3b8'),
               flexShrink: 0,
             }}
           >
-            <CalendarIcon size={size === 'small' ? 16 : 18} />
+            <CalendarIcon size={size === 'small' ? 15 : 18} />
           </Box>
 
           <Typography
             noWrap
             sx={{
-              fontSize: size === 'small' ? '0.8125rem' : '0.875rem',
+              fontSize: size === 'small' ? '0.78rem' : '0.875rem',
               fontWeight: hasValue ? 600 : 400,
-              color: hasValue ? '#0f172a' : '#64748b',
+              color: hasValue ? (isDark ? '#e4e6eb' : '#0f172a') : (isDark ? '#71767b' : '#94a3b8'),
             }}
           >
             {displayLabel || placeholder}
@@ -625,8 +629,10 @@ export const CommonDateRangePicker: React.FC<CommonDateRangePickerProps> = ({
           sx: {
             mt: 1,
             borderRadius: '12px',
-            boxShadow: '0 12px 36px -4px rgba(0, 0, 0, 0.16), 0 0 0 1px rgba(0, 0, 0, 0.05)',
-            border: '1px solid #e2e8f0',
+            boxShadow: '0 12px 36px -4px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.05)',
+            border: '1px solid',
+            borderColor: 'divider',
+            bgcolor: 'background.paper',
             overflow: 'hidden',
             maxWidth: { xs: '95vw', sm: 760 },
           },
@@ -637,9 +643,10 @@ export const CommonDateRangePicker: React.FC<CommonDateRangePickerProps> = ({
           <Box
             sx={{
               width: { xs: '100%', md: 160 },
-              bgcolor: '#f8fafc',
-              borderRight: { xs: 'none', md: '1px solid #e2e8f0' },
-              borderBottom: { xs: '1px solid #e2e8f0', md: 'none' },
+              bgcolor: (theme) => theme.palette.mode === 'dark' ? '#141414' : '#f8fafc',
+              borderRight: { xs: 'none', md: '1px solid' },
+              borderBottom: { xs: '1px solid', md: 'none' },
+              borderColor: 'divider',
               p: 1.5,
               display: 'flex',
               flexDirection: { xs: 'row', md: 'column' },
@@ -652,7 +659,7 @@ export const CommonDateRangePicker: React.FC<CommonDateRangePickerProps> = ({
               variant="caption"
               sx={{
                 fontWeight: 700,
-                color: '#64748b',
+                color: 'text.secondary',
                 textTransform: 'uppercase',
                 letterSpacing: '0.05em',
                 px: 1,
@@ -680,9 +687,9 @@ export const CommonDateRangePicker: React.FC<CommonDateRangePickerProps> = ({
                     py: 0.6,
                     borderRadius: '6px',
                     bgcolor: isSelected ? '#0284c7 !important' : 'transparent',
-                    color: isSelected ? '#ffffff !important' : '#475569',
+                    color: isSelected ? '#ffffff !important' : 'text.secondary',
                     '&:hover': {
-                      bgcolor: isSelected ? '#0369a1 !important' : '#e2e8f0',
+                      bgcolor: isSelected ? '#0369a1 !important' : 'action.hover',
                     },
                   }}
                 >
@@ -703,9 +710,9 @@ export const CommonDateRangePicker: React.FC<CommonDateRangePickerProps> = ({
                 py: 0.6,
                 borderRadius: '6px',
                 bgcolor: activePresetId === 'custom' ? '#0284c7 !important' : 'transparent',
-                color: activePresetId === 'custom' ? '#ffffff !important' : '#475569',
+                color: activePresetId === 'custom' ? '#ffffff !important' : 'text.secondary',
                 '&:hover': {
-                  bgcolor: activePresetId === 'custom' ? '#0369a1 !important' : '#e2e8f0',
+                  bgcolor: activePresetId === 'custom' ? '#0369a1 !important' : 'action.hover',
                 },
               }}
             >
@@ -725,14 +732,15 @@ export const CommonDateRangePicker: React.FC<CommonDateRangePickerProps> = ({
                 gap: 1,
                 pb: 1,
                 mb: 1,
-                borderBottom: '1px solid #f1f5f9',
+                borderBottom: '1px solid',
+                borderColor: 'divider',
               }}
             >
               <Box>
-                <Typography sx={{ fontWeight: 700, fontSize: '0.9rem', color: '#0f172a' }}>
+                <Typography sx={{ fontWeight: 700, fontSize: '0.9rem', color: 'text.primary' }}>
                   Chọn khoảng thời gian bắt đầu & kết thúc
                 </Typography>
-                <Typography variant="caption" sx={{ color: '#64748b' }}>
+                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
                   Nhấp ngày bắt đầu, sau đó nhấp ngày kết thúc trên lịch
                 </Typography>
               </Box>

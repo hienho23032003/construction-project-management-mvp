@@ -53,7 +53,7 @@ export const RoleTable: React.FC<RoleTableProps> = memo(({
               variant="caption"
               sx={{
                 fontFamily: 'monospace',
-                color: '#64748b',
+                color: 'text.disabled',
                 fontWeight: 600,
                 fontSize: '0.7rem',
                 whiteSpace: 'nowrap',
@@ -73,7 +73,7 @@ export const RoleTable: React.FC<RoleTableProps> = memo(({
           <Typography
             variant="body2"
             sx={{
-              color: '#64748b',
+              color: 'text.secondary',
               fontSize: '0.8rem',
               whiteSpace: 'nowrap',
             }}
@@ -94,8 +94,8 @@ export const RoleTable: React.FC<RoleTableProps> = memo(({
               label="Hệ Thống"
               size="small"
               sx={{
-                bgcolor: '#f1f5f9',
-                color: '#475569',
+                bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.08)' : '#f1f5f9',
+                color: (theme) => theme.palette.mode === 'dark' ? '#b4b4b4' : '#475569',
                 fontWeight: 600,
                 fontSize: '0.7rem',
                 whiteSpace: 'nowrap',
@@ -107,8 +107,9 @@ export const RoleTable: React.FC<RoleTableProps> = memo(({
               label="Tùy Chỉnh"
               size="small"
               sx={{
-                bgcolor: '#fdf4ff',
-                color: '#a855f7',
+                bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(217, 70, 239, 0.15)' : '#fdf4ff',
+                color: (theme) => theme.palette.mode === 'dark' ? '#e879f9' : '#a21caf',
+                border: (theme) => theme.palette.mode === 'dark' ? '1px solid rgba(217, 70, 239, 0.3)' : '1px solid #f5d0fe',
                 fontWeight: 600,
                 fontSize: '0.7rem',
                 whiteSpace: 'nowrap',
@@ -132,9 +133,9 @@ export const RoleTable: React.FC<RoleTableProps> = memo(({
         ),
       },
       {
-        id: 'permissions',
-        header: 'Quyền Hạn Cấp',
-        minWidth: 200,
+        id: 'permissionsCount',
+        header: 'Phạm Vi Quyền Hạn',
+        minWidth: 240,
         cell: ({ row }) => {
           const moduleTags = getRoleModuleTags(row.permissions);
           const isSuperAdminRole = row.code === 'SuperAdmin';
@@ -146,15 +147,23 @@ export const RoleTable: React.FC<RoleTableProps> = memo(({
                   icon={<CheckCircle2 size={12} />}
                   label="Toàn Quyền"
                   size="small"
-                  sx={{ bgcolor: '#f0fdf4', color: '#16a34a', fontSize: '0.7rem', fontWeight: 700, whiteSpace: 'nowrap' }}
+                  sx={{
+                    bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(34, 197, 94, 0.15)' : '#f0fdf4',
+                    color: (theme) => theme.palette.mode === 'dark' ? '#4ade80' : '#16a34a',
+                    border: (theme) => theme.palette.mode === 'dark' ? '1px solid rgba(34, 197, 94, 0.3)' : '1px solid #bbf7d0',
+                    fontSize: '0.7rem',
+                    fontWeight: 700,
+                    whiteSpace: 'nowrap',
+                  }}
                 />
               ) : (
                 <Chip
                   label={`${row.permissions.length} quyền`}
                   size="small"
                   sx={{
-                    bgcolor: '#e0f2fe',
-                    color: '#0369a1',
+                    bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(56, 189, 248, 0.15)' : '#e0f2fe',
+                    color: (theme) => theme.palette.mode === 'dark' ? '#38bdf8' : '#0369a1',
+                    border: (theme) => theme.palette.mode === 'dark' ? '1px solid rgba(56, 189, 248, 0.3)' : '1px solid #bae6fd',
                     fontWeight: 700,
                     fontSize: '0.7rem',
                     whiteSpace: 'nowrap',
@@ -166,14 +175,30 @@ export const RoleTable: React.FC<RoleTableProps> = memo(({
                   key={t.name}
                   label={`${t.name} (${t.count})`}
                   size="small"
-                  sx={{ bgcolor: '#f8fafc', color: '#334155', fontSize: '0.7rem', height: 22, whiteSpace: 'nowrap' }}
+                  sx={{
+                    bgcolor: (theme) => theme.palette.mode === 'dark' ? '#141414' : '#f8fafc',
+                    color: 'text.secondary',
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    fontSize: '0.7rem',
+                    height: 22,
+                    whiteSpace: 'nowrap',
+                  }}
                 />
               ))}
               {moduleTags.length > 1 && (
                 <Chip
                   label={`+${moduleTags.length - 1}`}
                   size="small"
-                  sx={{ bgcolor: '#f1f5f9', color: '#475569', fontSize: '0.7rem', height: 22, whiteSpace: 'nowrap' }}
+                  sx={{
+                    bgcolor: 'action.hover',
+                    color: 'text.secondary',
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    fontSize: '0.7rem',
+                    height: 22,
+                    whiteSpace: 'nowrap',
+                  }}
                 />
               )}
             </Box>

@@ -47,14 +47,15 @@ export const ProjectPresenceAvatars: React.FC<ProjectPresenceAvatarsProps> = ({
         gap: 1,
         px: 1.25,
         py: 0.5,
-        bgcolor: '#f8fafc',
-        border: '1px solid #e2e8f0',
+        bgcolor: (theme) => theme.palette.mode === 'dark' ? '#141414' : '#f8fafc',
+        border: '1px solid',
+        borderColor: 'divider',
         borderRadius: '20px',
       }}
     >
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, color: '#64748b' }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, color: 'text.secondary' }}>
         <Users size={14} />
-        <Typography variant="caption" sx={{ fontWeight: 600, fontSize: '0.75rem', color: '#475569' }}>
+        <Typography variant="caption" sx={{ fontWeight: 600, fontSize: '0.75rem', color: 'text.secondary' }}>
           Đang xem ({activeUsers.length})
         </Typography>
       </Box>
@@ -66,7 +67,8 @@ export const ProjectPresenceAvatars: React.FC<ProjectPresenceAvatarsProps> = ({
             width: size,
             height: size,
             fontSize: '0.75rem',
-            border: '2px solid #ffffff',
+            border: '2px solid',
+            borderColor: 'background.paper',
             fontWeight: 600,
           },
         }}
@@ -81,19 +83,19 @@ export const ProjectPresenceAvatars: React.FC<ProjectPresenceAvatarsProps> = ({
                 {u.userName} {isMe && '(Bạn)'}
               </Typography>
               {u.userDepartment && (
-                <Typography variant="caption" sx={{ display: 'block', color: '#cbd5e1' }}>
+                <Typography variant="caption" sx={{ display: 'block', color: 'text.disabled' }}>
                   {u.userDepartment} {u.userRole && `• ${u.userRole}`}
                 </Typography>
               )}
               {isEditing ? (
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5, color: '#f59e0b' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5, color: '#fbbf24' }}>
                   <Edit3 size={12} />
                   <Typography variant="caption" sx={{ fontWeight: 600 }}>
                     Đang sửa: {u.editingTaskName || 'công việc'}
                   </Typography>
                 </Box>
               ) : (
-                <Typography variant="caption" sx={{ color: '#94a3b8', fontStyle: 'italic', display: 'block', mt: 0.25 }}>
+                <Typography variant="caption" sx={{ color: 'text.disabled', fontStyle: 'italic', display: 'block', mt: 0.25 }}>
                   Đang xem dự án
                 </Typography>
               )}
@@ -110,7 +112,7 @@ export const ProjectPresenceAvatars: React.FC<ProjectPresenceAvatarsProps> = ({
                   '& .MuiBadge-badge': {
                     backgroundColor: isEditing ? '#f59e0b' : '#10b981',
                     color: isEditing ? '#f59e0b' : '#10b981',
-                    boxShadow: '0 0 0 1.5px #fff',
+                    boxShadow: '0 0 0 1.5px rgba(0,0,0,0.5)',
                     width: 7,
                     height: 7,
                     minWidth: 7,
@@ -168,8 +170,8 @@ export const CoEditingWarningBanner: React.FC<CoEditingWarningBannerProps> = ({
       sx={{
         mb: 2,
         p: 1.5,
-        bgcolor: '#fffbeb',
-        border: '1px solid #fde68a',
+        bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(245, 158, 11, 0.15)' : '#fffbeb',
+        border: (theme) => theme.palette.mode === 'dark' ? '1px solid rgba(245, 158, 11, 0.35)' : '1px solid #fde68a',
         borderRadius: '8px',
         display: 'flex',
         alignItems: 'center',
@@ -179,7 +181,7 @@ export const CoEditingWarningBanner: React.FC<CoEditingWarningBannerProps> = ({
       <Box
         sx={{
           p: 0.75,
-          bgcolor: '#fef3c7',
+          bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(245, 158, 11, 0.25)' : '#fef3c7',
           color: '#d97706',
           borderRadius: '50%',
           display: 'flex',
@@ -190,10 +192,10 @@ export const CoEditingWarningBanner: React.FC<CoEditingWarningBannerProps> = ({
         <Edit3 size={16} />
       </Box>
       <Box sx={{ flex: 1 }}>
-        <Typography variant="body2" sx={{ fontWeight: 700, color: '#92400e', fontSize: '0.85rem' }}>
+        <Typography variant="body2" sx={{ fontWeight: 700, color: (theme) => theme.palette.mode === 'dark' ? '#fcd34d' : '#92400e', fontSize: '0.85rem' }}>
           Cảnh báo: Có người đang chỉnh sửa công việc này!
         </Typography>
-        <Typography variant="caption" sx={{ color: '#b45309' }}>
+        <Typography variant="caption" sx={{ color: (theme) => theme.palette.mode === 'dark' ? '#fbbf24' : '#b45309' }}>
           Đồng nghiệp <strong>{editorNames}</strong> cũng đang mở form sửa công việc này. Vui lòng kiểm tra hoặc lưu ý để tránh ghi đè dữ liệu của nhau.
         </Typography>
       </Box>

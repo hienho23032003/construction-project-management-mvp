@@ -117,14 +117,26 @@ export const EmployeeTasksTab: React.FC<EmployeeTasksTabProps> = ({
                 <Chip
                   label="Trễ hạn"
                   size="small"
-                  sx={{ bgcolor: '#fee2e2', color: '#ef4444', fontWeight: 700, fontSize: '0.68rem', height: 22 }}
+                  sx={{
+                    bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(239, 68, 68, 0.16)' : '#fee2e2',
+                    color: (theme) => theme.palette.mode === 'dark' ? '#f87171' : '#ef4444',
+                    fontWeight: 700,
+                    fontSize: '0.68rem',
+                    height: 22,
+                  }}
                 />
               )}
               {isCompletedLate && (
                 <Chip
                   label="Xong trễ"
                   size="small"
-                  sx={{ bgcolor: '#fee2e2', color: '#ef4444', fontWeight: 700, fontSize: '0.68rem', height: 22 }}
+                  sx={{
+                    bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(239, 68, 68, 0.16)' : '#fee2e2',
+                    color: (theme) => theme.palette.mode === 'dark' ? '#f87171' : '#ef4444',
+                    fontWeight: 700,
+                    fontSize: '0.68rem',
+                    height: 22,
+                  }}
                 />
               )}
             </Box>
@@ -139,7 +151,7 @@ export const EmployeeTasksTab: React.FC<EmployeeTasksTabProps> = ({
         cell: ({ value, row }) => (
           <Box sx={{ width: '100%' }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-              <Typography variant="caption" sx={{ fontWeight: 700, color: '#0f172a' }}>
+              <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.primary' }}>
                 {Math.round(value)}%
               </Typography>
             </Box>
@@ -149,7 +161,7 @@ export const EmployeeTasksTab: React.FC<EmployeeTasksTabProps> = ({
               sx={{
                 height: 6,
                 borderRadius: 3,
-                bgcolor: '#e2e8f0',
+                bgcolor: (theme) => theme.palette.mode === 'dark' ? '#3a3b3c' : '#e2e8f0',
                 '& .MuiLinearProgress-bar': {
                   bgcolor:
                     row.status === 'Completed'

@@ -149,6 +149,8 @@ export const taskApi = {
     apiClient.patch<ApiResponse<TaskItem>>(`/tasks/${id}/progress`, { progress }),
   updateDates: (id: string, startDate: string, plannedEndDate: string) =>
     apiClient.patch<ApiResponse<TaskItem>>(`/tasks/${id}/dates`, { startDate, plannedEndDate }),
+  updatePriority: (id: string, priority: string) =>
+    apiClient.patch<ApiResponse<TaskItem>>(`/tasks/${id}/priority`, { priority }),
   getGanttData: (params?: {
     projectId?: string;
     status?: string;

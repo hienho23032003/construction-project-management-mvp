@@ -204,9 +204,10 @@ export const TaskCommentsTab: React.FC<TaskCommentsTabProps> = ({
                     sx={{
                       maxWidth: '85%',
                       width: 'fit-content',
-                      bgcolor: isSelf ? '#0284c7' : '#ffffff',
-                      color: isSelf ? '#ffffff' : '#0f172a',
-                      border: isSelf ? 'none' : '1px solid #e2e8f0',
+                      bgcolor: isSelf ? '#0284c7' : (theme) => theme.palette.mode === 'dark' ? '#141414' : '#ffffff',
+                      color: isSelf ? '#ffffff' : 'text.primary',
+                      border: isSelf ? 'none' : '1px solid',
+                      borderColor: isSelf ? 'transparent' : 'divider',
                       p: 1.5,
                       borderRadius: isSelf ? '14px 14px 2px 14px' : '14px 14px 14px 2px',
                       boxShadow: isSelf
@@ -219,7 +220,7 @@ export const TaskCommentsTab: React.FC<TaskCommentsTabProps> = ({
                         variant="caption"
                         sx={{
                           fontWeight: 700,
-                          color: isSelf ? '#ffffff' : '#0f172a',
+                          color: isSelf ? '#ffffff' : 'text.primary',
                           fontSize: '0.78rem',
                         }}
                       >
@@ -228,7 +229,7 @@ export const TaskCommentsTab: React.FC<TaskCommentsTabProps> = ({
                       <Typography
                         variant="caption"
                         sx={{
-                          color: isSelf ? 'rgba(255, 255, 255, 0.8)' : '#94a3b8',
+                          color: isSelf ? 'rgba(255, 255, 255, 0.8)' : 'text.disabled',
                           fontSize: '0.7rem',
                           whiteSpace: 'nowrap',
                         }}
@@ -241,7 +242,7 @@ export const TaskCommentsTab: React.FC<TaskCommentsTabProps> = ({
                       <Typography
                         variant="body2"
                         sx={{
-                          color: isSelf ? '#ffffff' : '#334155',
+                          color: isSelf ? '#ffffff' : 'text.secondary',
                           fontSize: '0.85rem',
                           lineHeight: 1.5,
                           whiteSpace: 'pre-wrap',
@@ -345,7 +346,7 @@ export const TaskCommentsTab: React.FC<TaskCommentsTabProps> = ({
                                   sx={{
                                     fontWeight: 600,
                                     fontSize: '0.8rem',
-                                    color: isSelf ? '#ffffff' : '#0f172a',
+                                    color: isSelf ? '#ffffff' : 'text.primary',
                                     whiteSpace: 'nowrap',
                                     overflow: 'hidden',
                                     textOverflow: 'ellipsis',
@@ -358,7 +359,7 @@ export const TaskCommentsTab: React.FC<TaskCommentsTabProps> = ({
                                 <Typography
                                   variant="caption"
                                   sx={{
-                                    color: isSelf ? 'rgba(255, 255, 255, 0.75)' : '#64748b',
+                                    color: isSelf ? 'rgba(255, 255, 255, 0.75)' : 'text.disabled',
                                     fontSize: '0.7rem',
                                   }}
                                 >
@@ -375,10 +376,10 @@ export const TaskCommentsTab: React.FC<TaskCommentsTabProps> = ({
                               rel="noopener noreferrer"
                               size="small"
                               sx={{
-                                color: isSelf ? '#ffffff' : '#0284c7',
-                                bgcolor: isSelf ? 'rgba(255, 255, 255, 0.2)' : '#e0f2fe',
+                                color: isSelf ? '#ffffff' : 'text.secondary',
+                                bgcolor: isSelf ? 'rgba(255, 255, 255, 0.2)' : 'action.hover',
                                 '&:hover': {
-                                  bgcolor: isSelf ? 'rgba(255, 255, 255, 0.3)' : '#bae6fd',
+                                  bgcolor: isSelf ? 'rgba(255, 255, 255, 0.3)' : 'action.selected',
                                 },
                                 p: 0.75,
                               }}
@@ -428,8 +429,9 @@ export const TaskCommentsTab: React.FC<TaskCommentsTabProps> = ({
             flexDirection: 'column',
             gap: 1.25,
             p: 1.5,
-            bgcolor: '#f8fafc',
-            border: '1px solid #e2e8f0',
+            bgcolor: (theme) => theme.palette.mode === 'dark' ? '#141414' : '#f8fafc',
+            border: '1px solid',
+            borderColor: 'divider',
             borderRadius: '10px',
           }}
         >
@@ -470,7 +472,7 @@ export const TaskCommentsTab: React.FC<TaskCommentsTabProps> = ({
                   }
                 }}
                 sx={{
-                  bgcolor: '#ffffff',
+                  bgcolor: 'background.paper',
                   '& .MuiOutlinedInput-root': {
                     p: 1.25,
                     borderRadius: '8px',
@@ -481,7 +483,7 @@ export const TaskCommentsTab: React.FC<TaskCommentsTabProps> = ({
           />
 
           {selectedFiles.length > 0 && (
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, p: 1, bgcolor: '#ffffff', borderRadius: '8px', border: '1px dashed #cbd5e1' }}>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, p: 1, bgcolor: 'background.paper', borderRadius: '8px', border: '1px dashed', borderColor: 'divider' }}>
               {selectedFiles.map((f, idx) => (
                 <Chip
                   key={idx}
@@ -491,7 +493,7 @@ export const TaskCommentsTab: React.FC<TaskCommentsTabProps> = ({
                   deleteIcon={<X size={14} />}
                   size="small"
                   sx={{
-                    bgcolor: '#f1f5f9',
+                    bgcolor: 'action.hover',
                     fontWeight: 600,
                     fontSize: '0.75rem',
                     maxWidth: 260,
@@ -516,9 +518,9 @@ export const TaskCommentsTab: React.FC<TaskCommentsTabProps> = ({
                   fontSize: '0.75rem',
                   py: 0.5,
                   px: 1.25,
-                  borderColor: '#cbd5e1',
-                  color: '#334155',
-                  '&:hover': { borderColor: '#0284c7', bgcolor: '#f0f9ff' },
+                  borderColor: 'divider',
+                  color: 'text.secondary',
+                  '&:hover': { borderColor: '#0284c7', bgcolor: 'action.hover' },
                 }}
               >
                 Thêm Ảnh
@@ -535,14 +537,14 @@ export const TaskCommentsTab: React.FC<TaskCommentsTabProps> = ({
                   fontSize: '0.75rem',
                   py: 0.5,
                   px: 1.25,
-                  borderColor: '#cbd5e1',
-                  color: '#334155',
-                  '&:hover': { borderColor: '#059669', bgcolor: '#ecfdf5' },
+                  borderColor: 'divider',
+                  color: 'text.secondary',
+                  '&:hover': { borderColor: '#059669', bgcolor: 'action.hover' },
                 }}
               >
                 Đính Kèm Tệp
               </Button>
-              <Typography variant="caption" sx={{ color: '#94a3b8', fontSize: '0.7rem', display: { xs: 'none', sm: 'block' } }}>
+              <Typography variant="caption" sx={{ color: 'text.disabled', fontSize: '0.7rem', display: { xs: 'none', sm: 'block' } }}>
                 (Hỗ trợ Ctrl+V dán ảnh)
               </Typography>
             </Box>
@@ -553,15 +555,15 @@ export const TaskCommentsTab: React.FC<TaskCommentsTabProps> = ({
               disabled={isSubmitting || !canSubmit}
               startIcon={isSubmitting ? <CircularProgress size={16} color="inherit" /> : <SendHorizontal size={16} />}
               sx={{
-                bgcolor: canSubmit ? '#0284c7' : '#94a3b8',
-                color: '#ffffff',
+                bgcolor: canSubmit ? '#0284c7' : 'action.disabledBackground',
+                color: canSubmit ? '#ffffff' : 'text.disabled',
                 fontWeight: 700,
                 fontSize: '0.8rem',
                 py: 0.75,
                 px: 2,
                 borderRadius: '8px',
                 boxShadow: 'none',
-                '&:hover': { bgcolor: canSubmit ? '#0369a1' : '#94a3b8', boxShadow: canSubmit ? '0 2px 6px rgba(2, 132, 199, 0.25)' : 'none' },
+                '&:hover': { bgcolor: canSubmit ? '#0369a1' : 'action.disabledBackground', boxShadow: canSubmit ? '0 2px 6px rgba(2, 132, 199, 0.25)' : 'none' },
               }}
             >
               Gửi Trao Đổi
@@ -574,12 +576,13 @@ export const TaskCommentsTab: React.FC<TaskCommentsTabProps> = ({
           sx={{
             p: 2,
             textAlign: 'center',
-            bgcolor: '#f8fafc',
-            border: '1px dashed #cbd5e1',
+            bgcolor: (theme) => theme.palette.mode === 'dark' ? '#141414' : '#f8fafc',
+            border: '1px dashed',
+            borderColor: 'divider',
             borderRadius: '10px',
           }}
         >
-          <Typography variant="body2" sx={{ color: '#64748b' }}>
+          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
             Bạn không có quyền gửi bình luận hoặc đính kèm tệp cho công việc này.
           </Typography>
         </Paper>

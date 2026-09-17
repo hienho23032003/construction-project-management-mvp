@@ -11,6 +11,7 @@ import {
   ListItemText,
   Avatar,
   Tooltip,
+  useTheme,
 } from '@mui/material';
 import {
   LayoutDashboard,
@@ -24,7 +25,10 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { usePermission } from '../hooks/usePermission';
+import { useAppTheme } from '../contexts/ThemeContext';
 import { getMediaUrl } from '../utils/fileUtils';
+import { ROUTERS_PATHS } from '../constants/router-paths';
+import { PERMISSIONS } from '../constants/permissions';
 
 export const EXPANDED_DRAWER_WIDTH = 270;
 export const COLLAPSED_DRAWER_WIDTH = 76;
@@ -37,14 +41,14 @@ interface MenuItemDef {
 }
 
 const allMenuItems: MenuItemDef[] = [
-  { text: 'Tổng Quan', icon: LayoutDashboard, path: '/', permission: 'dashboard.view' },
-  { text: 'Công Trình & Dự Án', icon: FolderKanban, path: '/projects', permission: 'projects.view' },
-  { text: 'Công Việc', icon: CheckSquare, path: '/tasks', permission: 'tasks.view' },
-  { text: 'Tiến Độ Gantt', icon: BarChart3, path: '/gantt', permission: 'gantt.view' },
-  { text: 'Nhân Sự & Workload', icon: Users, path: '/employees', permission: 'employees.view' },
-  { text: 'Báo Cáo & Xuất Dữ Liệu', icon: FileText, path: '/reports', permission: 'reports.view' },
-  { text: 'Phân Quyền & Vai Trò', icon: Settings, path: '/roles', permission: 'roles.view' },
-  { text: 'Lịch Sử Đăng Nhập', icon: History, path: '/login-history', permission: 'audit.view_sessions' },
+  { text: 'Tổng Quan', icon: LayoutDashboard, path: ROUTERS_PATHS.DASHBOARD, permission: PERMISSIONS.DASHBOARD_VIEW },
+  { text: 'Công Trình & Dự Án', icon: FolderKanban, path: ROUTERS_PATHS.PROJECTS, permission: PERMISSIONS.PROJECTS_VIEW },
+  { text: 'Công Việc', icon: CheckSquare, path: ROUTERS_PATHS.TASKS, permission: PERMISSIONS.TASKS_VIEW },
+  { text: 'Tiến Độ Gantt', icon: BarChart3, path: ROUTERS_PATHS.GANTT, permission: PERMISSIONS.GANTT_VIEW },
+  { text: 'Nhân Sự & Workload', icon: Users, path: ROUTERS_PATHS.EMPLOYEES, permission: PERMISSIONS.EMPLOYEES_VIEW },
+  { text: 'Báo Cáo & Xuất Dữ Liệu', icon: FileText, path: ROUTERS_PATHS.REPORTS, permission: PERMISSIONS.REPORTS_VIEW },
+  { text: 'Phân Quyền & Vai Trò', icon: Settings, path: ROUTERS_PATHS.ROLES, permission: PERMISSIONS.ROLES_VIEW },
+  { text: 'Lịch Sử Đăng Nhập', icon: History, path: ROUTERS_PATHS.LOGIN_HISTORY, permission: PERMISSIONS.AUDIT_VIEW_SESSIONS },
 ];
 
 interface SidebarNavProps {
@@ -64,6 +68,8 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
 }) => {
   const { user } = useAuth();
   const { can, isSuperAdmin } = usePermission();
+  const { isDark } = useAppTheme();
+  const theme = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -85,10 +91,9 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
         height: '100%',
         display: 'flex',
         flexDirection: 'column',
-        bgcolor: '#ffffff',
-        color: '#0f172a',
+        bgcolor: 'background.paper',
+        color: 'text.primary',
         borderRadius: 0,
-        transition: 'all 0.25s ease',
       }}
     >
       {/* Brand Header */}
@@ -98,7 +103,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
           display: 'flex',
           alignItems: 'center',
           justifyContent: collapsed && !isMobile ? 'center' : 'space-between',
-          borderBottom: '1px solid #e2e8f0',
+          borderBottom: `1px solid ${theme.palette.divider}`,
           height: 64,
           minHeight: 64,
           maxHeight: 64,
@@ -113,8 +118,8 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
               justifyContent: 'center',
               p: 0.5,
               borderRadius: '8px',
-              bgcolor: '#f0f9ff',
-              border: '1px solid #e0f2fe',
+              bgcolor: isDark ? 'rgba(56, 189, 248, 0.1)' : '#f0f9ff',
+              border: isDark ? '1px solid rgba(56, 189, 248, 0.2)' : '1px solid #e0f2fe',
             }}
           >
             <Box
@@ -135,14 +140,14 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
                 sx={{
                   fontWeight: 800,
                   fontSize: '0.95rem',
-                  color: '#0f172a',
+                  color: 'text.primary',
                   lineHeight: 1.2,
                   letterSpacing: '0.02em',
                 }}
               >
-                FCB<span style={{ color: '#0284c7' }}>VN</span>
+                FCB<span style={{ color: isDark ? '#38bdf8' : '#0284c7' }}>VN</span>
               </Typography>
-              <Typography variant="caption" sx={{ color: '#64748b', fontSize: '0.68rem', fontWeight: 500 }} noWrap>
+              <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.68rem', fontWeight: 500 }} noWrap>
                 Quản Lý Công Trình
               </Typography>
             </Box>
@@ -168,16 +173,34 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
                 py: 1.2,
                 px: collapsed && !isMobile ? 1 : 1.5,
                 justifyContent: collapsed && !isMobile ? 'center' : 'initial',
-                bgcolor: isActive ? '#e0f2fe' : 'transparent',
-                backgroundColor: isActive ? '#e0f2fe' : 'transparent',
-                color: isActive ? '#0284c7' : '#475569',
-                border: isActive ? '1px solid #bae6fd' : '1px solid transparent',
+                bgcolor: isActive
+                  ? isDark
+                    ? 'rgba(45, 136, 255, 0.16)'
+                    : '#e0f2fe'
+                  : 'transparent',
+                backgroundColor: isActive
+                  ? isDark
+                    ? 'rgba(45, 136, 255, 0.16)'
+                    : '#e0f2fe'
+                  : 'transparent',
+                color: isActive ? (isDark ? '#2d88ff' : '#0284c7') : isDark ? '#b0b3b8' : '#475569',
+                border: isActive
+                  ? isDark
+                    ? '1px solid rgba(45, 136, 255, 0.3)'
+                    : '1px solid #bae6fd'
+                  : '1px solid transparent',
                 transition: 'all 0.15s ease',
                 '&:hover': {
-                  bgcolor: isActive ? '#dbeafe' : '#f1f5f9',
-                  color: isActive ? '#0284c7' : '#0f172a',
+                  bgcolor: isActive
+                    ? isDark
+                      ? 'rgba(45, 136, 255, 0.24)'
+                      : '#dbeafe'
+                    : isDark
+                    ? 'rgba(255, 255, 255, 0.08)'
+                    : '#f1f5f9',
+                  color: isActive ? (isDark ? '#2d88ff' : '#0284c7') : isDark ? '#e4e6eb' : '#0f172a',
                   '& .menu-icon': {
-                    color: '#0284c7',
+                    color: isDark ? '#2d88ff' : '#0284c7',
                   },
                 },
               }}
@@ -188,7 +211,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
                   minWidth: collapsed && !isMobile ? 0 : 36,
                   mr: collapsed && !isMobile ? 0 : 1,
                   justifyContent: 'center',
-                  color: isActive ? '#0284c7' : '#64748b',
+                  color: isActive ? (isDark ? '#2d88ff' : '#0284c7') : isDark ? '#b0b3b8' : '#64748b',
                   transition: 'color 0.15s ease',
                 }}
               >
@@ -200,7 +223,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
                   primaryTypographyProps={{
                     fontSize: '0.875rem',
                     fontWeight: isActive ? 700 : 500,
-                    color: isActive ? '#0284c7' : '#334155',
+                    color: isActive ? (isDark ? '#2d88ff' : '#0284c7') : isDark ? '#b0b3b8' : '#334155',
                   }}
                 />
               )}
@@ -226,28 +249,28 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
         onClick={onOpenProfile}
         sx={{
           p: collapsed && !isMobile ? 1.5 : 2,
-          borderTop: '1px solid #e2e8f0',
-          bgcolor: '#f8fafc',
+          borderTop: `1px solid ${theme.palette.divider}`,
+          bgcolor: isDark ? 'rgba(0, 0, 0, 0.2)' : '#f8fafc',
           display: 'flex',
           alignItems: 'center',
           justifyContent: collapsed && !isMobile ? 'center' : 'flex-start',
           cursor: 'pointer',
           borderRadius: 0,
           transition: 'background-color 0.2s',
-          '&:hover': { bgcolor: '#f1f5f9' },
+          '&:hover': { bgcolor: isDark ? 'rgba(255, 255, 255, 0.05)' : '#f1f5f9' },
         }}
       >
         {collapsed && !isMobile ? (
           <Tooltip
             title={
               <Box>
-                <Typography variant="caption" sx={{ fontWeight: 700, display: 'block', color: '#0f172a' }}>
+                <Typography variant="caption" sx={{ fontWeight: 700, display: 'block', color: 'text.primary' }}>
                   {user?.fullName}
                 </Typography>
-                <Typography variant="caption" sx={{ color: '#0284c7' }}>
+                <Typography variant="caption" sx={{ color: isDark ? '#38bdf8' : '#0284c7' }}>
                   {user?.roleName || user?.role}
                 </Typography>
-                <Typography variant="caption" sx={{ color: '#64748b', display: 'block', mt: 0.25 }}>
+                <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mt: 0.25 }}>
                   (Nhấp để xem hồ sơ)
                 </Typography>
               </Box>
@@ -257,7 +280,16 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
           >
             <Avatar
               src={getMediaUrl(user?.avatarUrl)}
-              sx={{ bgcolor: '#0284c7', width: 36, height: 36, fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer', color: '#ffffff' }}
+              sx={{
+                bgcolor: '#0284c7',
+                width: 36,
+                height: 36,
+                fontWeight: 700,
+                fontSize: '0.9rem',
+                cursor: 'pointer',
+                color: '#ffffff',
+                border: isDark ? '2px solid #38bdf8' : 'none',
+              }}
             >
               {user?.fullName?.charAt(0) || 'U'}
             </Avatar>
@@ -266,15 +298,24 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, width: '100%', overflow: 'hidden' }}>
             <Avatar
               src={getMediaUrl(user?.avatarUrl)}
-              sx={{ bgcolor: '#0284c7', width: 36, height: 36, fontWeight: 700, fontSize: '0.9rem', flexShrink: 0, color: '#ffffff' }}
+              sx={{
+                bgcolor: '#0284c7',
+                width: 36,
+                height: 36,
+                fontWeight: 700,
+                fontSize: '0.9rem',
+                flexShrink: 0,
+                color: '#ffffff',
+                border: isDark ? '2px solid #38bdf8' : 'none',
+              }}
             >
               {user?.fullName?.charAt(0) || 'U'}
             </Avatar>
             <Box sx={{ minWidth: 0, flexGrow: 1 }}>
-              <Typography variant="subtitle2" noWrap sx={{ color: '#0f172a', fontWeight: 600, fontSize: '0.8125rem' }}>
+              <Typography variant="subtitle2" noWrap sx={{ color: 'text.primary', fontWeight: 600, fontSize: '0.8125rem' }}>
                 {user?.fullName}
               </Typography>
-              <Typography variant="caption" noWrap sx={{ color: '#0284c7', display: 'block', fontSize: '0.7rem', fontWeight: 600 }}>
+              <Typography variant="caption" noWrap sx={{ color: isDark ? '#38bdf8' : '#0284c7', display: 'block', fontSize: '0.7rem', fontWeight: 600 }}>
                 {user?.roleName ||
                   (user?.roles && user.roles.length > 0 ? user.roles[0] : null) ||
                   (user?.role === 'SuperAdmin'
@@ -292,9 +333,9 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
 
       {/* Credit Footer */}
       {(!collapsed || isMobile) && (
-        <Box sx={{ py: 1, px: 2, bgcolor: '#f8fafc', borderTop: '1px solid #f1f5f9', textAlign: 'center' }}>
-          <Typography variant="caption" sx={{ fontSize: '0.68rem', color: '#94a3b8', display: 'block', fontWeight: 500 }}>
-            Design by <span style={{ color: '#0284c7', fontWeight: 700 }}>Phạm Thế Hiển</span>
+        <Box sx={{ py: 1, px: 2, bgcolor: isDark ? 'rgba(0, 0, 0, 0.3)' : '#f8fafc', borderTop: `1px solid ${theme.palette.divider}`, textAlign: 'center' }}>
+          <Typography variant="caption" sx={{ fontSize: '0.68rem', color: isDark ? '#64748b' : '#94a3b8', display: 'block', fontWeight: 500 }}>
+            Design by <span style={{ color: isDark ? '#38bdf8' : '#0284c7', fontWeight: 700 }}>Phạm Thế Hiển</span>
           </Typography>
         </Box>
       )}
@@ -319,7 +360,13 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
         ModalProps={{ keepMounted: true }}
         sx={{
           display: { xs: 'block', md: 'none' },
-          '& .MuiDrawer-paper': { boxSizing: 'border-box', width: EXPANDED_DRAWER_WIDTH, borderRadius: 0, borderRight: '1px solid #e2e8f0', bgcolor: '#ffffff' },
+          '& .MuiDrawer-paper': {
+            boxSizing: 'border-box',
+            width: EXPANDED_DRAWER_WIDTH,
+            borderRadius: 0,
+            borderRight: `1px solid ${theme.palette.divider}`,
+            bgcolor: 'background.paper',
+          },
         }}
       >
         {drawerContent}
@@ -333,9 +380,9 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
           '& .MuiDrawer-paper': {
             boxSizing: 'border-box',
             width: currentDrawerWidth,
-            borderRight: '1px solid #e2e8f0',
+            borderRight: `1px solid ${theme.palette.divider}`,
             borderRadius: 0,
-            bgcolor: '#ffffff',
+            bgcolor: 'background.paper',
             transition: 'width 0.25s ease',
             overflowX: 'hidden',
             height: '100vh',

@@ -99,6 +99,11 @@ public class UpdateTaskDatesRequest
     public DateTime PlannedEndDate { get; set; }
 }
 
+public class UpdateTaskPriorityRequest
+{
+    public PriorityLevel Priority { get; set; }
+}
+
 public class TaskAssigneeDto
 {
     public Guid Id { get; set; }

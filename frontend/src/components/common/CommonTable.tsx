@@ -157,7 +157,7 @@ const densityPaddingMap: Record<TableDensity, { py: number; px: number }> = {
   comfortable: { py: 1.75, px: 2.5 },
 };
 
-export function CommonTable<T = any>({
+function CommonTableInner<T = any>({
   columns,
   data,
   loading = false,
@@ -254,9 +254,10 @@ export function CommonTable<T = any>({
         width: '100%',
         maxWidth: '100%',
         minWidth: 0,
-        bgcolor: '#ffffff',
+        bgcolor: 'background.paper',
         borderRadius: '8px',
-        border: bordered ? '1px solid #e2e8f0' : 'none',
+        border: bordered ? '1px solid' : 'none',
+        borderColor: 'divider',
         overflow: 'hidden',
         display: 'flex',
         flexDirection: 'column',
@@ -286,14 +287,15 @@ export function CommonTable<T = any>({
           <TableHead>
             <TableRow
               sx={{
-                bgcolor: '#f8fafc',
+                bgcolor: (theme) => theme.palette.mode === 'dark' ? '#141414' : '#f8fafc',
                 '& th': {
-                  bgcolor: '#f8fafc',
-                  color: '#475569',
+                  bgcolor: (theme) => theme.palette.mode === 'dark' ? '#141414 !important' : '#f8fafc',
+                  color: (theme) => theme.palette.mode === 'dark' ? '#b4b4b4' : '#475569',
                   fontWeight: 700,
                   fontSize: '0.8125rem',
                   letterSpacing: '0.01em',
-                  borderBottom: '1px solid #e2e8f0',
+                  borderBottom: '1px solid',
+                  borderColor: 'divider',
                   py: cellPadding.py,
                   px: cellPadding.px,
                   whiteSpace: 'nowrap',
@@ -481,7 +483,7 @@ export function CommonTable<T = any>({
                       <Typography
                         variant="body2"
                         sx={{
-                          color: '#64748b',
+                          color: 'text.secondary',
                           fontWeight: 600,
                           fontSize: '0.875rem',
                         }}
@@ -519,16 +521,15 @@ export function CommonTable<T = any>({
                       selected={isSelected}
                       sx={{
                         cursor: onRowClick ? 'pointer' : 'default',
-                        transition: 'background-color 0.15s ease',
                         '&:hover': hover
                           ? {
-                              bgcolor: '#f8fafc !important',
+                              bgcolor: 'action.hover',
                             }
                           : undefined,
                         '&.Mui-selected': {
-                          bgcolor: 'rgba(2, 132, 199, 0.08) !important',
+                          bgcolor: 'action.selected',
                           '&:hover': {
-                            bgcolor: 'rgba(2, 132, 199, 0.12) !important',
+                            bgcolor: 'action.hover',
                           },
                         },
                         ...rowCustomSx,
@@ -554,9 +555,9 @@ export function CommonTable<T = any>({
                             }
                             sx={{
                               p: 0.5,
-                              color: '#cbd5e1',
+                              color: 'text.disabled',
                               '&.Mui-checked': {
-                                color: '#0284c7',
+                                color: 'primary.main',
                               },
                             }}
                           />
@@ -569,7 +570,7 @@ export function CommonTable<T = any>({
                           align={sttConfig?.align || 'center'}
                           sx={{
                             fontWeight: 600,
-                            color: '#64748b',
+                            color: 'text.secondary',
                             fontSize: '0.8125rem',
                             whiteSpace: 'nowrap',
                             py: cellPadding.py,
@@ -663,12 +664,13 @@ export function CommonTable<T = any>({
                               py: cellPadding.py,
                               px: cellPadding.px,
                               fontSize: '0.8125rem',
-                              color: '#1e293b',
+                              color: 'text.primary',
                               whiteSpace: 'nowrap',
                               width: { xs: 'auto', md: col.width as any },
                               minWidth: (col.minWidth as any) || (typeof col.width === 'number' ? col.width : undefined),
                               maxWidth: col.maxWidth as any,
-                              borderBottom: '1px solid #f1f5f9',
+                              borderBottom: '1px solid',
+                              borderColor: 'divider',
                               ...customCellSx,
                             }}
                           >
@@ -716,3 +718,5 @@ export function CommonTable<T = any>({
     </Box>
   );
 }
+
+export const CommonTable = React.memo(CommonTableInner) as typeof CommonTableInner;

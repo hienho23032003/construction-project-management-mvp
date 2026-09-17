@@ -30,6 +30,7 @@ import { ConfirmDialog } from '../components/common/ConfirmDialog';
 import { CardGridSkeleton } from '../components/common/CardGridSkeleton';
 import { TableSkeleton } from '../components/common/TableSkeleton';
 import { CommonPagination } from '../components/common/CommonPagination';
+import { CommonButton, CommonInput } from '../components/common';
 import { useDebounce } from '../hooks/useDebounce';
 import {
   useUsersQuery,
@@ -58,11 +59,28 @@ export const EmployeesPage: React.FC = () => {
 
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('table');
   const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(9);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('ALL');
   const [sortBy, setSortBy] = useState('fullName');
   const [isDescending, setIsDescending] = useState(false);
+
+  const handleViewModeChange = (val: 'grid' | 'table') => {
+    setViewMode(val);
+    if (val === 'grid') {
+      if (rowsPerPage === 20) {
+        setRowsPerPage(15);
+      } else if (rowsPerPage !== 10 && rowsPerPage !== 15 && rowsPerPage !== 20 && rowsPerPage !== 30 && rowsPerPage !== 50 && rowsPerPage !== 100) {
+        setRowsPerPage(10);
+      }
+      setPage(0);
+    } else {
+      if (rowsPerPage === 15 || rowsPerPage === 30) {
+        setRowsPerPage(10);
+      }
+      setPage(0);
+    }
+  };
 
   // Modal & Dialog state
   const [openModal, setOpenModal] = useState(false);
@@ -79,19 +97,11 @@ export const EmployeesPage: React.FC = () => {
     const base = [{ value: 'ALL', label: 'Tất Cả Vai Trò' }];
     if (roleList && roleList.length > 0) {
       roleList.forEach((r) => {
-        const cleanName = r.name.replace('Chỉ Huy Trưởng', 'Quản Lý (PM)').replace('Người Quản Lý', 'Quản Lý (PM)');
         base.push({
-          value: r.code || r.name,
-          label: `${cleanName} ${!r.isSystem ? '(Tùy chỉnh)' : ''}`.trim(),
+          value: r.id,
+          label: r.name,
         });
       });
-    } else {
-      base.push(
-        { value: 'SuperAdmin', label: 'Quản Trị Viên (Admin)' },
-        { value: 'ProjectManager', label: 'Quản Lý Dự Án (PM)' },
-        { value: 'Supervisor', label: 'Giám Sát Hiện Trường' },
-        { value: 'Employee', label: 'Kỹ Sư / Nhân Viên' }
-      );
     }
     return base;
   }, [roleList]);
@@ -180,45 +190,41 @@ export const EmployeesPage: React.FC = () => {
       {/* Header */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1.5, width: '100%' }}>
         <Box>
-          <Typography variant="h2" sx={{ fontWeight: 800, fontSize: { xs: '1.15rem', sm: '1.35rem' }, color: '#0f172a' }}>
+          <Typography variant="h2" sx={{ fontWeight: 800, fontSize: { xs: '1.15rem', sm: '1.35rem' }, color: 'text.primary' }}>
             Quản Lý Nhân Sự & Tải Công Việc (Workload)
           </Typography>
-          <Typography variant="body2" sx={{ color: '#64748b', mt: 0.25, fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
+          <Typography variant="body2" sx={{ color: 'text.secondary', mt: 0.25, fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
             Danh sách kỹ sư, phân quyền vai trò và phân bổ khối lượng công việc hiện trường
           </Typography>
         </Box>
 
         {canCreate && (
-          <Button
-            variant="contained"
+          <CommonButton
+            variant="primary"
             startIcon={<Plus size={18} />}
             onClick={handleOpenCreate}
-            sx={{ bgcolor: '#0284c7', fontWeight: 700 }}
           >
             Thêm Nhân Viên Mới
-          </Button>
+          </CommonButton>
         )}
       </Box>
 
       {/* Filter & Toolbar */}
-      <Paper sx={{ p: { xs: 1.5, sm: 2 }, border: '1px solid #e2e8f0', borderRadius: '8px', display: 'flex', gap: 1.5, flexWrap: 'wrap', alignItems: 'center', width: '100%', maxWidth: '100%' }}>
+      <Paper sx={{ p: { xs: 1.5, sm: 2 }, border: '1px solid', borderColor: 'divider', borderRadius: '8px', bgcolor: 'background.paper', display: 'flex', gap: 1.5, flexWrap: 'wrap', alignItems: 'center', width: '100%', maxWidth: '100%' }}>
         {/* Compact Search Input */}
         <Box sx={{ width: { xs: '100%', sm: 300, md: 360 }, minWidth: 0 }}>
-          <TextField
-            size="small"
-            fullWidth
+          <CommonInput
+            isSearch
+            clearable
             placeholder="Tìm theo họ tên, email, phòng..."
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
               setPage(0);
             }}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <Search size={16} color="#94a3b8" />
-                </InputAdornment>
-              ),
+            onClear={() => {
+              setSearch('');
+              setPage(0);
             }}
           />
         </Box>
@@ -241,7 +247,7 @@ export const EmployeesPage: React.FC = () => {
           <ToggleButtonGroup
             value={viewMode}
             exclusive
-            onChange={(_, val) => val && setViewMode(val)}
+            onChange={(_, val) => val && handleViewModeChange(val)}
             size="small"
           >
             <ToggleButton value="table" aria-label="table view">
@@ -257,10 +263,26 @@ export const EmployeesPage: React.FC = () => {
       {/* Content Section */}
       {viewMode === 'grid' ? (
         isLoading ? (
-          <CardGridSkeleton count={rowsPerPage} />
+          <CardGridSkeleton count={rowsPerPage > 10 ? 10 : rowsPerPage} />
         ) : (
           <>
-            <Grid container spacing={2}>
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: {
+                  xs: '1fr',
+                  sm: 'repeat(2, 1fr)',
+                  md: 'repeat(3, 1fr)',
+                  lg: 'repeat(4, 1fr)',
+                  xl: 'repeat(5, 1fr)',
+                  '@media (min-width: 1400px)': {
+                    gridTemplateColumns: 'repeat(5, 1fr)',
+                  },
+                },
+                gap: 1.5,
+                width: '100%',
+              }}
+            >
               {users.map((u) => {
                 const workload = workloads.find((w: any) => w.userId === u.id) || {
                   activeTasks: 0,
@@ -268,23 +290,22 @@ export const EmployeesPage: React.FC = () => {
                   overdueTasks: 0,
                 };
                 return (
-                  <Grid item xs={12} sm={6} md={4} key={u.id}>
-                    <EmployeeCard
-                      user={u}
-                      workload={workload}
-                      canEdit={canEdit}
-                      canDelete={canDelete}
-                      canResetPassword={canResetPassword}
-                      onEdit={handleOpenEdit}
-                      onResetPassword={(target) => setResetPasswordTarget(target)}
-                      onToggleStatus={(target) => setToggleTarget(target)}
-                      onDelete={(target) => setDeleteTarget(target)}
-                    />
-                  </Grid>
+                  <EmployeeCard
+                    key={u.id}
+                    user={u}
+                    workload={workload}
+                    canEdit={canEdit}
+                    canDelete={canDelete}
+                    canResetPassword={canResetPassword}
+                    onEdit={handleOpenEdit}
+                    onResetPassword={(target) => setResetPasswordTarget(target)}
+                    onToggleStatus={(target) => setToggleTarget(target)}
+                    onDelete={(target) => setDeleteTarget(target)}
+                  />
                 );
               })}
-            </Grid>
-            <Paper sx={{ border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden', mt: 1 }}>
+            </Box>
+            <Paper sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '8px', overflow: 'hidden', mt: 1, bgcolor: 'background.paper' }}>
               <CommonPagination
                 page={page}
                 rowsPerPage={rowsPerPage}
@@ -294,13 +315,13 @@ export const EmployeesPage: React.FC = () => {
                   setRowsPerPage(newRowsPerPage);
                   setPage(0);
                 }}
-                rowsPerPageOptions={[6, 9, 15, 30]}
+                rowsPerPageOptions={[10, 15, 20, 30, 50, 100]}
               />
             </Paper>
           </>
         )
       ) : (
-        <Paper sx={{ border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden', bgcolor: '#ffffff' }}>
+        <Paper sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '8px', overflow: 'hidden', bgcolor: 'background.paper' }}>
           <EmployeeTable
             users={users}
             workloads={workloads}
@@ -327,7 +348,7 @@ export const EmployeesPage: React.FC = () => {
               setRowsPerPage(newRowsPerPage);
               setPage(0);
             }}
-            rowsPerPageOptions={[6, 9, 15, 30]}
+            rowsPerPageOptions={[10, 20, 50, 100]}
           />
         </Paper>
       )}

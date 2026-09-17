@@ -1,5 +1,5 @@
 import React, { memo, useMemo } from 'react';
-import { Chip, Box, Avatar, Typography, Tooltip } from '@mui/material';
+import { Chip, Box, Avatar, Typography, Tooltip, useTheme } from '@mui/material';
 import { CommonTable, ColumnDef } from '../common/CommonTable';
 import { ProgressBar } from '../common/ProgressBar';
 import { formatDate } from '../../utils/dateUtils';
@@ -30,6 +30,9 @@ interface OverdueReportProps {
 
 export const OverdueReport: React.FC<OverdueReportProps> = memo(
   ({ data, page, rowsPerPage, loading = false, onSelectTask }) => {
+    const theme = useTheme();
+    const isDark = theme.palette.mode === 'dark';
+
     const paginatedData = useMemo(() => {
       return data.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
     }, [data, page, rowsPerPage]);
@@ -55,7 +58,7 @@ export const OverdueReport: React.FC<OverdueReportProps> = memo(
           accessorKey: 'taskName',
           minWidth: 200,
           headerSx: { fontWeight: 700 },
-          cellSx: { fontWeight: 700, color: '#0f172a' },
+          cellSx: { fontWeight: 700, color: 'text.primary' },
         },
         {
           id: 'assigneeNames',
@@ -85,7 +88,7 @@ export const OverdueReport: React.FC<OverdueReportProps> = memo(
                     avatar={
                       <Avatar
                         src={getMediaUrl(a.avatarUrl)}
-                        sx={{ width: 20, height: 20, fontSize: '0.65rem', bgcolor: '#e0f2fe', color: '#0369a1' }}
+                        sx={{ width: 20, height: 20, fontSize: '0.65rem', bgcolor: '#0284c7', color: '#ffffff', fontWeight: 700 }}
                       >
                         {a.fullName.charAt(0)}
                       </Avatar>
@@ -96,8 +99,10 @@ export const OverdueReport: React.FC<OverdueReportProps> = memo(
                       height: 24,
                       fontSize: '0.72rem',
                       whiteSpace: 'nowrap',
-                      bgcolor: '#f8fafc',
-                      border: '1px solid #e2e8f0',
+                      bgcolor: (theme) => theme.palette.mode === 'dark' ? '#141414' : '#f8fafc',
+                      border: '1px solid',
+                      borderColor: 'divider',
+                      color: 'text.primary',
                     }}
                   />
                 ))}
@@ -106,7 +111,12 @@ export const OverdueReport: React.FC<OverdueReportProps> = memo(
                     <Chip
                       label={`+${assignees.length - 2}`}
                       size="small"
-                      sx={{ height: 24, fontSize: '0.72rem', bgcolor: '#f1f5f9' }}
+                      sx={{
+                        height: 24,
+                        fontSize: '0.72rem',
+                        bgcolor: (theme) => theme.palette.mode === 'dark' ? '#141414' : '#f1f5f9',
+                        color: 'text.secondary',
+                      }}
                     />
                   </Tooltip>
                 )}
@@ -162,11 +172,10 @@ export const OverdueReport: React.FC<OverdueReportProps> = memo(
         rowKey="taskId"
         onRowClick={(row) => onSelectTask?.(row.taskId)}
         rowSx={() => ({
-          bgcolor: '#fff5f5',
+          bgcolor: isDark ? 'inherit' : '#fff5f5',
           cursor: onSelectTask ? 'pointer' : 'default',
-          transition: 'background-color 0.15s ease',
           '&:hover': {
-            bgcolor: '#fee2e2 !important',
+            bgcolor: isDark ? 'rgba(255, 255, 255, 0.04) !important' : '#fee2e2 !important',
           },
         })}
         emptyMessage="Tuyệt vời! Không có công việc nào bị quá hạn."

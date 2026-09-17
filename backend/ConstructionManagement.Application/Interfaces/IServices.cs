@@ -86,10 +86,11 @@ public interface ITaskService
     Task<ApiResponse<TaskDto>> UpdateTaskAsync(Guid id, UpdateTaskRequest request, Guid currentUserId);
     Task<ApiResponse<bool>> DeleteTaskAsync(Guid id, Guid currentUserId);
     
-    // Status, Progress, and Dates updates (Gantt drag/drop & inline updates)
+    // Status, Progress, Dates, and Priority updates (Gantt drag/drop & inline updates)
     Task<ApiResponse<TaskDto>> UpdateStatusAsync(Guid id, UpdateTaskStatusRequest request, Guid currentUserId);
     Task<ApiResponse<TaskDto>> UpdateProgressAsync(Guid id, UpdateTaskProgressRequest request, Guid currentUserId);
     Task<ApiResponse<TaskDto>> UpdateDatesAsync(Guid id, UpdateTaskDatesRequest request, Guid currentUserId);
+    Task<ApiResponse<TaskDto>> UpdatePriorityAsync(Guid id, UpdateTaskPriorityRequest request, Guid currentUserId);
     
     // Comments
     Task<ApiResponse<List<TaskCommentDto>>> GetTaskCommentsAsync(Guid taskId);

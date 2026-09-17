@@ -29,15 +29,37 @@ public class UserService : IUserService
         if (!string.IsNullOrWhiteSpace(pagination.Search))
         {
             var s = pagination.Search.ToLower().Trim();
-            query = query.Where(u => u.FullName.ToLower().Contains(s) || u.Email.ToLower().Contains(s) || (u.Department != null && u.Department.ToLower().Contains(s)));
+            query = query.Where(u =>
+                u.FullName.ToLower().Contains(s) ||
+                u.Email.ToLower().Contains(s) ||
+                (u.Phone != null && u.Phone.ToLower().Contains(s)) ||
+                (u.Department != null && u.Department.ToLower().Contains(s)) ||
+                u.UserRoles.Any(ur => ur.Role != null && (
+                    ur.Role.Name.ToLower().Contains(s) ||
+                    ur.Role.Code.ToLower().Contains(s)
+                ))
+            );
         }
 
         if (!string.IsNullOrWhiteSpace(pagination.Role) && pagination.Role != "ALL")
         {
-            var r = pagination.Role.Trim().ToLower();
-            query = query.Where(u =>
-                u.Role.ToString().ToLower() == r ||
-                u.UserRoles.Any(ur => ur.Role != null && (ur.Role.Name.ToLower() == r || ur.Role.Code.ToLower() == r)));
+            var roleFilterValue = pagination.Role.Trim();
+            if (Guid.TryParse(roleFilterValue, out var roleId))
+            {
+                query = query.Where(u => u.UserRoles.Any(ur => ur.RoleId == roleId));
+            }
+            else
+            {
+                var rLower = roleFilterValue.ToLower();
+                query = query.Where(u => u.UserRoles.Any(ur =>
+                    ur.Role != null && (
+                        ur.Role.Code.ToLower() == rLower ||
+                        ur.Role.Name.ToLower() == rLower ||
+                        ur.Role.Name.ToLower().Contains(rLower) ||
+                        ur.Role.Code.ToLower().Contains(rLower)
+                    )
+                ));
+            }
         }
 
         var totalCount = await query.CountAsync();

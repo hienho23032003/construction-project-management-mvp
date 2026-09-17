@@ -50,6 +50,7 @@ import { TableSkeleton } from '../components/common/TableSkeleton';
 import { CommonPagination } from '../components/common/CommonPagination';
 import { TaskDetailDrawer } from '../components/tasks/TaskDetailDrawer';
 import { ScopeChip } from '../components/common/ScopeChip';
+import { CommonButton } from '../components/common';
 import { useToast } from '../contexts/ToastContext';
 
 import { usePermission } from '../hooks/usePermission';
@@ -246,12 +247,12 @@ export const ReportsPage: React.FC = () => {
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1.5, width: '100%' }}>
         <Box>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-            <Typography variant="h2" sx={{ fontWeight: 800, fontSize: { xs: '1.15rem', sm: '1.35rem' }, color: '#0f172a' }}>
+            <Typography variant="h2" sx={{ fontWeight: 800, fontSize: { xs: '1.15rem', sm: '1.35rem' }, color: 'text.primary' }}>
               Trung Tâm Báo Cáo & Xuất Dữ Liệu
             </Typography>
             <ScopeChip canViewAll={canViewAll} canViewProject={canViewProject} />
           </Box>
-          <Typography variant="body2" sx={{ color: '#64748b', mt: 0.25, fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
+          <Typography variant="body2" sx={{ color: 'text.secondary', mt: 0.25, fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
             {canViewAll
               ? 'Báo cáo tổng hợp tiến độ, phân tích trễ hạn và khối lượng thực hiện toàn công ty'
               : canViewProject
@@ -261,20 +262,19 @@ export const ReportsPage: React.FC = () => {
         </Box>
 
         {canExport && (
-          <Button
-            variant="contained"
+          <CommonButton
+            variant="success"
             startIcon={<Download size={18} />}
             onClick={handleExportCsv}
-            disabled={exporting}
-            sx={{ bgcolor: '#10b981', '&:hover': { bgcolor: '#059669' }, fontWeight: 700 }}
+            loading={exporting}
           >
-            {exporting ? 'Đang xuất dữ liệu...' : 'Xuất Báo Cáo Excel / CSV'}
-          </Button>
+            Xuất Báo Cáo Excel / CSV
+          </CommonButton>
         )}
       </Box>
 
       {/* Filter Toolbar */}
-      <Paper sx={{ p: { xs: 1.5, sm: 2 }, border: '1px solid #e2e8f0', borderRadius: '8px', display: 'flex', gap: 1.5, flexWrap: 'wrap', alignItems: 'center', width: '100%', maxWidth: '100%' }}>
+      <Paper sx={{ p: { xs: 1.5, sm: 2 }, border: '1px solid', borderColor: 'divider', borderRadius: '8px', bgcolor: 'background.paper', display: 'flex', gap: 1.5, flexWrap: 'wrap', alignItems: 'center', width: '100%', maxWidth: '100%' }}>
         <Box sx={{ width: { xs: '100%', sm: 340 } }}>
           <CommonDateRangePicker
             fromDate={fromDate}
@@ -328,7 +328,7 @@ export const ReportsPage: React.FC = () => {
       </Paper>
 
       {/* Tab Navigation & Report Table */}
-      <Paper sx={{ border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden', width: '100%', maxWidth: '100%' }}>
+      <Paper sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '8px', bgcolor: 'background.paper', overflow: 'hidden', width: '100%', maxWidth: '100%' }}>
         <Tabs
           value={activeTab}
           onChange={(_, val) => {
@@ -340,8 +340,9 @@ export const ReportsPage: React.FC = () => {
           scrollButtons="auto"
           allowScrollButtonsMobile
           sx={{
-            borderBottom: '1px solid #e2e8f0',
-            bgcolor: '#f8fafc',
+            borderBottom: '1px solid',
+            borderColor: 'divider',
+            bgcolor: (theme) => theme.palette.mode === 'dark' ? '#242526' : '#f8fafc',
             px: { xs: 1, sm: 2 },
             '& .MuiTab-root': { fontWeight: 700, textTransform: 'none', fontSize: { xs: '0.8125rem', sm: '0.9rem' }, py: 1.5, minWidth: 'auto', px: { xs: 1.5, sm: 2 } },
           }}
@@ -353,7 +354,7 @@ export const ReportsPage: React.FC = () => {
         </Tabs>
 
         <Box sx={{ p: 2 }}>
-          <Box sx={{ border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden', bgcolor: '#ffffff' }}>
+          <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '8px', overflow: 'hidden', bgcolor: 'background.paper' }}>
             {activeTab === 0 && (
               <ProjectProgressReport
                 data={projectReport}

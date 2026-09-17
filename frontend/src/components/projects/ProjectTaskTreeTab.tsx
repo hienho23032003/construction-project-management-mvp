@@ -18,8 +18,8 @@ import {
 } from '@mui/material';
 import { Plus, Edit, Trash2, CornerDownRight } from 'lucide-react';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { TaskTreeItem, TaskStatus } from '../../types';
-import { StatusSelect } from '../common';
+import { TaskTreeItem, TaskStatus, PriorityLevel } from '../../types';
+import { StatusSelect, PrioritySelect } from '../common';
 import { formatDate } from '../../utils/dateUtils';
 import { getMediaUrl } from '../../utils/fileUtils';
 import { useAuth } from '../../contexts/AuthContext';
@@ -33,8 +33,10 @@ interface ProjectTaskTreeTabProps {
   canDeleteTask?: boolean;
   canUpdateStatus?: boolean;
   canUpdateProgress?: boolean;
+  canUpdatePriority?: boolean;
   onStatusChange: (taskId: string, status: TaskStatus) => void;
   onProgressChange: (taskId: string, progress: number) => void;
+  onPriorityChange?: (taskId: string, priority: PriorityLevel) => void;
   onCreateSubTask: (parentId: string) => void;
   onEditTask: (task: TaskTreeItem) => void;
   onDeleteTask: (taskId: string) => void;
@@ -54,8 +56,10 @@ export const ProjectTaskTreeTab: React.FC<ProjectTaskTreeTabProps> = memo(({
   canDeleteTask = false,
   canUpdateStatus = false,
   canUpdateProgress = false,
+  canUpdatePriority = false,
   onStatusChange,
   onProgressChange,
+  onPriorityChange,
   onCreateSubTask,
   onEditTask,
   onDeleteTask,
@@ -68,7 +72,7 @@ export const ProjectTaskTreeTab: React.FC<ProjectTaskTreeTabProps> = memo(({
   const allowEdit = hasManagerRights;
   const allowDelete = canDeleteTask || isSuperAdmin || can(PERMISSIONS.TASKS_DELETE);
   const hasAnyAction = allowCreate || allowEdit || allowDelete;
-  const totalCols = hasAnyAction ? 7 : 6;
+  const totalCols = hasAnyAction ? 8 : 7;
   const tableContainerRef = useRef<HTMLDivElement>(null);
 
   // Flatten the recursive tree into a flat list with depth levels for virtualization
@@ -109,7 +113,8 @@ export const ProjectTaskTreeTab: React.FC<ProjectTaskTreeTabProps> = memo(({
       ref={tableContainerRef}
       component={Paper}
       sx={{
-        border: '1px solid #e2e8f0',
+        border: '1px solid',
+        borderColor: 'divider',
         borderRadius: '8px',
         overflow: 'auto',
         maxHeight: 'calc(100vh - 280px)',
@@ -120,11 +125,12 @@ export const ProjectTaskTreeTab: React.FC<ProjectTaskTreeTabProps> = memo(({
         <TableHead>
           <TableRow>
             <TableCell sx={{ width: '50px', textAlign: 'center', whiteSpace: 'nowrap', py: 1.5 }}>STT</TableCell>
-            <TableCell sx={{ width: '30%', whiteSpace: 'nowrap', py: 1.5 }}>Hạng Mục / Công Việc</TableCell>
-            <TableCell sx={{ width: '22%', whiteSpace: 'nowrap', py: 1.5 }}>Người Thực Hiện</TableCell>
-            <TableCell sx={{ width: '15%', whiteSpace: 'nowrap', py: 1.5 }}>Thời Gian</TableCell>
+            <TableCell sx={{ width: '28%', whiteSpace: 'nowrap', py: 1.5 }}>Hạng Mục / Công Việc</TableCell>
+            <TableCell sx={{ width: '18%', whiteSpace: 'nowrap', py: 1.5 }}>Người Thực Hiện</TableCell>
+            <TableCell sx={{ width: '12%', whiteSpace: 'nowrap', py: 1.5 }}>Ưu Tiên</TableCell>
+            <TableCell sx={{ width: '14%', whiteSpace: 'nowrap', py: 1.5 }}>Thời Gian</TableCell>
             <TableCell sx={{ width: '14%', whiteSpace: 'nowrap', py: 1.5 }}>Trạng Thái</TableCell>
-            <TableCell sx={{ width: '15%', whiteSpace: 'nowrap', py: 1.5 }}>Tiến Độ</TableCell>
+            <TableCell sx={{ width: '14%', whiteSpace: 'nowrap', py: 1.5 }}>Tiến Độ</TableCell>
             {hasAnyAction && (
               <TableCell align="right" sx={{ whiteSpace: 'nowrap', py: 1.5 }}>Thao Tác</TableCell>
             )}
@@ -134,7 +140,7 @@ export const ProjectTaskTreeTab: React.FC<ProjectTaskTreeTabProps> = memo(({
           {flattenedTasks.length === 0 ? (
             <TableRow>
               <TableCell colSpan={totalCols} align="center" sx={{ py: 6, whiteSpace: 'nowrap' }}>
-                <Typography variant="body2" sx={{ color: '#94a3b8', mb: 1, whiteSpace: 'nowrap' }}>
+                <Typography variant="body2" sx={{ color: 'text.secondary', mb: 1, whiteSpace: 'nowrap' }}>
                   Chưa có hạng mục công việc nào trong dự án này.
                 </Typography>
                 {allowCreate && (
@@ -161,6 +167,7 @@ export const ProjectTaskTreeTab: React.FC<ProjectTaskTreeTabProps> = memo(({
                 const isAssigned = Boolean(user?.id && task.assignees?.some((a) => a.userId === user.id || a.id === user.id));
                 const rowAllowStatus = hasManagerRights || (canUpdateStatus && isAssigned) || isAssigned;
                 const rowAllowProgress = hasManagerRights || (canUpdateProgress && isAssigned) || isAssigned;
+                const rowAllowPriority = hasManagerRights || (canUpdatePriority && isAssigned) || isAssigned;
 
                 return (
                   <TableRow
@@ -168,26 +175,32 @@ export const ProjectTaskTreeTab: React.FC<ProjectTaskTreeTabProps> = memo(({
                     hover
                     sx={{
                       height: `${virtualRow.size}px`,
-                      bgcolor: level === 0 ? '#f8fafc' : level === 1 ? '#ffffff' : '#fafafa',
-                      borderLeft: level > 0 ? `4px solid ${level === 1 ? '#0284c7' : '#94a3b8'}` : 'none',
+                      bgcolor: (theme) => {
+                        const isDark = theme.palette.mode === 'dark';
+                        if (isDark) {
+                          return level === 0 ? '#18191a' : level === 1 ? '#242526' : '#1e1f20';
+                        }
+                        return level === 0 ? '#f8fafc' : level === 1 ? '#ffffff' : '#fafafa';
+                      },
+                      borderLeft: level > 0 ? `4px solid ${level === 1 ? '#0284c7' : '#7b7b7b'}` : 'none',
                     }}
                   >
                     {/* STT */}
-                    <TableCell sx={{ textAlign: 'center', whiteSpace: 'nowrap', fontWeight: 600, color: '#64748b', py: 1, width: '50px' }}>
+                    <TableCell sx={{ textAlign: 'center', whiteSpace: 'nowrap', fontWeight: 600, color: 'text.secondary', py: 1, width: '50px' }}>
                       {stt}
                     </TableCell>
 
                     {/* Name & Indentation */}
                     <TableCell sx={{ pl: `${16 + level * 20}px`, whiteSpace: 'nowrap', maxWidth: { xs: 200, sm: 300, md: 400 }, py: 1 }}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>
-                        {level > 0 && <CornerDownRight size={14} color="#94a3b8" style={{ flexShrink: 0 }} />}
+                        {level > 0 && <CornerDownRight size={14} color="#7b7b7b" style={{ flexShrink: 0 }} />}
                         <Box sx={{ minWidth: 0, overflow: 'hidden' }}>
                           <Typography
                             variant="body2"
                             noWrap
                             sx={{
                               fontWeight: level === 0 ? 700 : 600,
-                              color: level === 0 ? '#0f172a' : '#334155',
+                              color: level === 0 ? 'text.primary' : 'text.secondary',
                               overflow: 'hidden',
                               textOverflow: 'ellipsis',
                               whiteSpace: 'nowrap',
@@ -202,7 +215,7 @@ export const ProjectTaskTreeTab: React.FC<ProjectTaskTreeTabProps> = memo(({
                               variant="caption"
                               noWrap
                               sx={{
-                                color: '#64748b',
+                                color: 'text.disabled',
                                 overflow: 'hidden',
                                 textOverflow: 'ellipsis',
                                 whiteSpace: 'nowrap',
@@ -218,36 +231,95 @@ export const ProjectTaskTreeTab: React.FC<ProjectTaskTreeTabProps> = memo(({
                     </TableCell>
 
                     {/* Assignees */}
-                    <TableCell sx={{ whiteSpace: 'nowrap', maxWidth: 180, py: 1 }}>
-                      <Box sx={{ display: 'flex', flexWrap: 'nowrap', gap: 0.5, overflow: 'hidden' }}>
+                    <TableCell sx={{ whiteSpace: 'nowrap', maxWidth: 190, py: 1 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'nowrap', gap: 0.5, overflow: 'hidden' }}>
                         {task.assignees.length === 0 ? (
-                          <Typography variant="caption" sx={{ color: '#94a3b8', whiteSpace: 'nowrap' }}>
+                          <Typography variant="caption" sx={{ color: 'text.disabled', whiteSpace: 'nowrap' }}>
                             Chưa gán
                           </Typography>
                         ) : (
-                          task.assignees.slice(0, 2).map((a) => (
+                          <>
                             <Chip
-                              key={a.id}
-                              label={a.fullName}
+                              key={task.assignees[0].id || task.assignees[0].userId}
+                              label={task.assignees[0].fullName}
                               size="small"
-                              avatar={<Avatar src={getMediaUrl(a.avatarUrl)} sx={{ width: 18, height: 18, fontSize: '0.65rem' }}>{a.fullName.charAt(0)}</Avatar>}
-                              sx={{ height: 22, fontSize: '0.7rem', whiteSpace: 'nowrap' }}
+                              avatar={
+                                <Avatar
+                                  src={getMediaUrl(task.assignees[0].avatarUrl)}
+                                  sx={{ width: 18, height: 18, fontSize: '0.65rem' }}
+                                >
+                                  {task.assignees[0].fullName.charAt(0)}
+                                </Avatar>
+                              }
+                              sx={{
+                                height: 22,
+                                fontSize: '0.7rem',
+                                whiteSpace: 'nowrap',
+                                maxWidth: task.assignees.length > 1 ? 120 : 160,
+                                '& .MuiChip-label': {
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                  whiteSpace: 'nowrap',
+                                },
+                              }}
                             />
-                          ))
-                        )}
-                        {task.assignees.length > 2 && (
-                          <Chip
-                            label={`+${task.assignees.length - 2}`}
-                            size="small"
-                            sx={{ height: 22, fontSize: '0.7rem', bgcolor: '#f1f5f9' }}
-                          />
+                            {task.assignees.length > 1 && (
+                              <Tooltip
+                                title={
+                                  <Box sx={{ p: 0.5, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                                    <Typography variant="caption" sx={{ fontWeight: 700, mb: 0.25, display: 'block', color: 'inherit' }}>
+                                      Người thực hiện khác ({task.assignees.length - 1}):
+                                    </Typography>
+                                    {task.assignees.slice(1).map((a) => (
+                                      <Box key={a.id || a.userId} sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                                        <Avatar
+                                          src={getMediaUrl(a.avatarUrl)}
+                                          sx={{ width: 18, height: 18, fontSize: '0.65rem' }}
+                                        >
+                                          {a.fullName.charAt(0)}
+                                        </Avatar>
+                                        <Typography variant="caption" sx={{ color: 'inherit' }}>
+                                          {a.fullName}
+                                        </Typography>
+                                      </Box>
+                                    ))}
+                                  </Box>
+                                }
+                                arrow
+                                placement="top"
+                              >
+                                <Chip
+                                  label={`+${task.assignees.length - 1}`}
+                                  size="small"
+                                  sx={{
+                                    height: 22,
+                                    fontSize: '0.7rem',
+                                    fontWeight: 700,
+                                    bgcolor: (theme) =>
+                                      theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'action.hover',
+                                    cursor: 'pointer',
+                                    flexShrink: 0,
+                                  }}
+                                />
+                              </Tooltip>
+                            )}
+                          </>
                         )}
                       </Box>
                     </TableCell>
 
+                    {/* Priority */}
+                    <TableCell sx={{ whiteSpace: 'nowrap', py: 1 }}>
+                      <PrioritySelect
+                        value={task.priority}
+                        onChange={(priority) => onPriorityChange?.(task.id, priority)}
+                        disabled={!rowAllowPriority}
+                      />
+                    </TableCell>
+
                     {/* Timeline */}
                     <TableCell sx={{ whiteSpace: 'nowrap', py: 1 }}>
-                      <Typography variant="caption" sx={{ fontWeight: 600, color: '#334155', whiteSpace: 'nowrap', display: 'block' }}>
+                      <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary', whiteSpace: 'nowrap', display: 'block' }}>
                         {formatDate(task.startDate, 'dd/MM')} - {formatDate(task.plannedEndDate, 'dd/MM/yyyy')}
                       </Typography>
                     </TableCell>

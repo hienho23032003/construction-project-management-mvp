@@ -17,11 +17,13 @@ import {
   Chip,
   IconButton,
   Tooltip,
+  useTheme,
 } from '@mui/material';
 import { X, Settings, CheckSquare, Square, Palette, Check } from 'lucide-react';
 import { RoleItem, PermissionModuleGroup } from '../../types';
 import { usePermissionsMatrixQuery } from '../../hooks/useRoles';
 import { ROLE_COLOR_PRESETS, getRoleChipStyle } from '../../utils/roleColors';
+import { CommonButton, CommonInput, CommonChip } from '../common';
 
 export interface RoleFormData {
   name: string;
@@ -55,6 +57,9 @@ const RoleColorPicker: React.FC<RoleColorPickerProps> = memo(({
 }) => {
   const [localColor, setLocalColor] = useState(value || '#0284c7');
   const roleName = useWatch({ control, name: 'name' }) || '';
+
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
 
   useEffect(() => {
     if (value) {
@@ -92,10 +97,11 @@ const RoleColorPicker: React.FC<RoleColorPickerProps> = memo(({
         display: 'flex',
         flexDirection: 'column',
         gap: 1.5,
-        bgcolor: '#ffffff',
+        bgcolor: 'background.paper',
         p: 1.5,
         borderRadius: '8px',
-        border: '1px solid #e2e8f0',
+        border: '1px solid',
+        borderColor: 'divider',
       }}
     >
       {/* Preset color swatches */}
@@ -133,7 +139,7 @@ const RoleColorPicker: React.FC<RoleColorPickerProps> = memo(({
 
         {/* Custom color picker input + Hex code input */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, ml: { xs: 0, sm: 'auto' }, flexWrap: 'wrap' }}>
-          <Typography variant="caption" sx={{ color: '#64748b', fontSize: '0.75rem', fontWeight: 600 }}>
+          <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.75rem', fontWeight: 600 }}>
             Mã màu:
           </Typography>
           <input
@@ -148,10 +154,10 @@ const RoleColorPicker: React.FC<RoleColorPickerProps> = memo(({
               fontFamily: 'monospace',
               fontWeight: 600,
               padding: '2px 8px',
-              border: '1px solid #cbd5e1',
+              border: `1px solid ${isDark ? '#333333' : '#cbd5e1'}`,
               borderRadius: '6px',
-              color: '#0f172a',
-              background: '#f8fafc',
+              color: 'inherit',
+              background: 'transparent',
             }}
           />
           <input
@@ -162,19 +168,19 @@ const RoleColorPicker: React.FC<RoleColorPickerProps> = memo(({
             style={{
               width: 32,
               height: 32,
-              border: '1px solid #cbd5e1',
+              border: `1px solid ${isDark ? '#3a3b3c' : '#cbd5e1'}`,
               borderRadius: '6px',
               cursor: 'pointer',
               padding: '2px',
-              background: '#ffffff',
+              background: isDark ? '#242526' : '#ffffff',
             }}
           />
         </Box>
       </Box>
 
       {/* Live Preview */}
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, pt: 1, borderTop: '1px dashed #e2e8f0' }}>
-        <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 600, fontSize: '0.75rem' }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, pt: 1, borderTop: '1px dashed', borderColor: 'divider' }}>
+        <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, fontSize: '0.75rem' }}>
           Xem trước hiển thị:
         </Typography>
         <Chip
@@ -210,6 +216,8 @@ const PermissionMatrixSection: React.FC<PermissionMatrixProps> = memo(({
   getValues,
   loadingMatrix,
 }) => {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
   const selectedPermissions: string[] = useWatch({ control, name: 'permissions' }) || [];
   const totalAvailablePerms = matrix.reduce((acc, g) => acc + g.permissions.length, 0);
 
@@ -261,13 +269,13 @@ const PermissionMatrixSection: React.FC<PermissionMatrixProps> = memo(({
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-          <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#0f172a', whiteSpace: 'nowrap' }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'text.primary', whiteSpace: 'nowrap' }}>
             Ma Trận Phân Quyền Chi Tiết
           </Typography>
           <Chip
             label={`${selectedPermissions.length}/${totalAvailablePerms} quyền đã chọn`}
             size="small"
-            sx={{ bgcolor: '#e0f2fe', color: '#0284c7', fontWeight: 600, fontSize: '0.75rem', whiteSpace: 'nowrap' }}
+            sx={{ bgcolor: isDark ? 'rgba(45, 136, 255, 0.16)' : '#e0f2fe', color: isDark ? '#2d88ff' : '#0284c7', fontWeight: 600, fontSize: '0.75rem', whiteSpace: 'nowrap' }}
           />
         </Box>
         <Button
@@ -290,7 +298,7 @@ const PermissionMatrixSection: React.FC<PermissionMatrixProps> = memo(({
       </Box>
 
       {loadingMatrix ? (
-        <Typography variant="body2" sx={{ color: '#64748b', py: 3, textAlign: 'center' }}>
+        <Typography variant="body2" sx={{ color: 'text.secondary', py: 3, textAlign: 'center' }}>
           Đang tải ma trận quyền...
         </Typography>
       ) : (
@@ -308,8 +316,12 @@ const PermissionMatrixSection: React.FC<PermissionMatrixProps> = memo(({
                 sx={{
                   p: { xs: 1.5, sm: 2 },
                   borderRadius: '8px',
-                  border: selectedInModule.length > 0 ? '1px solid #bae6fd' : '1px solid #e2e8f0',
-                  bgcolor: selectedInModule.length > 0 ? 'rgba(240, 249, 255, 0.4)' : '#ffffff',
+                  border: selectedInModule.length > 0
+                    ? `1px solid ${isDark ? 'rgba(45, 136, 255, 0.35)' : '#bae6fd'}`
+                    : `1px solid ${theme.palette.divider}`,
+                  bgcolor: selectedInModule.length > 0
+                    ? (isDark ? 'rgba(45, 136, 255, 0.06)' : 'rgba(240, 249, 255, 0.4)')
+                    : (isDark ? '#1e1f20' : '#ffffff'),
                   transition: 'all 0.2s ease',
                 }}
               >
@@ -323,18 +335,18 @@ const PermissionMatrixSection: React.FC<PermissionMatrixProps> = memo(({
                           indeterminate={isPartiallySelected}
                           onChange={() => handleToggleModule(moduleGroup)}
                           size="small"
-                          sx={{ color: '#0284c7', '&.Mui-checked': { color: '#0284c7' } }}
+                          sx={{ color: '#2d88ff', '&.Mui-checked': { color: '#2d88ff' } }}
                         />
                       }
                       label={
-                        <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#1e293b' }}>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'text.primary' }}>
                           {moduleGroup.moduleName}
                         </Typography>
                       }
                       sx={{ mr: 0.5 }}
                     />
                     {moduleGroup.description && (
-                      <Typography variant="caption" sx={{ color: '#64748b' }}>
+                      <Typography variant="caption" sx={{ color: 'text.secondary' }}>
                         ({moduleGroup.description})
                       </Typography>
                     )}
@@ -346,14 +358,14 @@ const PermissionMatrixSection: React.FC<PermissionMatrixProps> = memo(({
                     sx={{
                       fontSize: '0.7rem',
                       height: 20,
-                      bgcolor: selectedInModule.length > 0 ? '#0284c7' : 'transparent',
-                      color: selectedInModule.length > 0 ? '#ffffff' : '#94a3b8',
+                      bgcolor: selectedInModule.length > 0 ? (isDark ? '#2d88ff' : '#0284c7') : 'transparent',
+                      color: selectedInModule.length > 0 ? '#ffffff' : (isDark ? '#b0b3b8' : '#94a3b8'),
                       fontWeight: 600,
                       flexShrink: 0,
                     }}
                   />
                 </Box>
-                <Divider sx={{ my: 1 }} />
+                <Divider sx={{ my: 1, borderColor: isDark ? '#3e4042' : 'divider' }} />
 
                 {/* Permissions Grid */}
                 <Grid container spacing={1}>
@@ -371,12 +383,20 @@ const PermissionMatrixSection: React.FC<PermissionMatrixProps> = memo(({
                             p: 1,
                             borderRadius: '8px',
                             cursor: isLocked ? 'default' : 'pointer',
-                            bgcolor: isChecked ? '#e0f2fe' : '#f8fafc',
-                            border: isChecked ? '1px solid #7dd3fc' : '1px solid #f1f5f9',
+                            bgcolor: isChecked
+                              ? (isDark ? 'rgba(45, 136, 255, 0.15)' : '#e0f2fe')
+                              : (isDark ? '#2f3031' : '#f8fafc'),
+                            border: isChecked
+                              ? `1px solid ${isDark ? 'rgba(45, 136, 255, 0.4)' : '#7dd3fc'}`
+                              : `1px solid ${isDark ? '#3e4042' : '#f1f5f9'}`,
                             opacity: isLocked ? 0.92 : 1,
                             transition: 'all 0.15s ease',
                             '&:hover': {
-                              bgcolor: isLocked ? '#e0f2fe' : isChecked ? '#bae6fd' : '#f1f5f9',
+                              bgcolor: isLocked
+                                ? (isDark ? 'rgba(45, 136, 255, 0.15)' : '#e0f2fe')
+                                : isChecked
+                                ? (isDark ? 'rgba(45, 136, 255, 0.22)' : '#bae6fd')
+                                : (isDark ? 'rgba(255, 255, 255, 0.08)' : '#f1f5f9'),
                             },
                           }}
                         >
@@ -386,16 +406,16 @@ const PermissionMatrixSection: React.FC<PermissionMatrixProps> = memo(({
                             size="small"
                             sx={{
                               p: 0.2,
-                              color: '#0284c7',
-                              '&.Mui-checked': { color: '#0284c7' },
-                              '&.Mui-disabled': { color: '#0284c7' },
+                              color: '#2d88ff',
+                              '&.Mui-checked': { color: '#2d88ff' },
+                              '&.Mui-disabled': { color: '#2d88ff' },
                             }}
                           />
                           <Box sx={{ minWidth: 0, flexGrow: 1 }}>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, flexWrap: 'wrap' }}>
                               <Typography
                                 variant="body2"
-                                sx={{ fontWeight: isChecked ? 600 : 500, fontSize: '0.8125rem', color: '#0f172a' }}
+                                sx={{ fontWeight: isChecked ? 600 : 500, fontSize: '0.8125rem', color: 'text.primary' }}
                               >
                                 {perm.name}
                               </Typography>
@@ -407,8 +427,8 @@ const PermissionMatrixSection: React.FC<PermissionMatrixProps> = memo(({
                                     height: 18,
                                     fontSize: '0.65rem',
                                     fontWeight: 700,
-                                    bgcolor: '#0284c7',
-                                    color: '#ffffff',
+                                    bgcolor: isDark ? 'rgba(45, 136, 255, 0.3)' : '#0284c7',
+                                    color: isDark ? '#70b5ff' : '#ffffff',
                                     borderRadius: '4px',
                                   }}
                                 />
@@ -416,7 +436,7 @@ const PermissionMatrixSection: React.FC<PermissionMatrixProps> = memo(({
                             </Box>
                             <Typography
                               variant="caption"
-                              sx={{ color: '#64748b', fontSize: '0.7rem', display: 'block' }}
+                              sx={{ color: 'text.secondary', fontSize: '0.7rem', display: 'block' }}
                             >
                               {perm.description}
                             </Typography>
@@ -488,6 +508,8 @@ export const RoleModal: React.FC<RoleModalProps> = ({
   }, [open, initialData, reset]);
 
   const isEditing = Boolean(initialData);
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
 
   return (
     <Dialog
@@ -512,7 +534,8 @@ export const RoleModal: React.FC<RoleModalProps> = ({
             justifyContent: 'space-between',
             px: { xs: 2, sm: 3 },
             py: { xs: 1.5, sm: 2 },
-            borderBottom: '1px solid #e2e8f0',
+            borderBottom: '1px solid',
+            borderColor: 'divider',
           }}
         >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
@@ -520,8 +543,8 @@ export const RoleModal: React.FC<RoleModalProps> = ({
               sx={{
                 p: 0.8,
                 borderRadius: '8px',
-                bgcolor: 'rgba(2, 132, 199, 0.1)',
-                color: '#0284c7',
+                bgcolor: isDark ? 'rgba(56, 189, 248, 0.16)' : 'rgba(2, 132, 199, 0.1)',
+                color: isDark ? '#38bdf8' : '#0284c7',
                 display: 'flex',
                 alignItems: 'center',
               }}
@@ -529,15 +552,15 @@ export const RoleModal: React.FC<RoleModalProps> = ({
               <Settings size={22} />
             </Box>
             <Box>
-              <Typography variant="h6" sx={{ fontWeight: 700, fontSize: { xs: '0.95rem', sm: '1.1rem' }, color: '#0f172a' }}>
+              <Typography variant="h6" sx={{ fontWeight: 700, fontSize: { xs: '0.95rem', sm: '1.1rem' }, color: 'text.primary' }}>
                 {isEditing ? `Chỉnh Sửa Vai Trò: ${initialData?.name}` : 'Tạo Vai Trò & Phân Quyền Mới'}
               </Typography>
-              <Typography variant="caption" sx={{ color: '#64748b' }}>
+              <Typography variant="caption" sx={{ color: 'text.secondary' }}>
                 Thiết lập thông tin và ma trận quyền hạn cho vai trò này trong hệ thống
               </Typography>
             </Box>
           </Box>
-          <IconButton onClick={onClose} size="small" sx={{ color: '#94a3b8' }}>
+          <IconButton onClick={onClose} size="small" sx={{ color: 'text.secondary' }}>
             <X size={20} />
           </IconButton>
         </DialogTitle>
@@ -545,8 +568,8 @@ export const RoleModal: React.FC<RoleModalProps> = ({
         <DialogContent sx={{ px: { xs: 1.5, sm: 3 }, py: { xs: 1.5, sm: 2.5 }, maxHeight: '72vh', overflowY: 'auto' }}>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
             {/* General Info */}
-            <Paper variant="outlined" sx={{ p: { xs: 1.5, sm: 2.5 }, borderRadius: '8px', bgcolor: '#f8fafc' }}>
-              <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 2, color: '#1e293b' }}>
+            <Paper variant="outlined" sx={{ p: { xs: 1.5, sm: 2.5 }, borderRadius: '8px', bgcolor: isDark ? '#1e1f20' : '#f8fafc', borderColor: 'divider' }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 2, color: 'text.primary' }}>
                 Thông Tin Cơ Bản
               </Typography>
               <Grid container spacing={2}>
@@ -556,7 +579,7 @@ export const RoleModal: React.FC<RoleModalProps> = ({
                     control={control}
                     rules={{ required: 'Trường này là bắt buộc' }}
                     render={({ field }) => (
-                      <TextField
+                      <CommonInput
                         {...field}
                         label="Tên Vai Trò"
                         fullWidth
@@ -581,7 +604,7 @@ export const RoleModal: React.FC<RoleModalProps> = ({
                       },
                     }}
                     render={({ field }) => (
-                      <TextField
+                      <CommonInput
                         {...field}
                         label="Mã Vai Trò (Code)"
                         fullWidth
@@ -600,7 +623,7 @@ export const RoleModal: React.FC<RoleModalProps> = ({
                     name="description"
                     control={control}
                     render={({ field }) => (
-                      <TextField
+                      <CommonInput
                         {...field}
                         label="Mô Tả Nhiệm Vụ & Quyền Hạn"
                         fullWidth
@@ -615,9 +638,9 @@ export const RoleModal: React.FC<RoleModalProps> = ({
 
                 {/* Role Chip Color Option */}
                 <Grid item xs={12}>
-                  <Typography variant="caption" sx={{ fontWeight: 700, color: '#334155', display: 'block', mb: 1 }}>
+                  <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary', display: 'block', mb: 1 }}>
                     <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.75 }}>
-                      <Palette size={15} color="#0284c7" />
+                      <Palette size={15} color={isDark ? '#2d88ff' : '#0284c7'} />
                       Màu Sắc Đại Diện Cho Vai Trò (Role Chip Color)
                     </Box>
                   </Typography>
@@ -648,24 +671,17 @@ export const RoleModal: React.FC<RoleModalProps> = ({
           </Box>
         </DialogContent>
 
-        <DialogActions sx={{ px: { xs: 2, sm: 3 }, py: { xs: 1.5, sm: 2 }, borderTop: '1px solid #e2e8f0', justifyContent: 'space-between', gap: 1 }}>
-          <Button onClick={onClose} variant="outlined" color="inherit" disabled={isSubmitting} sx={{ borderRadius: '8px', px: { xs: 2, sm: 2.5 } }}>
+        <DialogActions sx={{ px: { xs: 2, sm: 3 }, py: { xs: 1.5, sm: 2 }, borderTop: '1px solid', borderColor: 'divider', justifyContent: 'space-between', gap: 1 }}>
+          <CommonButton onClick={onClose} variant="secondary" disabled={isSubmitting}>
             Hủy Bỏ
-          </Button>
-          <Button
+          </CommonButton>
+          <CommonButton
             type="submit"
-            variant="contained"
-            disabled={isSubmitting}
-            sx={{
-              bgcolor: '#0284c7',
-              '&:hover': { bgcolor: '#0369a1' },
-              borderRadius: '8px',
-              px: { xs: 2, sm: 3 },
-              fontWeight: 600,
-            }}
+            variant="primary"
+            loading={isSubmitting}
           >
-            {isSubmitting ? 'Đang lưu...' : isEditing ? 'Lưu Thay Đổi' : 'Tạo Vai Trò Mới'}
-          </Button>
+            {isEditing ? 'Lưu Thay Đổi' : 'Tạo Vai Trò Mới'}
+          </CommonButton>
         </DialogActions>
       </form>
     </Dialog>

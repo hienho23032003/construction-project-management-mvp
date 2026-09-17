@@ -57,7 +57,7 @@ export const TaskDetailReport: React.FC<TaskDetailReportProps> = memo(
           header: 'Tên Công Việc',
           accessorKey: 'taskName',
           minWidth: 200,
-          cellSx: { fontWeight: 700, color: '#0f172a' },
+          cellSx: { fontWeight: 700, color: 'text.primary' },
         },
         {
           id: 'assigneeNames',
@@ -73,21 +73,21 @@ export const TaskDetailReport: React.FC<TaskDetailReportProps> = memo(
 
             if (assignees.length === 0) {
               return (
-                <Typography variant="caption" sx={{ color: '#94a3b8' }}>
+                <Typography variant="caption" sx={{ color: 'text.disabled' }}>
                   Chưa gán
                 </Typography>
               );
             }
 
             return (
-              <Box sx={{ display: 'flex', flexWrap: 'nowrap', gap: 0.5, alignItems: 'center' }}>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                 {assignees.slice(0, 2).map((a: any) => (
                   <Chip
                     key={a.id || a.fullName}
                     avatar={
                       <Avatar
                         src={getMediaUrl(a.avatarUrl)}
-                        sx={{ width: 20, height: 20, fontSize: '0.65rem', bgcolor: '#e0f2fe', color: '#0369a1' }}
+                        sx={{ width: 18, height: 18, fontSize: '0.65rem' }}
                       >
                         {a.fullName.charAt(0)}
                       </Avatar>
@@ -98,8 +98,9 @@ export const TaskDetailReport: React.FC<TaskDetailReportProps> = memo(
                       height: 24,
                       fontSize: '0.72rem',
                       whiteSpace: 'nowrap',
-                      bgcolor: '#f8fafc',
-                      border: '1px solid #e2e8f0',
+                      bgcolor: (theme) => theme.palette.mode === 'dark' ? '#141414' : '#f8fafc',
+                      border: '1px solid',
+                      borderColor: 'divider',
                     }}
                   />
                 ))}
@@ -108,7 +109,7 @@ export const TaskDetailReport: React.FC<TaskDetailReportProps> = memo(
                     <Chip
                       label={`+${assignees.length - 2}`}
                       size="small"
-                      sx={{ height: 24, fontSize: '0.72rem', bgcolor: '#f1f5f9' }}
+                      sx={{ height: 24, fontSize: '0.72rem', bgcolor: 'action.hover' }}
                     />
                   </Tooltip>
                 )}
@@ -158,9 +159,8 @@ export const TaskDetailReport: React.FC<TaskDetailReportProps> = memo(
         onRowClick={(row) => onSelectTask?.(row.taskId)}
         rowSx={() => ({
           cursor: onSelectTask ? 'pointer' : 'default',
-          transition: 'background-color 0.15s ease',
           '&:hover': {
-            bgcolor: '#f8fafc',
+            bgcolor: 'action.hover',
           },
         })}
         emptyMessage="Không có dữ liệu công việc phù hợp"

@@ -5,7 +5,6 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Button,
   TextField,
   Autocomplete,
   IconButton,
@@ -13,6 +12,7 @@ import {
 } from '@mui/material';
 import { X } from 'lucide-react';
 import { User } from '../../types';
+import { CommonButton, CommonInput } from '../common';
 
 export interface ProjectMemberFormData {
   userId: string;
@@ -66,7 +66,7 @@ export const ProjectMemberModal: React.FC<ProjectMemberModalProps> = ({
             alignItems: 'center',
           }}
         >
-          <Typography variant="h3" sx={{ fontWeight: 700, fontSize: '1.15rem', color: '#0f172a' }}>
+          <Typography variant="h3" sx={{ fontWeight: 700, fontSize: '1.15rem', color: 'text.primary' }}>
             Thêm Nhân Sự Vào Dự Án
           </Typography>
           <IconButton
@@ -74,8 +74,8 @@ export const ProjectMemberModal: React.FC<ProjectMemberModalProps> = ({
             onClick={onClose}
             size="small"
             sx={{
-              color: '#94a3b8',
-              '&:hover': { color: '#0f172a', bgcolor: '#f1f5f9' },
+              color: 'text.secondary',
+              '&:hover': { color: 'text.primary', bgcolor: 'action.hover' },
             }}
           >
             <X size={20} />
@@ -115,7 +115,7 @@ export const ProjectMemberModal: React.FC<ProjectMemberModalProps> = ({
             name="roleInProject"
             control={control}
             render={({ field }) => (
-              <TextField
+              <CommonInput
                 {...field}
                 label="Vai trò / Chức danh trong dự án"
                 fullWidth
@@ -125,12 +125,12 @@ export const ProjectMemberModal: React.FC<ProjectMemberModalProps> = ({
           />
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2.5 }}>
-          <Button onClick={onClose} variant="outlined" color="inherit" disabled={isSubmitting}>
+          <CommonButton onClick={onClose} variant="secondary" disabled={isSubmitting}>
             Hủy Bỏ
-          </Button>
-          <Button type="submit" variant="contained" sx={{ bgcolor: '#0284c7' }} disabled={isSubmitting}>
+          </CommonButton>
+          <CommonButton type="submit" variant="primary" loading={isSubmitting}>
             {isSubmitting ? 'Đang thêm...' : 'Thêm Vào Dự Án'}
-          </Button>
+          </CommonButton>
         </DialogActions>
       </form>
     </Dialog>

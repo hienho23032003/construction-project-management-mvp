@@ -30,8 +30,9 @@ export const EmployeeHeader: React.FC<EmployeeHeaderProps> = ({
       sx={{
         p: { xs: 2.5, md: 3 },
         borderRadius: 2,
-        border: '1px solid #e2e8f0',
-        bgcolor: '#ffffff',
+        border: '1px solid',
+        borderColor: 'divider',
+        bgcolor: 'background.paper',
         display: 'flex',
         flexDirection: { xs: 'column', md: 'row' },
         justifyContent: 'space-between',
@@ -48,14 +49,15 @@ export const EmployeeHeader: React.FC<EmployeeHeaderProps> = ({
             bgcolor: '#0284c7',
             fontSize: { xs: '1.5rem', sm: '1.8rem' },
             fontWeight: 800,
-            border: '3px solid #e0f2fe',
+            border: '3px solid',
+            borderColor: (theme) => (theme.palette.mode === 'dark' ? 'rgba(56, 189, 248, 0.3)' : '#e0f2fe'),
           }}
         >
           {user.fullName.charAt(0)}
         </Avatar>
         <Box>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap', mb: 0.5 }}>
-            <Typography variant="h4" sx={{ fontWeight: 800, fontSize: { xs: '1.25rem', sm: '1.5rem' }, color: '#0f172a' }}>
+            <Typography variant="h4" sx={{ fontWeight: 800, fontSize: { xs: '1.25rem', sm: '1.5rem' }, color: 'text.primary' }}>
               {user.fullName}
             </Typography>
             <Chip
@@ -71,15 +73,18 @@ export const EmployeeHeader: React.FC<EmployeeHeaderProps> = ({
               label={user.isActive ? 'Đang hoạt động' : 'Đã khóa'}
               size="small"
               sx={{
-                bgcolor: user.isActive ? '#ecfdf5' : '#fef2f2',
-                color: user.isActive ? '#10b981' : '#ef4444',
+                bgcolor: (theme) =>
+                  theme.palette.mode === 'dark'
+                    ? user.isActive ? 'rgba(34, 197, 94, 0.15)' : 'rgba(239, 68, 68, 0.15)'
+                    : user.isActive ? '#ecfdf5' : '#fef2f2',
+                color: user.isActive ? '#22c55e' : '#ef4444',
                 fontWeight: 700,
                 fontSize: '0.72rem',
               }}
             />
           </Box>
 
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1.5, sm: 3 }, flexWrap: 'wrap', color: '#64748b', fontSize: '0.8125rem' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1.5, sm: 3 }, flexWrap: 'wrap', color: 'text.secondary', fontSize: '0.8125rem' }}>
             {user.department && (
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                 <Building2 size={15} color="#0284c7" />
@@ -114,10 +119,10 @@ export const EmployeeHeader: React.FC<EmployeeHeaderProps> = ({
               fontWeight: 600,
               color: '#d97706',
               borderColor: '#fcd34d',
-              bgcolor: '#fffbeb',
+              bgcolor: (theme) => (theme.palette.mode === 'dark' ? 'rgba(217, 119, 6, 0.15)' : '#fffbeb'),
               '&:hover': {
                 borderColor: '#d97706',
-                bgcolor: '#fef3c7',
+                bgcolor: (theme) => (theme.palette.mode === 'dark' ? 'rgba(217, 119, 6, 0.25)' : '#fef3c7'),
               },
             }}
           >

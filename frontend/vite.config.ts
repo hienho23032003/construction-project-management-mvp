@@ -25,10 +25,10 @@ export default defineConfig({
       output: {
         manualChunks: {
           'vendor-react': ['react', 'react-dom', 'react-router-dom'],
-          'vendor-mui': ['@mui/material', '@mui/icons-material', '@emotion/react', '@emotion/styled'],
+          'vendor-mui': ['@mui/material', '@mui/icons-material', '@emotion/react', '@emotion/styled', '@mui/x-date-pickers'],
           'vendor-query': ['@tanstack/react-query'],
           'vendor-charts': ['recharts', 'lucide-react'],
-          'vendor-date': ['date-fns', '@mui/x-date-pickers'],
+          'vendor-date': ['date-fns'],
         },
       },
     },

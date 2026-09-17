@@ -140,7 +140,7 @@ export const ForbiddenPage: React.FC = () => {
           sx={{
             fontSize: { xs: '1.65rem', sm: '2.15rem' },
             fontWeight: 800,
-            color: '#0f172a',
+            color: 'text.primary',
             letterSpacing: '-0.025em',
             mb: 1.5,
             lineHeight: 1.2,
@@ -153,7 +153,7 @@ export const ForbiddenPage: React.FC = () => {
         <Typography
           variant="body1"
           sx={{
-            color: '#475569',
+            color: 'text.secondary',
             fontSize: { xs: '0.9rem', sm: '1.025rem' },
             lineHeight: 1.6,
             maxWidth: 520,
@@ -185,18 +185,17 @@ export const ForbiddenPage: React.FC = () => {
               minWidth: { xs: '100%', sm: 200 },
               py: 1.2,
               px: 2.5,
-              bgcolor: '#ffffff',
-              color: '#0f172a',
-              border: '1.5px solid #cbd5e1',
+              bgcolor: 'background.paper',
+              color: 'text.primary',
+              border: '1.5px solid',
+              borderColor: 'divider',
               borderRadius: '8px',
               textTransform: 'none',
               fontWeight: 700,
               fontSize: '0.9rem',
-              boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
               '&:hover': {
-                bgcolor: '#f8fafc',
-                borderColor: '#94a3b8',
-                boxShadow: '0 2px 4px rgba(0,0,0,0.06)',
+                bgcolor: 'action.hover',
+                borderColor: 'primary.main',
               },
             }}
           >
@@ -236,7 +235,8 @@ export const ForbiddenPage: React.FC = () => {
           sx={{
             mt: 4,
             pt: 2.5,
-            borderTop: '1px dashed #e2e8f0',
+            borderTop: '1px dashed',
+            borderColor: 'divider',
             width: '100%',
             maxWidth: 480,
             display: 'flex',
@@ -245,9 +245,9 @@ export const ForbiddenPage: React.FC = () => {
             gap: 1,
           }}
         >
-          <Typography variant="caption" sx={{ color: '#94a3b8', fontSize: '0.82rem' }}>
+          <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.82rem' }}>
             Đang đăng nhập với tài khoản:{' '}
-            <strong style={{ color: '#475569' }}>{user?.fullName || user?.email || 'N/A'}</strong>
+            <strong style={{ color: 'inherit' }}>{user?.fullName || user?.email || 'N/A'}</strong>
             {user?.role ? ` (${user.role})` : ''}
           </Typography>
 
@@ -257,7 +257,7 @@ export const ForbiddenPage: React.FC = () => {
             startIcon={<LogOut size={14} />}
             onClick={logout}
             sx={{
-              color: '#64748b',
+              color: 'text.secondary',
               fontSize: '0.8rem',
               textTransform: 'none',
               fontWeight: 600,
@@ -279,15 +279,14 @@ export const ForbiddenPage: React.FC = () => {
           sx: {
             borderRadius: '12px',
             p: 1,
-            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
           },
         }}
       >
-        <DialogTitle sx={{ fontWeight: 800, fontSize: '1.15rem', pb: 1, color: '#0f172a' }}>
+        <DialogTitle sx={{ fontWeight: 800, fontSize: '1.15rem', pb: 1, color: 'text.primary' }}>
           Gửi Yêu Cầu Cấp Quyền
         </DialogTitle>
         <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: '8px !important' }}>
-          <Typography variant="body2" sx={{ color: '#64748b', lineHeight: 1.5 }}>
+          <Typography variant="body2" sx={{ color: 'text.secondary', lineHeight: 1.5 }}>
             Hệ thống sẽ gửi thông báo trực tiếp tới <strong>Quản Trị Viên (SuperAdmin)</strong> kèm thông tin tài khoản của bạn để xét duyệt quyền truy cập.
           </Typography>
           <TextField
@@ -308,7 +307,7 @@ export const ForbiddenPage: React.FC = () => {
         <DialogActions sx={{ px: 3, pb: 2 }}>
           <Button
             onClick={() => setRequestModalOpen(false)}
-            sx={{ textTransform: 'none', color: '#64748b', fontWeight: 600 }}
+            sx={{ textTransform: 'none', color: 'text.secondary', fontWeight: 600 }}
           >
             Hủy
           </Button>

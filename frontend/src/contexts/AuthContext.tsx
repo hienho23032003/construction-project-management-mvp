@@ -1,7 +1,8 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback, useMemo } from 'react';
 import { User, UserRole } from '../types';
 import { authApi, sessionApi } from '../services/api/endpoints';
 import { API_BASE_URL } from '../services/api/apiClient';
+import { ROUTERS_PATHS } from '../constants/router-paths';
 
 interface AuthContextType {
   user: User | null;
@@ -36,10 +37,30 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   });
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
+  const logout = useCallback(async () => {
+    const activeSessionId = sessionId || localStorage.getItem('sessionId');
+    try {
+      if (activeSessionId) {
+        await authApi.logout(activeSessionId);
+      }
+    } catch (e) {
+      console.error('Error closing session:', e);
+    } finally {
+      setUser(null);
+      setToken(null);
+      setSessionId(null);
+      setPermissions([]);
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      localStorage.removeItem('sessionId');
+      localStorage.removeItem('permissions');
+      window.location.href = ROUTERS_PATHS.LOGIN;
+    }
+  }, [sessionId]);
+
   useEffect(() => {
     const initAuth = async () => {
       const savedToken = localStorage.getItem('token');
-      const savedSessionId = localStorage.getItem('sessionId');
       if (savedToken) {
         try {
           const res = await authApi.getMe();
@@ -61,7 +82,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
     initAuth();
-  }, []);
+  }, [logout]);
 
   // Setup periodic Heartbeat (every 30 seconds), tab focus/visibility refresh, and pagehide beacon when user is active
   useEffect(() => {
@@ -110,7 +131,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
   }, [token, user, sessionId]);
 
-  const login = async (email: string, password: string): Promise<{ success: boolean; message?: string }> => {
+  const login = useCallback(async (email: string, password: string): Promise<{ success: boolean; message?: string }> => {
     try {
       const res = await authApi.login({ email, password });
       if (res.data.success && res.data.data) {
@@ -141,35 +162,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         'Đã xảy ra lỗi khi đăng nhập.';
       return { success: false, message: apiMessage };
     }
-  };
+  }, []);
 
-  const logout = async () => {
-    const activeSessionId = sessionId || localStorage.getItem('sessionId');
-    try {
-      if (activeSessionId) {
-        await authApi.logout(activeSessionId);
-      }
-    } catch (e) {
-      console.error('Error closing session:', e);
-    } finally {
-      setUser(null);
-      setToken(null);
-      setSessionId(null);
-      setPermissions([]);
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      localStorage.removeItem('sessionId');
-      localStorage.removeItem('permissions');
-      window.location.href = '/login';
-    }
-  };
-
-  const updateUser = (updatedUser: User) => {
+  const updateUser = useCallback((updatedUser: User) => {
     setUser(updatedUser);
     localStorage.setItem('user', JSON.stringify(updatedUser));
-  };
+  }, []);
 
-  const refreshUser = async () => {
+  const refreshUser = useCallback(async () => {
     try {
       const res = await authApi.getMe();
       if (res.data.success && res.data.data) {
@@ -184,7 +184,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     } catch (e) {
       console.error('Failed to refresh user:', e);
     }
-  };
+  }, []);
 
   const role: UserRole = user?.role ?? 'Employee';
   const isAdmin = role === 'SuperAdmin' || (user?.roles?.includes('SuperAdmin') ?? false);
@@ -193,26 +193,44 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const canEditProject = isManager;
   const canEditTask = isSupervisor;
 
+  const authContextValue = useMemo<AuthContextType>(
+    () => ({
+      user,
+      token,
+      sessionId,
+      permissions,
+      isAuthenticated: !!token && !!user,
+      isLoading,
+      login,
+      logout,
+      updateUser,
+      refreshUser,
+      isAdmin,
+      isManager,
+      isSupervisor,
+      canEditProject,
+      canEditTask,
+    }),
+    [
+      user,
+      token,
+      sessionId,
+      permissions,
+      isLoading,
+      login,
+      logout,
+      updateUser,
+      refreshUser,
+      isAdmin,
+      isManager,
+      isSupervisor,
+      canEditProject,
+      canEditTask,
+    ]
+  );
+
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        token,
-        sessionId,
-        permissions,
-        isAuthenticated: !!token && !!user,
-        isLoading,
-        login,
-        logout,
-        updateUser,
-        refreshUser,
-        isAdmin,
-        isManager,
-        isSupervisor,
-        canEditProject,
-        canEditTask,
-      }}
-    >
+    <AuthContext.Provider value={authContextValue}>
       {children}
     </AuthContext.Provider>
   );

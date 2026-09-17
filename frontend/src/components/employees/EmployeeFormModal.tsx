@@ -23,6 +23,7 @@ import { X } from 'lucide-react';
 import { User, UserRole, RoleItem } from '../../types';
 import { useRolesQuery } from '../../hooks/useRoles';
 import { getRoleChipStyle } from '../../utils/roleColors';
+import { CommonButton, CommonInput } from '../common';
 
 export interface EmployeeFormData {
   fullName: string;
@@ -197,7 +198,7 @@ export const EmployeeFormModal: React.FC<EmployeeFormModalProps> = ({
             alignItems: 'center',
           }}
         >
-          <Typography variant="h3" sx={{ fontWeight: 700, fontSize: '1.15rem', color: '#0f172a' }}>
+          <Typography variant="h3" sx={{ fontWeight: 700, fontSize: '1.15rem', color: 'text.primary' }}>
             {editingUser ? `Chỉnh Sửa Nhân Sự: ${editingUser.fullName}` : 'Thêm Nhân Viên / Người Dùng Mới'}
           </Typography>
           <IconButton
@@ -205,8 +206,8 @@ export const EmployeeFormModal: React.FC<EmployeeFormModalProps> = ({
             onClick={onClose}
             size="small"
             sx={{
-              color: '#94a3b8',
-              '&:hover': { color: '#0f172a', bgcolor: '#f1f5f9' },
+              color: 'text.secondary',
+              '&:hover': { color: 'text.primary', bgcolor: 'action.hover' },
             }}
           >
             <X size={20} />
@@ -218,7 +219,7 @@ export const EmployeeFormModal: React.FC<EmployeeFormModalProps> = ({
             control={control}
             rules={{ required: 'Trường này là bắt buộc' }}
             render={({ field }) => (
-              <TextField
+              <CommonInput
                 {...field}
                 label="Họ Và Tên"
                 fullWidth
@@ -241,7 +242,7 @@ export const EmployeeFormModal: React.FC<EmployeeFormModalProps> = ({
               },
             }}
             render={({ field }) => (
-              <TextField
+              <CommonInput
                 {...field}
                 label="Email Đăng Nhập"
                 type="email"
@@ -272,10 +273,10 @@ export const EmployeeFormModal: React.FC<EmployeeFormModalProps> = ({
                   }
             }
             render={({ field }) => (
-              <TextField
+              <CommonInput
                 {...field}
                 label={editingUser ? 'Mật Khẩu Mới (Để trống nếu không đổi)' : 'Mật Khẩu Khởi Tạo'}
-                type="password"
+                isPassword
                 fullWidth
                 required={!editingUser}
                 placeholder={editingUser ? 'Nhập mật khẩu mới nếu muốn đổi...' : 'Tối thiểu 6 ký tự...'}
@@ -291,7 +292,7 @@ export const EmployeeFormModal: React.FC<EmployeeFormModalProps> = ({
                 name="phone"
                 control={control}
                 render={({ field }) => (
-                  <TextField
+                  <CommonInput
                     {...field}
                     label="Số Điện Thoại"
                     fullWidth
@@ -305,7 +306,7 @@ export const EmployeeFormModal: React.FC<EmployeeFormModalProps> = ({
                 name="department"
                 control={control}
                 render={({ field }) => (
-                  <TextField
+                  <CommonInput
                     {...field}
                     label="Phòng Ban / Đơn Vị"
                     fullWidth
@@ -405,12 +406,12 @@ export const EmployeeFormModal: React.FC<EmployeeFormModalProps> = ({
           )}
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2.5 }}>
-          <Button onClick={onClose} variant="outlined" color="inherit" disabled={isSubmitting}>
+          <CommonButton onClick={onClose} variant="secondary" disabled={isSubmitting}>
             Hủy Bỏ
-          </Button>
-          <Button type="submit" variant="contained" sx={{ bgcolor: '#0284c7' }} disabled={isSubmitting}>
-            {isSubmitting ? 'Đang lưu...' : editingUser ? 'Lưu Thay Đổi' : 'Tạo Nhân Viên'}
-          </Button>
+          </CommonButton>
+          <CommonButton type="submit" variant="primary" loading={isSubmitting}>
+            {editingUser ? 'Lưu Thay Đổi' : 'Tạo Nhân Viên'}
+          </CommonButton>
         </DialogActions>
       </form>
     </Dialog>

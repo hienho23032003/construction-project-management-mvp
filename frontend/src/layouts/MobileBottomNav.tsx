@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Box, Typography } from '@mui/material';
+import { Box, Typography, useTheme } from '@mui/material';
 import {
   LayoutDashboard,
   FolderKanban,
@@ -8,6 +8,8 @@ import {
   BarChart3,
   Menu as MenuIcon,
 } from 'lucide-react';
+import { useAppTheme } from '../contexts/ThemeContext';
+import { ROUTERS_PATHS } from '../constants/router-paths';
 
 interface MobileBottomNavProps {
   mobileOpen: boolean;
@@ -15,10 +17,10 @@ interface MobileBottomNavProps {
 }
 
 const navItems = [
-  { text: 'Tổng Quan', icon: LayoutDashboard, path: '/' },
-  { text: 'Dự Án', icon: FolderKanban, path: '/projects' },
-  { text: 'Tasks', icon: CheckSquare, path: '/tasks' },
-  { text: 'Gantt', icon: BarChart3, path: '/gantt' },
+  { text: 'Tổng Quan', icon: LayoutDashboard, path: ROUTERS_PATHS.DASHBOARD },
+  { text: 'Dự Án', icon: FolderKanban, path: ROUTERS_PATHS.PROJECTS },
+  { text: 'Tasks', icon: CheckSquare, path: ROUTERS_PATHS.TASKS },
+  { text: 'Gantt', icon: BarChart3, path: ROUTERS_PATHS.GANTT },
 ];
 
 export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
@@ -27,6 +29,8 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
 }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const theme = useTheme();
+  const { isDark } = useAppTheme();
 
   return (
     <Box
@@ -37,9 +41,11 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
         left: 0,
         right: 0,
         height: 60,
-        bgcolor: '#ffffff',
-        borderTop: '1px solid #e2e8f0',
-        boxShadow: '0 -4px 16px rgba(0,0,0,0.06)',
+        bgcolor: 'background.paper',
+        borderTop: `1px solid ${theme.palette.divider}`,
+        boxShadow: isDark
+          ? '0 -4px 16px rgba(0,0,0,0.5)'
+          : '0 -4px 16px rgba(0,0,0,0.06)',
         zIndex: 1050,
         alignItems: 'center',
         justifyContent: 'space-around',
@@ -63,7 +69,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
               py: 0.5,
               px: 1.5,
               borderRadius: '8px',
-              color: isActive ? '#0284c7' : '#64748b',
+              color: isActive ? (isDark ? '#38bdf8' : '#0284c7') : isDark ? '#94a3b8' : '#64748b',
               transition: 'all 0.15s ease',
               '&:active': { transform: 'scale(0.95)' },
             }}
@@ -88,7 +94,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
           py: 0.5,
           px: 1.5,
           borderRadius: '8px',
-          color: mobileOpen ? '#0284c7' : '#64748b',
+          color: mobileOpen ? (isDark ? '#38bdf8' : '#0284c7') : isDark ? '#94a3b8' : '#64748b',
           transition: 'all 0.15s ease',
           '&:active': { transform: 'scale(0.95)' },
         }}

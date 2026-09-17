@@ -1,17 +1,10 @@
-import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogContentText,
-  DialogActions,
-  Button,
-  IconButton,
-  Box,
-  Typography,
-} from '@mui/material';
-import { X } from 'lucide-react';
+import React from 'react';
+import { Typography } from '@mui/material';
+import { CommonDialog } from './CommonDialog';
+import { CommonButton } from './CommonButton';
+import { AlertTriangle, Info } from 'lucide-react';
 
-interface ConfirmDialogProps {
+export interface ConfirmDialogProps {
   open: boolean;
   title: string;
   message: string;
@@ -20,6 +13,7 @@ interface ConfirmDialogProps {
   confirmColor?: 'error' | 'primary' | 'warning';
   onConfirm: () => void;
   onCancel: () => void;
+  loading?: boolean;
 }
 
 export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
@@ -31,46 +25,49 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   confirmColor = 'error',
   onConfirm,
   onCancel,
+  loading = false,
 }) => {
+  const getButtonVariant = () => {
+    if (confirmColor === 'error') return 'danger';
+    if (confirmColor === 'warning') return 'primary';
+    return 'primary';
+  };
+
+  const isWarningOrDanger = confirmColor === 'error' || confirmColor === 'warning';
+
   return (
-    <Dialog open={open} onClose={onCancel} maxWidth="xs" fullWidth>
-      <DialogTitle
-        sx={{
-          fontWeight: 700,
-          pb: 1,
-          px: 3,
-          pt: 2.5,
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-        }}
-      >
-        <Typography variant="h3" sx={{ fontWeight: 700, fontSize: '1.1rem', color: '#0f172a' }}>
-          {title}
-        </Typography>
-        <IconButton
-          aria-label="close"
-          onClick={onCancel}
-          size="small"
-          sx={{
-            color: '#94a3b8',
-            '&:hover': { color: '#0f172a', bgcolor: '#f1f5f9' },
-          }}
-        >
-          <X size={18} />
-        </IconButton>
-      </DialogTitle>
-      <DialogContent>
-        <DialogContentText sx={{ color: '#475569' }}>{message}</DialogContentText>
-      </DialogContent>
-      <DialogActions sx={{ px: 3, pb: 2 }}>
-        <Button onClick={onCancel} variant="outlined" color="inherit">
-          {cancelText}
-        </Button>
-        <Button onClick={onConfirm} variant="contained" color={confirmColor} autoFocus>
-          {confirmText}
-        </Button>
-      </DialogActions>
-    </Dialog>
+    <CommonDialog
+      open={open}
+      onClose={onCancel}
+      maxWidth="xs"
+      title={title}
+      icon={
+        isWarningOrDanger ? (
+          <AlertTriangle size={20} color={confirmColor === 'error' ? '#ef4444' : '#f59e0b'} />
+        ) : (
+          <Info size={20} color="#2d88ff" />
+        )
+      }
+      actions={
+        <>
+          <CommonButton variant="outline" onClick={onCancel} disabled={loading}>
+            {cancelText}
+          </CommonButton>
+          <CommonButton
+            variant={getButtonVariant()}
+            onClick={onConfirm}
+            loading={loading}
+            autoFocus
+          >
+            {confirmText}
+          </CommonButton>
+        </>
+      }
+    >
+      <Typography variant="body1" sx={{ color: 'text.secondary', lineHeight: 1.6, py: 1 }}>
+        {message}
+      </Typography>
+    </CommonDialog>
   );
 };
+

@@ -1,4 +1,5 @@
 import React, { memo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Typography,
@@ -9,10 +10,13 @@ import {
   Avatar,
   Chip,
   IconButton,
+  Tooltip,
 } from '@mui/material';
-import { Plus, Trash2, Mail, Briefcase } from 'lucide-react';
+import { Plus, Trash2, Mail, Briefcase, ChevronRight } from 'lucide-react';
 import { ProjectMember } from '../../types';
 import { getMediaUrl } from '../../utils/fileUtils';
+import { usePermission } from '../../hooks/usePermission';
+import { PERMISSIONS } from '../../constants/permissions';
 
 interface ProjectMembersTabProps {
   members: ProjectMember[];
@@ -29,9 +33,19 @@ export const ProjectMembersTab: React.FC<ProjectMembersTabProps> = memo(({
   onOpenAddMember,
   onRemoveMember,
 }) => {
+  const navigate = useNavigate();
+  const { can, isSuperAdmin } = usePermission();
+  const canViewEmployee = isSuperAdmin || can(PERMISSIONS.EMPLOYEES_VIEW);
   const allowManage = canManageMembers ?? canEditTask ?? false;
+
+  const handleCardClick = (userId: string) => {
+    if (canViewEmployee) {
+      navigate(`/employees/${userId}`);
+    }
+  };
+
   return (
-    <Box sx={{ p: { xs: 1.5, sm: 3 } }}>
+    <Box sx={{ p: { xs: 1.5, sm: 2.5 } }}>
       <Box
         sx={{
           display: 'flex',
@@ -42,7 +56,7 @@ export const ProjectMembersTab: React.FC<ProjectMembersTabProps> = memo(({
           mb: 2.5,
         }}
       >
-        <Typography variant="h4" sx={{ fontWeight: 700, fontSize: { xs: '0.95rem', sm: '1.05rem' }, color: '#0f172a' }}>
+        <Typography variant="h4" sx={{ fontWeight: 700, fontSize: { xs: '0.95rem', sm: '1.05rem' }, color: 'text.primary' }}>
           Đội Ngũ Ban Quản Lý & Kỹ Sư Công Trình ({members.length} nhân sự)
         </Typography>
         {allowManage && (
@@ -63,47 +77,141 @@ export const ProjectMembersTab: React.FC<ProjectMembersTabProps> = memo(({
           Chưa có nhân sự nào được phân bổ vào dự án này.
         </Typography>
       ) : (
-        <Grid container spacing={2}>
+        <Grid container spacing={1.5}>
           {members.map((m) => (
-            <Grid item xs={12} sm={6} md={4} key={m.id}>
-              <Card sx={{ border: '1px solid #e2e8f0', borderRadius: '8px', boxShadow: 'none' }}>
-                <CardContent sx={{ p: 2 }}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center' }}>
+            <Grid
+              item
+              xs={12}
+              sm={6}
+              md={4}
+              lg={3}
+              xl={2.4}
+              key={m.id}
+              sx={{
+                width: { xl: '20%' },
+                maxWidth: { xl: '20%' },
+                flexBasis: { xl: '20%' },
+              }}
+            >
+              <Card
+                onClick={() => handleCardClick(m.userId)}
+                sx={{
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  bgcolor: 'background.paper',
+                  borderRadius: '8px',
+                  boxShadow: 'none',
+                  height: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  cursor: canViewEmployee ? 'pointer' : 'default',
+                  transition: 'transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease',
+                  '&:hover': canViewEmployee
+                    ? {
+                        transform: 'translateY(-2px)',
+                        borderColor: 'primary.main',
+                        boxShadow: (theme) =>
+                          theme.palette.mode === 'dark'
+                            ? '0 8px 20px -4px rgba(0, 0, 0, 0.5)'
+                            : '0 8px 20px -4px rgba(2, 132, 199, 0.12)',
+                      }
+                    : undefined,
+                }}
+              >
+                <CardContent sx={{ p: 1.5, pb: '12px !important', flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
+                    <Box sx={{ display: 'flex', gap: 1.25, alignItems: 'center', minWidth: 0, flex: 1 }}>
                       <Avatar
                         src={getMediaUrl(m.avatarUrl)}
-                        sx={{ bgcolor: '#0284c7', width: 40, height: 40, fontWeight: 700 }}
+                        sx={{ bgcolor: '#0284c7', width: 36, height: 36, fontWeight: 700, fontSize: '0.875rem', flexShrink: 0 }}
                       >
                         {(m.fullName || 'U').charAt(0)}
                       </Avatar>
-                      <Box>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                      <Box sx={{ minWidth: 0, flex: 1 }}>
+                        <Typography
+                          variant="subtitle2"
+                          sx={{
+                            fontWeight: 700,
+                            color: 'text.primary',
+                            fontSize: '0.8125rem',
+                            lineHeight: 1.2,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                          }}
+                          title={m.fullName}
+                        >
                           {m.fullName}
                         </Typography>
                         <Chip
                           label={m.roleInProject || 'Thành viên'}
                           size="small"
-                          sx={{ height: 18, fontSize: '0.65rem', fontWeight: 600, bgcolor: '#e0f2fe', color: '#0369a1' }}
+                          sx={{
+                            mt: 0.35,
+                            height: 18,
+                            fontSize: '0.65rem',
+                            fontWeight: 600,
+                            bgcolor: (theme) =>
+                              theme.palette.mode === 'dark' ? 'rgba(56, 189, 248, 0.16)' : '#e0f2fe',
+                            color: (theme) =>
+                              theme.palette.mode === 'dark' ? '#38bdf8' : '#0369a1',
+                            maxWidth: '100%',
+                            '& .MuiChip-label': {
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                              px: 0.75,
+                            },
+                          }}
                         />
                       </Box>
                     </Box>
                     {allowManage && (
-                      <IconButton size="small" onClick={() => onRemoveMember(m.userId)}>
-                        <Trash2 size={15} color="#ef4444" />
-                      </IconButton>
+                      <Tooltip title="Xóa khỏi dự án">
+                        <IconButton
+                          size="small"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onRemoveMember(m.userId);
+                          }}
+                          sx={{ p: 0.35, color: 'text.secondary', '&:hover': { color: '#ef4444' } }}
+                        >
+                          <Trash2 size={14} />
+                        </IconButton>
+                      </Tooltip>
                     )}
                   </Box>
 
-                  <Box sx={{ mt: 1.5, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Mail size={13} color="#94a3b8" />
-                      <Typography variant="caption" sx={{ color: '#64748b' }} noWrap>
+                  <Box sx={{ mt: 'auto', pt: 1, display: 'flex', flexDirection: 'column', gap: 0.4, borderTop: '1px solid', borderColor: 'divider' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, minWidth: 0 }}>
+                      <Mail size={12} color="#7b7b7b" style={{ flexShrink: 0 }} />
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          color: 'text.secondary',
+                          fontSize: '0.725rem',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                        }}
+                        title={m.email}
+                      >
                         {m.email}
                       </Typography>
                     </Box>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Briefcase size={13} color="#94a3b8" />
-                      <Typography variant="caption" sx={{ color: '#64748b' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, minWidth: 0 }}>
+                      <Briefcase size={12} color="#7b7b7b" style={{ flexShrink: 0 }} />
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          color: 'text.secondary',
+                          fontSize: '0.725rem',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                        }}
+                        title={m.department ? `Phòng: ${m.department}` : 'Phòng: -'}
+                      >
                         Phòng: {m.department || '-'}
                       </Typography>
                     </Box>

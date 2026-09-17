@@ -63,6 +63,14 @@ export const EmployeeDetailPage: React.FC = () => {
     setOpenResetPassword(false);
   };
 
+  const handleBack = () => {
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate('/employees');
+    }
+  };
+
   const handleAddComment = async (content: string, files?: File[]) => {
     if (selectedTaskId) {
       await addCommentMutation.mutateAsync({ content, files });
@@ -86,8 +94,8 @@ export const EmployeeDetailPage: React.FC = () => {
         <Typography variant="h6" sx={{ color: '#ef4444', mb: 2 }}>
           Không thể tìm thấy thông tin nhân viên hoặc đã có lỗi xảy ra.
         </Typography>
-        <Button variant="outlined" startIcon={<ArrowLeft size={18} />} onClick={() => navigate('/employees')}>
-          Quay lại danh sách nhân sự
+        <Button variant="outlined" startIcon={<ArrowLeft size={18} />} onClick={handleBack}>
+          Quay lại
         </Button>
       </Box>
     );
@@ -100,13 +108,13 @@ export const EmployeeDetailPage: React.FC = () => {
         <Button
           variant="text"
           startIcon={<ArrowLeft size={18} />}
-          onClick={() => navigate('/employees')}
-          sx={{ color: '#64748b', fontWeight: 600, '&:hover': { color: '#0284c7' } }}
+          onClick={handleBack}
+          sx={{ color: 'text.secondary', fontWeight: 600, '&:hover': { color: 'primary.main' } }}
         >
-          Quản Lý Nhân Sự
+          Quay Lại
         </Button>
-        <ChevronRight size={16} color="#94a3b8" />
-        <Typography variant="body2" sx={{ color: '#0f172a', fontWeight: 700 }}>
+        <ChevronRight size={16} color="#7b7b7b" />
+        <Typography variant="body2" sx={{ color: 'text.primary', fontWeight: 700 }}>
           Hồ Sơ & Tiến Độ: {user.fullName}
         </Typography>
       </Box>
@@ -122,8 +130,8 @@ export const EmployeeDetailPage: React.FC = () => {
       <EmployeeStatsCards stats={stats} projects={projects} />
 
       {/* Tabs Layout */}
-      <Paper elevation={0} sx={{ borderRadius: 2, border: '1px solid #e2e8f0', bgcolor: '#ffffff', overflow: 'hidden' }}>
-        <Box sx={{ borderBottom: '1px solid #e2e8f0', px: { xs: 1, sm: 2 } }}>
+      <Paper elevation={0} sx={{ borderRadius: 2, border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper', overflow: 'hidden' }}>
+        <Box sx={{ borderBottom: '1px solid', borderColor: 'divider', px: { xs: 1, sm: 2 } }}>
           <Tabs
             value={activeTab}
             onChange={(_, val) => setActiveTab(val)}

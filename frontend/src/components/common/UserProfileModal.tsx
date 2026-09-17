@@ -4,8 +4,6 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Button,
-  TextField,
   Typography,
   Box,
   Avatar,
@@ -15,10 +13,10 @@ import {
   Grid,
   Divider,
   IconButton,
-  InputAdornment,
   Tooltip,
   CircularProgress,
 } from '@mui/material';
+import { CommonButton, CommonInput } from './index';
 import {
   User as UserIcon,
   Key,
@@ -35,9 +33,15 @@ import {
   Camera,
   Upload,
   RefreshCw,
+  Sun,
+  Moon,
+  Palette,
+  Check,
 } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../contexts/AuthContext';
+import { useAppTheme } from '../../contexts/ThemeContext';
+import { useTheme } from '@mui/material';
 import { authApi } from '../../services/api/endpoints';
 import { useToast } from '../../contexts/ToastContext';
 import { formatDate } from '../../utils/dateUtils';
@@ -51,6 +55,8 @@ interface UserProfileModalProps {
 
 export const UserProfileModal: React.FC<UserProfileModalProps> = ({ open, onClose }) => {
   const { user, updateUser, permissions } = useAuth();
+  const { mode, setMode, isDark } = useAppTheme();
+  const theme = useTheme();
   const { showSuccess, showError } = useToast();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -80,9 +86,8 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ open, onClos
     if (avatarPreviewUrl && avatarPreviewUrl.startsWith('blob:')) {
       URL.revokeObjectURL(avatarPreviewUrl);
     }
-    setAvatarPreviewUrl(null);
     setSelectedAvatarFile(null);
-    if (fileInputRef.current) fileInputRef.current.value = '';
+    setAvatarPreviewUrl(null);
   };
 
   const handleModalClose = () => {
@@ -94,19 +99,13 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ open, onClos
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate size (< 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      showError('Dung lượng ảnh vượt quá 5MB. Vui lòng chọn ảnh nhỏ hơn.');
+    if (!file.type.startsWith('image/')) {
+      showError('Vui lòng chỉ chọn tệp hình ảnh hợp lệ (PNG, JPG, JPEG, WEBP).');
       return;
     }
 
-    // Validate type / extension
-    const ext = (file.name.split('.').pop() || '').toLowerCase();
-    const allowedExtensions = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'jfif', 'pjpeg', 'pjp', 'bmp', 'svg', 'ico'];
-    const isImageMime = file.type.startsWith('image/');
-
-    if (!allowedExtensions.includes(ext) && !isImageMime) {
-      showError('Định dạng ảnh không hợp lệ. Chỉ chấp nhận JPG, PNG, WEBP, JFIF, GIF, BMP, SVG.');
+    if (file.size > 10 * 1024 * 1024) {
+      showError('Kích thước ảnh không được vượt quá 10MB.');
       return;
     }
 
@@ -198,7 +197,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ open, onClos
     }
 
     if (newPassword !== confirmPassword) {
-      showError('Xác nhận mật khẩu mới không khớp.');
+      showError('Mật khẩu xác nhận không khớp với mật khẩu mới.');
       return;
     }
 
@@ -214,6 +213,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ open, onClos
         setCurrentPassword('');
         setNewPassword('');
         setConfirmPassword('');
+        setActiveTab(0);
         handleModalClose();
       } else {
         showError(res.data.message || 'Đổi mật khẩu thất bại.');
@@ -227,16 +227,30 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ open, onClos
 
   if (!user) return null;
 
-  const currentDisplayAvatar = getMediaUrl(avatarPreviewUrl || user.avatarUrl);
+  const currentDisplayAvatar = avatarPreviewUrl || getMediaUrl(user.avatarUrl);
 
   return (
-    <Dialog open={open} onClose={handleModalClose} maxWidth="sm" fullWidth>
+    <Dialog
+      open={open}
+      onClose={handleModalClose}
+      maxWidth="sm"
+      fullWidth
+      PaperProps={{
+        sx: {
+          borderRadius: '12px',
+          overflow: 'hidden',
+          bgcolor: 'background.paper',
+        },
+      }}
+    >
       {/* Header Banner */}
       <Box
         sx={{
-          background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
-          p: 3,
-          color: '#ffffff',
+          background: isDark
+            ? 'linear-gradient(135deg, #0369a1 0%, #0f172a 100%)'
+            : 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
+          px: 3,
+          py: 3,
           position: 'relative',
           display: 'flex',
           alignItems: 'center',
@@ -340,7 +354,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ open, onClos
       </Box>
 
       {/* Tabs */}
-      <Box sx={{ borderBottom: 1, borderColor: '#e2e8f0', bgcolor: '#f8fafc', px: { xs: 1, sm: 2 } }}>
+      <Box sx={{ borderBottom: 1, borderColor: theme.palette.divider, bgcolor: isDark ? 'background.paper' : '#f8fafc', px: { xs: 1, sm: 2 } }}>
         <Tabs
           value={activeTab}
           onChange={(_, val) => setActiveTab(val)}
@@ -363,7 +377,8 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ open, onClos
         >
           <Tab icon={<UserIcon size={16} />} iconPosition="start" label="Thông Tin Cá Nhân" />
           <Tab icon={<Key size={16} />} iconPosition="start" label="Đổi Mật Khẩu" />
-          <Tab icon={<Shield size={16} />} iconPosition="start" label="Quyền Hạn & Vai Trò" />
+          <Tab icon={<Shield size={16} />} iconPosition="start" label="Quyền Hạn" />
+          <Tab icon={<Palette size={16} />} iconPosition="start" label="Giao Diện" />
         </Tabs>
       </Box>
 
@@ -373,171 +388,126 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ open, onClos
           <form id="profile-form" onSubmit={handleUpdateProfile}>
             <Grid container spacing={2.5}>
               <Grid item xs={12}>
-                <TextField
-                  label="Họ Và Tên"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
+                <CommonInput
+                  label="Họ và tên"
                   fullWidth
                   required
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
                   placeholder="Nhập họ và tên..."
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <UserIcon size={18} color="#64748b" />
-                      </InputAdornment>
-                    ),
-                  }}
+                  disabled={isUpdatingProfile}
+                  startIcon={<UserIcon size={18} color={isDark ? '#38bdf8' : '#0284c7'} />}
                 />
               </Grid>
 
               <Grid item xs={12} sm={6}>
-                <TextField
-                  label="Số Điện Thoại"
+                <CommonInput
+                  label="Số điện thoại"
+                  fullWidth
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  fullWidth
-                  placeholder="09xx xxx xxx"
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <Phone size={18} color="#64748b" />
-                      </InputAdornment>
-                    ),
-                  }}
+                  placeholder="0912..."
+                  disabled={isUpdatingProfile}
+                  startIcon={<Phone size={18} color={isDark ? '#38bdf8' : '#0284c7'} />}
                 />
               </Grid>
 
               <Grid item xs={12} sm={6}>
-                <TextField
-                  label="Phòng Ban / Bộ Phận"
+                <CommonInput
+                  label="Phòng ban / Bộ phận"
+                  fullWidth
                   value={department}
                   onChange={(e) => setDepartment(e.target.value)}
-                  fullWidth
-                  placeholder="VD: Ban Quản Lý Hiện Trường..."
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <Building size={18} color="#64748b" />
-                      </InputAdornment>
-                    ),
-                  }}
+                  placeholder="Ban chỉ huy, kỹ thuật..."
+                  disabled={isUpdatingProfile}
+                  startIcon={<Building size={18} color={isDark ? '#38bdf8' : '#0284c7'} />}
                 />
               </Grid>
 
               <Grid item xs={12}>
-                <TextField
-                  label="Địa Chỉ Email (Đăng Nhập)"
-                  value={user.email}
+                <CommonInput
+                  label="Địa chỉ Email"
                   fullWidth
+                  value={user.email}
                   disabled
-                  helperText="Địa chỉ email là định danh tài khoản và không thể tự thay đổi."
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <Mail size={18} color="#94a3b8" />
-                      </InputAdornment>
-                    ),
-                  }}
+                  helperText="Địa chỉ email là định danh tài khoản, không thể thay đổi."
+                  startIcon={<Mail size={18} color="#94a3b8" />}
                 />
               </Grid>
 
-              {user.createdAt && (
-                <Grid item xs={12}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: '#64748b', fontSize: '0.8rem' }}>
-                    <Calendar size={15} />
-                    <span>Ngày tham gia hệ thống: <strong>{formatDate(user.createdAt)}</strong></span>
-                  </Box>
-                </Grid>
-              )}
+              <Grid item xs={12} sm={6}>
+                <CommonInput
+                  label="Vai trò"
+                  fullWidth
+                  value={user.roleName || user.role}
+                  disabled
+                  startIcon={<Shield size={18} color="#94a3b8" />}
+                />
+              </Grid>
+
+              <Grid item xs={12} sm={6}>
+                <CommonInput
+                  label="Ngày tham gia"
+                  fullWidth
+                  value={formatDate(user.createdAt)}
+                  disabled
+                  startIcon={<Calendar size={18} color="#94a3b8" />}
+                />
+              </Grid>
             </Grid>
           </form>
         )}
 
-        {/* Tab 1: Change Password */}
+        {/* Tab 1: Password change form */}
         {activeTab === 1 && (
           <form id="password-form" onSubmit={handleChangePassword}>
             <Grid container spacing={2.5}>
               <Grid item xs={12}>
-                <TextField
-                  label="Mật Khẩu Hiện Tại"
-                  type={showCurrentPassword ? 'text' : 'password'}
+                <CommonInput
+                  label="Mật khẩu hiện tại"
+                  isPassword
+                  fullWidth
+                  required
                   value={currentPassword}
                   onChange={(e) => setCurrentPassword(e.target.value)}
-                  fullWidth
-                  required
                   placeholder="Nhập mật khẩu đang sử dụng..."
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <Lock size={18} color="#64748b" />
-                      </InputAdornment>
-                    ),
-                    endAdornment: (
-                      <InputAdornment position="end">
-                        <IconButton size="small" onClick={() => setShowCurrentPassword(!showCurrentPassword)}>
-                          {showCurrentPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                        </IconButton>
-                      </InputAdornment>
-                    ),
-                  }}
+                  disabled={isChangingPassword}
+                  startIcon={<Lock size={18} color={isDark ? '#38bdf8' : '#0284c7'} />}
                 />
               </Grid>
 
               <Grid item xs={12}>
-                <TextField
-                  label="Mật Khẩu Mới"
-                  type={showNewPassword ? 'text' : 'password'}
+                <CommonInput
+                  label="Mật khẩu mới"
+                  isPassword
+                  fullWidth
+                  required
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  fullWidth
-                  required
-                  placeholder="Tối thiểu 6 ký tự..."
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <Key size={18} color="#64748b" />
-                      </InputAdornment>
-                    ),
-                    endAdornment: (
-                      <InputAdornment position="end">
-                        <IconButton size="small" onClick={() => setShowNewPassword(!showNewPassword)}>
-                          {showNewPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                        </IconButton>
-                      </InputAdornment>
-                    ),
-                  }}
+                  placeholder="Ít nhất 6 ký tự..."
+                  disabled={isChangingPassword}
+                  helperText="Mật khẩu phải có độ dài tối thiểu 6 ký tự."
+                  startIcon={<Key size={18} color={isDark ? '#38bdf8' : '#0284c7'} />}
                 />
               </Grid>
 
               <Grid item xs={12}>
-                <TextField
-                  label="Xác Nhận Mật Khẩu Mới"
-                  type={showConfirmPassword ? 'text' : 'password'}
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
+                <CommonInput
+                  label="Xác nhận mật khẩu mới"
+                  isPassword
                   fullWidth
                   required
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Nhập lại mật khẩu mới..."
+                  disabled={isChangingPassword}
                   error={Boolean(confirmPassword && newPassword !== confirmPassword)}
                   helperText={
                     confirmPassword && newPassword !== confirmPassword
-                      ? 'Mật khẩu xác nhận không khớp'
-                      : 'Nhập lại mật khẩu mới để đảm bảo chính xác.'
+                      ? 'Mật khẩu xác nhận không trùng khớp.'
+                      : ''
                   }
-                  placeholder="Nhập lại mật khẩu mới..."
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <CheckCircle2 size={18} color="#64748b" />
-                      </InputAdornment>
-                    ),
-                    endAdornment: (
-                      <InputAdornment position="end">
-                        <IconButton size="small" onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
-                          {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                        </IconButton>
-                      </InputAdornment>
-                    ),
-                  }}
+                  startIcon={<CheckCircle2 size={18} color={isDark ? '#38bdf8' : '#0284c7'} />}
                 />
               </Grid>
             </Grid>
@@ -548,7 +518,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ open, onClos
         {activeTab === 2 && (
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <Box>
-              <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#0f172a', mb: 1 }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'text.primary', mb: 1 }}>
                 Các Vai Trò Được Gán
               </Typography>
               <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
@@ -559,7 +529,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ open, onClos
                       label={getVietnameseRole(r)}
                       color="primary"
                       variant="outlined"
-                      sx={{ fontWeight: 600, bgcolor: '#f0f9ff' }}
+                      sx={{ fontWeight: 600, bgcolor: isDark ? 'rgba(56, 189, 248, 0.12)' : '#f0f9ff' }}
                     />
                   ))
                 ) : (
@@ -567,87 +537,220 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ open, onClos
                     label={getVietnameseRole(user.roleName || user.role)}
                     color="primary"
                     variant="outlined"
-                    sx={{ fontWeight: 600, bgcolor: '#f0f9ff' }}
+                    sx={{ fontWeight: 600, bgcolor: isDark ? 'rgba(56, 189, 248, 0.12)' : '#f0f9ff' }}
                   />
                 )}
               </Box>
             </Box>
 
-            <Divider sx={{ my: 1 }} />
+            <Divider />
 
             <Box>
-              <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#0f172a', mb: 1 }}>
-                Danh Sách Quyền Hạn ({permissions.length})
+              <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'text.primary', mb: 1 }}>
+                Danh Sách Quyền Hạn ({permissions.length} quyền)
               </Typography>
-              <Box
-                sx={{
-                  display: 'flex',
-                  gap: 0.75,
-                  flexWrap: 'wrap',
-                  maxHeight: 220,
-                  overflowY: 'auto',
-                  p: 1.5,
-                  bgcolor: '#f8fafc',
-                  borderRadius: '8px',
-                  border: '1px solid #e2e8f0',
-                  '&::-webkit-scrollbar': { width: '5px' },
-                  '&::-webkit-scrollbar-thumb': { background: '#cbd5e1', borderRadius: '4px' },
-                }}
-              >
-                {permissions.length > 0 ? (
-                  permissions.map((p, idx) => (
-                    <Tooltip key={idx} title={`Mã quyền: ${p}`} arrow placement="top">
-                      <Chip
-                        label={getVietnamesePermission(p)}
-                        size="small"
-                        sx={{
-                          fontSize: '0.75rem',
-                          fontWeight: 600,
-                          bgcolor: '#e0f2fe',
-                          color: '#0369a1',
-                          border: '1px solid #bae6fd',
-                        }}
-                      />
-                    </Tooltip>
-                  ))
-                ) : (
-                  <Typography variant="caption" sx={{ color: '#64748b' }}>
-                    Tài khoản sử dụng quyền mặc định theo vai trò.
-                  </Typography>
-                )}
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, maxHeight: 220, overflowY: 'auto', p: 1, border: '1px solid', borderColor: 'divider', borderRadius: 1.5 }}>
+                {permissions.map((p, i) => (
+                  <Chip
+                    key={i}
+                    size="small"
+                    label={getVietnamesePermission(p)}
+                    icon={<CheckCircle2 size={13} color={isDark ? '#4ade80' : '#16a34a'} />}
+                    sx={{
+                      fontSize: '0.75rem',
+                      fontWeight: 500,
+                      bgcolor: isDark ? 'rgba(34, 197, 94, 0.15)' : '#f0fdf4',
+                      color: isDark ? '#4ade80' : '#15803d',
+                      borderColor: isDark ? 'rgba(34, 197, 94, 0.3)' : '#bbf7d0',
+                    }}
+                    variant="outlined"
+                  />
+                ))}
               </Box>
             </Box>
+          </Box>
+        )}
+
+        {/* Tab 3: Appearance & Theme Settings */}
+        {activeTab === 3 && (
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <Box>
+              <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'text.primary', mb: 0.5 }}>
+                Chủ Đề Giao Diện (Theme Mode)
+              </Typography>
+              <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '0.85rem' }}>
+                Lựa chọn chế độ hiển thị phù hợp với môi trường làm việc của bạn.
+              </Typography>
+            </Box>
+
+            <Grid container spacing={2}>
+              <Grid item xs={12} sm={6}>
+                <Box
+                  onClick={() => setMode('light')}
+                  sx={{
+                    p: 2.5,
+                    borderRadius: '8px',
+                    border: '2px solid',
+                    borderColor: mode === 'light' ? '#0284c7' : 'divider',
+                    bgcolor: mode === 'light' ? (isDark ? 'rgba(56, 189, 248, 0.08)' : '#f0f9ff') : 'background.paper',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 1.5,
+                    '&:hover': {
+                      borderColor: '#0284c7',
+                      transform: 'translateY(-2px)',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                    },
+                  }}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                      <Box
+                        sx={{
+                          width: 40,
+                          height: 40,
+                          borderRadius: '8px',
+                          bgcolor: '#fef3c7',
+                          color: '#d97706',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        <Sun size={22} />
+                      </Box>
+                      <Box>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'text.primary' }}>
+                          Chế Độ Sáng (Light)
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                          Mặc định, rõ ràng
+                        </Typography>
+                      </Box>
+                    </Box>
+                    {mode === 'light' && (
+                      <Box
+                        sx={{
+                          width: 22,
+                          height: 22,
+                          borderRadius: '50%',
+                          bgcolor: '#0284c7',
+                          color: '#fff',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        <Check size={14} strokeWidth={3} />
+                      </Box>
+                    )}
+                  </Box>
+                  <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', lineHeight: 1.4 }}>
+                    Giao diện sáng tiêu chuẩn, độ tương phản cao, tối ưu hiển thị dưới ánh sáng mạnh ngoài công trường.
+                  </Typography>
+                </Box>
+              </Grid>
+
+              <Grid item xs={12} sm={6}>
+                <Box
+                  onClick={() => setMode('dark')}
+                  sx={{
+                    p: 2.5,
+                    borderRadius: '8px',
+                    border: '2px solid',
+                    borderColor: mode === 'dark' ? '#38bdf8' : 'divider',
+                    bgcolor: mode === 'dark' ? (isDark ? 'rgba(56, 189, 248, 0.08)' : '#f0f9ff') : 'background.paper',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 1.5,
+                    '&:hover': {
+                      borderColor: '#38bdf8',
+                      transform: 'translateY(-2px)',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                    },
+                  }}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                      <Box
+                        sx={{
+                          width: 40,
+                          height: 40,
+                          borderRadius: '8px',
+                          bgcolor: '#1e293b',
+                          color: '#38bdf8',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        <Moon size={22} />
+                      </Box>
+                      <Box>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'text.primary' }}>
+                          Chế Độ Tối (Dark)
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                          Dịu mắt, tiết kiệm pin
+                        </Typography>
+                      </Box>
+                    </Box>
+                    {mode === 'dark' && (
+                      <Box
+                        sx={{
+                          width: 22,
+                          height: 22,
+                          borderRadius: '50%',
+                          bgcolor: '#38bdf8',
+                          color: '#0f172a',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        <Check size={14} strokeWidth={3} />
+                      </Box>
+                    )}
+                  </Box>
+                  <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', lineHeight: 1.4 }}>
+                    Tông màu Slate sẫm êm dịu, bảo vệ thị lực khi làm việc ban đêm hoặc trong điều kiện thiếu sáng.
+                  </Typography>
+                </Box>
+              </Grid>
+            </Grid>
           </Box>
         )}
       </DialogContent>
 
       <DialogActions sx={{ px: 3, pb: 2.5, justifyContent: 'space-between' }}>
-        <Button onClick={onClose} variant="outlined" color="inherit">
+        <CommonButton onClick={onClose} variant="secondary">
           Đóng
-        </Button>
+        </CommonButton>
 
         {activeTab === 0 && (
-          <Button
+          <CommonButton
             type="submit"
             form="profile-form"
-            variant="contained"
-            disabled={isUpdatingProfile}
-            sx={{ bgcolor: '#0284c7' }}
+            variant="primary"
+            loading={isUpdatingProfile}
           >
-            {isUpdatingProfile ? 'Đang lưu...' : 'Lưu Thay Đổi'}
-          </Button>
+            Lưu Thay Đổi
+          </CommonButton>
         )}
 
         {activeTab === 1 && (
-          <Button
+          <CommonButton
             type="submit"
             form="password-form"
-            variant="contained"
-            disabled={isChangingPassword}
-            sx={{ bgcolor: '#0284c7' }}
+            variant="primary"
+            loading={isChangingPassword}
           >
-            {isChangingPassword ? 'Đang đổi mật khẩu...' : 'Cập Nhật Mật Khẩu'}
-          </Button>
+            Cập Nhật Mật Khẩu
+          </CommonButton>
         )}
       </DialogActions>
     </Dialog>
