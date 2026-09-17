@@ -284,32 +284,58 @@ export const ProjectDetailPage: React.FC = () => {
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 2, sm: 3 }, width: '100%', maxWidth: '100%', minWidth: 0, overflowX: 'hidden' }}>
       {/* Header */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1.5, width: '100%' }}>
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: { xs: 'column', md: 'row' },
+          justifyContent: 'space-between',
+          alignItems: { xs: 'stretch', md: 'center' },
+          gap: 1.5,
+          width: '100%',
+        }}
+      >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
           <Button
             variant="outlined"
             size="small"
             startIcon={<ArrowLeft size={16} />}
             onClick={handleBack}
-            sx={{ fontWeight: 600, color: 'text.secondary', borderColor: 'divider' }}
+            sx={{ fontWeight: 600, color: 'text.secondary', borderColor: 'divider', flexShrink: 0 }}
           >
             Quay Lại
           </Button>
-          <Chip label={project.code} sx={{ bgcolor: '#0284c7', color: '#ffffff', fontWeight: 800 }} />
-          <Typography variant="h2" sx={{ fontWeight: 800, fontSize: { xs: '1.1rem', sm: '1.3rem' }, color: 'text.primary' }}>
+          <Chip label={project.code} sx={{ bgcolor: '#0284c7', color: '#ffffff', fontWeight: 800, flexShrink: 0 }} />
+          <Typography variant="h2" sx={{ fontWeight: 800, fontSize: { xs: '1.05rem', sm: '1.3rem' }, color: 'text.primary', lineHeight: 1.3 }}>
             {project.name}
           </Typography>
           <StatusChip status={project.status} isOverdue={project.isOverdue} />
         </Box>
 
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: { xs: 'space-between', sm: 'flex-start', md: 'flex-end' },
+            gap: 1.5,
+            flexWrap: 'wrap',
+          }}
+        >
           <ProjectPresenceAvatars projectId={id} />
           {canCreateTask && (
             <Button
               variant="contained"
+              size="small"
               startIcon={<Plus size={16} />}
               onClick={() => handleOpenCreateTask()}
-              sx={{ bgcolor: '#0284c7', fontWeight: 700 }}
+              sx={{
+                bgcolor: '#0284c7',
+                fontWeight: 700,
+                fontSize: { xs: '0.8rem', sm: '0.875rem' },
+                whiteSpace: 'nowrap',
+                px: { xs: 1.5, sm: 2 },
+                py: { xs: 0.75, sm: 0.85 },
+                flexShrink: 0,
+              }}
             >
               Thêm Hạng Mục / Task Mới
             </Button>

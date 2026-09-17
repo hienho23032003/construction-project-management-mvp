@@ -279,7 +279,7 @@ function CommonTableInner<T = any>({
           sx={{
             width: '100%',
             minWidth: computedMinWidth as any,
-            tableLayout: { xs: 'auto !important', sm: 'auto !important', md: tableLayout || 'auto' },
+            tableLayout: tableLayout || 'fixed',
             borderCollapse: 'separate',
             ...tableSx,
           }}
@@ -350,17 +350,17 @@ function CommonTableInner<T = any>({
                 const isSortActive = Boolean(sortBy && sortKey && sortBy === sortKey);
 
                 return (
-                  <TableCell
-                    key={colKey}
-                    align={col.align || 'left'}
-                    sx={{
-                      width: { xs: 'auto', md: col.width as any },
-                      minWidth: (col.minWidth as any) || (typeof col.width === 'number' ? col.width : undefined),
-                      maxWidth: col.maxWidth as any,
-                      whiteSpace: 'nowrap',
-                      ...col.headerSx,
-                    }}
-                  >
+                    <TableCell
+                      key={colKey}
+                      align={col.align || 'left'}
+                      sx={{
+                        width: col.width as any,
+                        minWidth: (col.minWidth as any) || (typeof col.width === 'number' ? col.width : undefined),
+                        maxWidth: col.maxWidth as any,
+                        whiteSpace: 'nowrap',
+                        ...col.headerSx,
+                      }}
+                    >
                     {col.sortable && sortKey && onSort ? (
                       <TableSortLabel
                         active={isSortActive}
@@ -666,7 +666,7 @@ function CommonTableInner<T = any>({
                               fontSize: '0.8125rem',
                               color: 'text.primary',
                               whiteSpace: 'nowrap',
-                              width: { xs: 'auto', md: col.width as any },
+                              width: col.width as any,
                               minWidth: (col.minWidth as any) || (typeof col.width === 'number' ? col.width : undefined),
                               maxWidth: col.maxWidth as any,
                               borderBottom: '1px solid',

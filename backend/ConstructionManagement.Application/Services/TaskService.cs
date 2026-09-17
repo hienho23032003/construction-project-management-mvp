@@ -95,17 +95,45 @@ public class TaskService : ITaskService
 
         var totalCount = await query.CountAsync();
 
-        // Dynamic Sorting
+        // Dynamic Sorting: Always keep tasks grouped by project (newest project first by default),
+        // and sort within each project by the chosen column.
         query = pagination.SortBy?.ToLower() switch
         {
-            "name" => pagination.IsDescending ? query.OrderByDescending(t => t.Name) : query.OrderBy(t => t.Name),
-            "projectcode" => pagination.IsDescending ? query.OrderByDescending(t => t.Project.Code) : query.OrderBy(t => t.Project.Code),
-            "startdate" => pagination.IsDescending ? query.OrderByDescending(t => t.StartDate) : query.OrderBy(t => t.StartDate),
-            "plannedenddate" => pagination.IsDescending ? query.OrderByDescending(t => t.PlannedEndDate) : query.OrderBy(t => t.PlannedEndDate),
-            "progress" => pagination.IsDescending ? query.OrderByDescending(t => t.Progress) : query.OrderBy(t => t.Progress),
-            "status" => pagination.IsDescending ? query.OrderByDescending(t => t.Status) : query.OrderBy(t => t.Status),
-            "priority" => pagination.IsDescending ? query.OrderByDescending(t => t.Priority) : query.OrderBy(t => t.Priority),
-            _ => pagination.IsDescending ? query.OrderBy(t => t.StartDate) : query.OrderBy(t => t.ProjectId).ThenBy(t => t.SortOrder).ThenBy(t => t.StartDate)
+            "name" => pagination.IsDescending
+                ? query.OrderByDescending(t => t.Project.CreatedAt).ThenByDescending(t => t.Name).ThenBy(t => t.SortOrder)
+                : query.OrderByDescending(t => t.Project.CreatedAt).ThenBy(t => t.Name).ThenBy(t => t.SortOrder),
+
+            "projectcode" => pagination.IsDescending
+                ? query.OrderByDescending(t => t.Project.Code).ThenBy(t => t.SortOrder).ThenBy(t => t.StartDate)
+                : query.OrderBy(t => t.Project.Code).ThenBy(t => t.SortOrder).ThenBy(t => t.StartDate),
+
+            "projectcreatedat" => pagination.IsDescending
+                ? query.OrderBy(t => t.Project.CreatedAt).ThenBy(t => t.SortOrder).ThenBy(t => t.StartDate)
+                : query.OrderByDescending(t => t.Project.CreatedAt).ThenBy(t => t.SortOrder).ThenBy(t => t.StartDate),
+
+            "startdate" => pagination.IsDescending
+                ? query.OrderByDescending(t => t.Project.CreatedAt).ThenByDescending(t => t.StartDate).ThenBy(t => t.SortOrder)
+                : query.OrderByDescending(t => t.Project.CreatedAt).ThenBy(t => t.StartDate).ThenBy(t => t.SortOrder),
+
+            "plannedenddate" => pagination.IsDescending
+                ? query.OrderByDescending(t => t.Project.CreatedAt).ThenByDescending(t => t.PlannedEndDate).ThenBy(t => t.SortOrder)
+                : query.OrderByDescending(t => t.Project.CreatedAt).ThenBy(t => t.PlannedEndDate).ThenBy(t => t.SortOrder),
+
+            "progress" => pagination.IsDescending
+                ? query.OrderByDescending(t => t.Project.CreatedAt).ThenByDescending(t => t.Progress).ThenBy(t => t.SortOrder)
+                : query.OrderByDescending(t => t.Project.CreatedAt).ThenBy(t => t.Progress).ThenBy(t => t.SortOrder),
+
+            "status" => pagination.IsDescending
+                ? query.OrderByDescending(t => t.Project.CreatedAt).ThenByDescending(t => t.Status).ThenBy(t => t.SortOrder)
+                : query.OrderByDescending(t => t.Project.CreatedAt).ThenBy(t => t.Status).ThenBy(t => t.SortOrder),
+
+            "priority" => pagination.IsDescending
+                ? query.OrderByDescending(t => t.Project.CreatedAt).ThenByDescending(t => t.Priority).ThenBy(t => t.SortOrder)
+                : query.OrderByDescending(t => t.Project.CreatedAt).ThenBy(t => t.Priority).ThenBy(t => t.SortOrder),
+
+            _ => pagination.IsDescending
+                ? query.OrderBy(t => t.Project.CreatedAt).ThenBy(t => t.SortOrder).ThenBy(t => t.StartDate)
+                : query.OrderByDescending(t => t.Project.CreatedAt).ThenBy(t => t.SortOrder).ThenBy(t => t.StartDate)
         };
 
         var pagedTasks = await query

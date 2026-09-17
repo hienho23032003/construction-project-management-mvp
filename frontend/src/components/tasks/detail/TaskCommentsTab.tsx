@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import {
   Box,
@@ -89,26 +89,39 @@ const getFileIconComponent = (fileName?: string) => {
   return <File size={18} color="#64748b" />;
 };
 
-const renderFormattedComment = (content: string, isSelf: boolean) => {
-  const parts = content.split(/(@[a-zA-Z0-9À-ỹ_]+(?:\s+[a-zA-Z0-9À-ỹ_]+)*)/g);
+const renderFormattedComment = (content: string, isSelf: boolean, knownNames: string[] = []) => {
+  const validNames = knownNames
+    .map((n) => n?.trim())
+    .filter((n): n is string => Boolean(n && n.length > 0))
+    .sort((a, b) => b.length - a.length);
+
+  let regex: RegExp;
+  if (validNames.length > 0) {
+    const escapedNames = validNames.map((n) => n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+    regex = new RegExp(`(@(?:${escapedNames.join('|')})|@[A-ZÀ-Ỹ0-9][a-zA-Z0-9À-ỹ_]*(?:\\s+[A-ZÀ-Ỹ0-9][a-zA-Z0-9À-ỹ_]*){0,3}|@[a-zA-Z0-9._-]+)`, 'g');
+  } else {
+    regex = /(@[A-ZÀ-Ỹ0-9][a-zA-Z0-9À-ỹ_]*(?:\s+[A-ZÀ-Ỹ0-9][a-zA-Z0-9À-ỹ_]*){0,3}|@[a-zA-Z0-9._-]+)/g;
+  }
+
+  const parts = content.split(regex);
   return parts.map((part, index) => {
-    if (part.startsWith('@')) {
+    if (part && part.startsWith('@') && part.length > 1) {
       return (
         <Box
           key={index}
           component="span"
           sx={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            bgcolor: isSelf ? 'rgba(255, 255, 255, 0.25)' : '#e0f2fe',
-            color: isSelf ? '#ffffff' : '#0369a1',
-            px: 0.6,
-            py: 0.1,
+            display: 'inline',
+            bgcolor: isSelf ? 'rgba(255, 255, 255, 0.15)' : 'rgba(2, 132, 199, 0.08)',
+            color: isSelf ? '#ffffff' : '#0284c7',
+            px: '5px',
+            py: '1px',
             borderRadius: '4px',
             fontWeight: 700,
             fontSize: '0.82rem',
-            border: isSelf ? '1px solid rgba(255, 255, 255, 0.3)' : '1px solid #bae6fd',
-            mx: 0.2,
+            border: isSelf ? '1px solid rgba(255, 255, 255, 0.75)' : '1px solid #0284c7',
+            mx: '2px',
+            whiteSpace: 'nowrap',
           }}
         >
           {part}
@@ -128,6 +141,7 @@ export const TaskCommentsTab: React.FC<TaskCommentsTabProps> = ({
 }) => {
   const { user } = useAuth();
   const { data: members = [] } = useProjectMembersQuery(projectId);
+  const memberNames = useMemo(() => members.map((m) => m.fullName).filter(Boolean) as string[], [members]);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [previewImage, setPreviewImage] = useState<{ url: string; fileName?: string } | null>(null);
 
@@ -343,7 +357,7 @@ export const TaskCommentsTab: React.FC<TaskCommentsTabProps> = ({
                           wordBreak: 'break-word',
                         }}
                       >
-                        {renderFormattedComment(c.content, Boolean(isSelf))}
+                        {renderFormattedComment(c.content, Boolean(isSelf), memberNames)}
                       </Typography>
                     )}
 

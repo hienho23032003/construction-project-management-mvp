@@ -73,7 +73,7 @@ export const TasksPage: React.FC = () => {
   // Pagination & Filtering & Sorting
   const [page, setPage] = useState(pageParam);
   const [rowsPerPage, setRowsPerPage] = useState(viewParam === 'grid' ? 10 : 10);
-  const [sortBy, setSortBy] = useState('sortOrder');
+  const [sortBy, setSortBy] = useState('projectCreatedAt');
   const [isDescending, setIsDescending] = useState(false);
   const [search, setSearch] = useState(searchParam);
   const [selectedProjectId, setSelectedProjectId] = useState(projectParam);
