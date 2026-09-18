@@ -88,7 +88,7 @@ export const OverdueReport: React.FC<OverdueReportProps> = memo(
 
             const isSingle = assignees.length === 1;
             const hasMore = assignees.length > 2;
-            const maxChipWidth = isSingle ? 175 : (hasMore ? 95 : 110);
+            const maxChipWidth = isSingle ? 175 : 130;
 
             return (
               <Box sx={{ display: 'flex', flexWrap: 'nowrap', gap: 0.5, alignItems: 'center', whiteSpace: 'nowrap', minWidth: 0, width: '100%', overflow: 'hidden' }}>

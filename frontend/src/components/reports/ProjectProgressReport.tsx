@@ -96,7 +96,7 @@ export const ProjectProgressReport: React.FC<ProjectProgressReportProps> = memo(
 
             const isSingle = managers.length === 1;
             const hasMore = managers.length > 2;
-            const maxChipWidth = isSingle ? 180 : (hasMore ? 95 : 110);
+            const maxChipWidth = isSingle ? 180 : (hasMore ? 95 : 120);
 
             return (
               <Box sx={{ display: 'flex', flexWrap: 'nowrap', gap: 0.5, alignItems: 'center', minWidth: 0, width: '100%', overflow: 'hidden' }}>

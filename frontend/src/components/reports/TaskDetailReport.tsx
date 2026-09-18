@@ -59,7 +59,7 @@ export const TaskDetailReport: React.FC<TaskDetailReportProps> = memo(
           accessorKey: 'taskName',
           width: 280,
           minWidth: 180,
-          maxWidth: 320,
+          maxWidth: 360,
           ellipsis: true,
           cellSx: { fontWeight: 700, color: 'text.primary' },
         },
@@ -87,7 +87,7 @@ export const TaskDetailReport: React.FC<TaskDetailReportProps> = memo(
 
             const isSingle = assignees.length === 1;
             const hasMore = assignees.length > 2;
-            const maxChipWidth = isSingle ? 175 : (hasMore ? 95 : 110);
+            const maxChipWidth = isSingle ? 175 : (hasMore ? 95 : 130);
 
             return (
               <Box sx={{ display: 'flex', flexWrap: 'nowrap', alignItems: 'center', gap: 0.5, whiteSpace: 'nowrap', minWidth: 0, width: '100%', overflow: 'hidden' }}>
