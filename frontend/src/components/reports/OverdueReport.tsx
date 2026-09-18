@@ -57,16 +57,19 @@ export const OverdueReport: React.FC<OverdueReportProps> = memo(
           id: 'taskName',
           header: 'Tên Công Việc',
           accessorKey: 'taskName',
-          width: 320,
-          minWidth: 320,
+          width: 300,
+          minWidth: 180,
+          maxWidth: 400,
+          ellipsis: true,
           headerSx: { fontWeight: 700 },
           cellSx: { fontWeight: 700, color: 'text.primary' },
         },
         {
           id: 'assigneeNames',
           header: 'Người Phụ Trách',
-          width: 230,
-          minWidth: 230,
+          width: 220,
+          minWidth: 170,
+          maxWidth: 240,
           cell: ({ row }) => {
             const assignees =
               row.assignees && row.assignees.length > 0
@@ -83,8 +86,12 @@ export const OverdueReport: React.FC<OverdueReportProps> = memo(
               );
             }
 
+            const isSingle = assignees.length === 1;
+            const hasMore = assignees.length > 2;
+            const maxChipWidth = isSingle ? 175 : (hasMore ? 95 : 110);
+
             return (
-              <Box sx={{ display: 'flex', flexWrap: 'nowrap', gap: 0.5, alignItems: 'center', whiteSpace: 'nowrap' }}>
+              <Box sx={{ display: 'flex', flexWrap: 'nowrap', gap: 0.5, alignItems: 'center', whiteSpace: 'nowrap', minWidth: 0, width: '100%', overflow: 'hidden' }}>
                 {assignees.slice(0, 2).map((a: any) => (
                   <Chip
                     key={a.id || a.fullName}
@@ -98,10 +105,19 @@ export const OverdueReport: React.FC<OverdueReportProps> = memo(
                     }
                     label={a.fullName}
                     size="small"
+                    title={a.fullName}
                     sx={{
                       height: 24,
                       fontSize: '0.72rem',
                       whiteSpace: 'nowrap',
+                      minWidth: 0,
+                      maxWidth: maxChipWidth,
+                      '& .MuiChip-label': {
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                        px: 0.75,
+                      },
                       bgcolor: (theme) => theme.palette.mode === 'dark' ? '#141414' : '#f8fafc',
                       border: '1px solid',
                       borderColor: 'divider',
@@ -119,6 +135,9 @@ export const OverdueReport: React.FC<OverdueReportProps> = memo(
                         fontSize: '0.72rem',
                         bgcolor: (theme) => theme.palette.mode === 'dark' ? '#141414' : '#f1f5f9',
                         color: 'text.secondary',
+                        flexShrink: 0,
+                        minWidth: 'fit-content',
+                        '& .MuiChip-label': { px: 0.75 },
                       }}
                     />
                   </Tooltip>

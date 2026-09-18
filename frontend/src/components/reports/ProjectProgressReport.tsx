@@ -62,17 +62,20 @@ export const ProjectProgressReport: React.FC<ProjectProgressReportProps> = memo(
           id: 'name',
           header: 'Tên Công Trình',
           accessorKey: 'name',
-          width: 280,
-          minWidth: 220,
+          width: 260,
+          minWidth: 180,
+          maxWidth: 320,
           sortable: true,
+          ellipsis: true,
           cellSx: { fontWeight: 700, color: 'text.primary' },
         },
         {
           id: 'managerName',
           header: 'Quản Lý (PM)',
           accessorKey: 'managerName',
-          width: 250,
-          minWidth: 220,
+          width: 240,
+          minWidth: 200,
+          maxWidth: 280,
           cell: ({ value, row }) => {
             const managers =
               row.managers && row.managers.length > 0
@@ -91,8 +94,12 @@ export const ProjectProgressReport: React.FC<ProjectProgressReportProps> = memo(
               );
             }
 
+            const isSingle = managers.length === 1;
+            const hasMore = managers.length > 2;
+            const maxChipWidth = isSingle ? 180 : (hasMore ? 95 : 110);
+
             return (
-              <Box sx={{ display: 'flex', flexWrap: 'nowrap', gap: 0.5, alignItems: 'center' }}>
+              <Box sx={{ display: 'flex', flexWrap: 'nowrap', gap: 0.5, alignItems: 'center', minWidth: 0, width: '100%', overflow: 'hidden' }}>
                 {managers.slice(0, 2).map((m: any) => (
                   <Chip
                     key={m.id || m.fullName}
@@ -106,10 +113,19 @@ export const ProjectProgressReport: React.FC<ProjectProgressReportProps> = memo(
                     }
                     label={m.fullName}
                     size="small"
+                    title={m.fullName}
                     sx={{
                       height: 24,
                       fontSize: '0.72rem',
                       whiteSpace: 'nowrap',
+                      minWidth: 0,
+                      maxWidth: maxChipWidth,
+                      '& .MuiChip-label': {
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                        px: 0.75,
+                      },
                       bgcolor: (theme) => theme.palette.mode === 'dark' ? '#141414' : '#f8fafc',
                       border: '1px solid',
                       borderColor: 'divider',
@@ -121,7 +137,14 @@ export const ProjectProgressReport: React.FC<ProjectProgressReportProps> = memo(
                     <Chip
                       label={`+${managers.length - 2}`}
                       size="small"
-                      sx={{ height: 24, fontSize: '0.72rem', bgcolor: 'action.hover' }}
+                      sx={{
+                        height: 24,
+                        fontSize: '0.72rem',
+                        bgcolor: 'action.hover',
+                        flexShrink: 0,
+                        minWidth: 'fit-content',
+                        '& .MuiChip-label': { px: 0.75 },
+                      }}
                     />
                   </Tooltip>
                 )}

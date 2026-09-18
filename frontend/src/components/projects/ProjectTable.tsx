@@ -77,19 +77,41 @@ export const ProjectTable: React.FC<ProjectTableProps> = memo(({
         header: 'Tên Công Trình / Dự Án',
         accessorKey: 'name',
         sortable: true,
-        width: 260,
-        minWidth: 200,
+        width: 250,
+        minWidth: 180,
+        maxWidth: 280,
         cell: ({ value, row }) => (
-          <div style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
-            <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.primary', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={value}>
-              {value}
-            </Typography>
+          <Box sx={{ overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>
+            <Tooltip title={value} arrow placement="top-start">
+              <Typography
+                variant="body2"
+                sx={{
+                  fontWeight: 700,
+                  color: 'text.primary',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {value}
+              </Typography>
+            </Tooltip>
             {row.location && (
-              <Typography variant="caption" sx={{ color: 'text.secondary', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }} title={row.location}>
+              <Typography
+                variant="caption"
+                sx={{
+                  color: 'text.secondary',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  display: 'block',
+                }}
+                title={row.location}
+              >
                 {row.location}
               </Typography>
             )}
-          </div>
+          </Box>
         ),
       },
       {
@@ -108,8 +130,9 @@ export const ProjectTable: React.FC<ProjectTableProps> = memo(({
         header: 'Quản Lý (PM)',
         accessorKey: 'managerName',
         sortable: true,
-        width: 200,
-        minWidth: 170,
+        width: 230,
+        minWidth: 180,
+        maxWidth: 260,
         cell: ({ value, row }) => {
           const managers =
             row.managers && row.managers.length > 0
@@ -128,8 +151,12 @@ export const ProjectTable: React.FC<ProjectTableProps> = memo(({
             );
           }
 
+          const isSingle = managers.length === 1;
+          const hasMore = managers.length > 2;
+          const maxChipWidth = isSingle ? 175 : (hasMore ? 95 : 110);
+
           return (
-            <Box sx={{ display: 'flex', flexWrap: 'nowrap', gap: 0.5, alignItems: 'center' }}>
+            <Box sx={{ display: 'flex', flexWrap: 'nowrap', gap: 0.5, alignItems: 'center', minWidth: 0, width: '100%', overflow: 'hidden' }}>
               {managers.slice(0, 2).map((m: any) => (
                 <Chip
                   key={m.id || m.fullName}
@@ -150,10 +177,19 @@ export const ProjectTable: React.FC<ProjectTableProps> = memo(({
                   }
                   label={m.fullName}
                   size="small"
+                  title={m.fullName}
                   sx={{
                     height: 24,
                     fontSize: '0.72rem',
                     whiteSpace: 'nowrap',
+                    minWidth: 0,
+                    maxWidth: maxChipWidth,
+                    '& .MuiChip-label': {
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      px: 0.75,
+                    },
                     bgcolor: isDark ? 'rgba(255, 255, 255, 0.06)' : '#f8fafc',
                     color: 'text.primary',
                     border: `1px solid ${theme.palette.divider}`,
@@ -170,6 +206,9 @@ export const ProjectTable: React.FC<ProjectTableProps> = memo(({
                       fontSize: '0.72rem',
                       bgcolor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#f1f5f9',
                       color: 'text.secondary',
+                      flexShrink: 0,
+                      minWidth: 'fit-content',
+                      '& .MuiChip-label': { px: 0.75 },
                     }}
                   />
                 </Tooltip>

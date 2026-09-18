@@ -64,7 +64,9 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = memo(({
         header: 'Họ Và Tên',
         accessorKey: 'fullName',
         sortable: true,
-        minWidth: 180,
+        width: 200,
+        minWidth: 160,
+        maxWidth: 220,
         cell: ({ row }) => (
           <Box
             onClick={() => navigate(`/employees/${row.id}`)}
@@ -74,12 +76,14 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = memo(({
               gap: 1.5,
               whiteSpace: 'nowrap',
               cursor: 'pointer',
+              overflow: 'hidden',
               '&:hover .employee-name': { color: '#0284c7', textDecoration: 'underline' },
             }}
+            title={row.fullName}
           >
             <Avatar
               src={getMediaUrl(row.avatarUrl)}
-              sx={{ width: 32, height: 32, fontSize: '0.85rem', bgcolor: '#0284c7' }}
+              sx={{ width: 32, height: 32, fontSize: '0.85rem', bgcolor: '#0284c7', flexShrink: 0 }}
             >
               {row.fullName.charAt(0)}
             </Avatar>
@@ -89,6 +93,8 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = memo(({
               sx={{
                 fontWeight: 700,
                 whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
                 transition: 'color 0.15s ease',
               }}
             >
@@ -102,42 +108,57 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = memo(({
         header: 'Email',
         accessorKey: 'email',
         sortable: true,
-        minWidth: 180,
+        width: 190,
+        minWidth: 160,
+        maxWidth: 210,
+        ellipsis: true,
       },
       {
         id: 'phone',
         header: 'Số Điện Thoại',
-        minWidth: 120,
+        width: 120,
+        minWidth: 110,
         accessorFn: (row) => row.phone || '-',
       },
       {
         id: 'department',
         header: 'Phòng Ban',
-        accessorKey: 'department',
+        accessorFn: (row) => row.department || 'Chưa phân ban',
         sortable: true,
-        minWidth: 140,
-        cell: ({ value }) => value || 'Chưa phân ban',
+        width: 170,
+        minWidth: 130,
+        maxWidth: 190,
+        ellipsis: true,
       },
       {
         id: 'role',
         header: 'Vai Trò',
         accessorKey: 'role',
         sortable: true,
-        minWidth: 150,
+        width: 160,
+        minWidth: 130,
+        maxWidth: 180,
         cell: ({ row }) => {
           const displayRole = (row.roles && row.roles.length > 0 ? row.roles[0] : null) || row.roleName || roleLabels[row.role] || row.role;
           return (
-            <Chip
-              label={displayRole}
-              size="small"
-              sx={{
-                height: 22,
-                fontSize: '0.7rem',
-                fontWeight: 700,
-                whiteSpace: 'nowrap',
-                ...getRoleChipStyle(row.roleColor, displayRole),
-              }}
-            />
+            <Tooltip title={displayRole} arrow>
+              <Chip
+                label={displayRole}
+                size="small"
+                sx={{
+                  height: 22,
+                  fontSize: '0.7rem',
+                  fontWeight: 700,
+                  maxWidth: 160,
+                  '& .MuiChip-label': {
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  },
+                  ...getRoleChipStyle(row.roleColor, displayRole),
+                }}
+              />
+            </Tooltip>
           );
         },
       },

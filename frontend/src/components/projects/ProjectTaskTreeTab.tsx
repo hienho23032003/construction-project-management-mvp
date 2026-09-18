@@ -132,7 +132,7 @@ export const ProjectTaskTreeTab: React.FC<ProjectTaskTreeTabProps> = memo(({
         <TableHead>
           <TableRow>
             <TableCell sx={{ width: 50, textAlign: 'center', whiteSpace: 'nowrap', py: 1.5 }}>STT</TableCell>
-            <TableCell sx={{ width: 340, whiteSpace: 'nowrap', py: 1.5 }}>Hạng Mục / Công Việc</TableCell>
+            <TableCell sx={{ width: 380, whiteSpace: 'nowrap', py: 1.5 }}>Hạng Mục / Công Việc</TableCell>
             <TableCell sx={{ width: 170, whiteSpace: 'nowrap', py: 1.5 }}>Người Thực Hiện</TableCell>
             <TableCell sx={{ width: 160, whiteSpace: 'nowrap', py: 1.5 }}>Ưu Tiên</TableCell>
             <TableCell sx={{ width: 165, whiteSpace: 'nowrap', py: 1.5 }}>Thời Gian</TableCell>

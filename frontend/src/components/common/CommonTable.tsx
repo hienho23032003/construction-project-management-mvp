@@ -629,7 +629,8 @@ function CommonTableInner<T = any>({
                                 overflow: 'hidden',
                                 textOverflow: 'ellipsis',
                                 whiteSpace: 'nowrap',
-                                maxWidth: col.maxWidth,
+                                width: '100%',
+                                maxWidth: col.maxWidth || '100%',
                               }}
                             >
                               {content}
@@ -668,7 +669,7 @@ function CommonTableInner<T = any>({
                               whiteSpace: 'nowrap',
                               width: { xs: 'auto', md: (col.width || col.minWidth) as any },
                               minWidth: (col.minWidth || col.width) as any,
-                              maxWidth: { xs: 'none', md: col.maxWidth as any },
+                              maxWidth: (col.maxWidth || (col.ellipsis ? (col.width || 250) : undefined)) as any,
                               borderBottom: '1px solid',
                               borderColor: 'divider',
                               overflow: col.ellipsis ? 'hidden' : 'visible',

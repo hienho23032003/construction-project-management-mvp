@@ -58,14 +58,17 @@ export const TaskDetailReport: React.FC<TaskDetailReportProps> = memo(
           header: 'Tên Công Việc',
           accessorKey: 'taskName',
           width: 280,
-          minWidth: 220,
+          minWidth: 180,
+          maxWidth: 320,
+          ellipsis: true,
           cellSx: { fontWeight: 700, color: 'text.primary' },
         },
         {
           id: 'assigneeNames',
           header: 'Người Phụ Trách',
-          width: 230,
-          minWidth: 230,
+          width: 220,
+          minWidth: 170,
+          maxWidth: 240,
           cell: ({ row }) => {
             const assignees =
               row.assignees && row.assignees.length > 0
@@ -82,8 +85,12 @@ export const TaskDetailReport: React.FC<TaskDetailReportProps> = memo(
               );
             }
 
+            const isSingle = assignees.length === 1;
+            const hasMore = assignees.length > 2;
+            const maxChipWidth = isSingle ? 175 : (hasMore ? 95 : 110);
+
             return (
-              <Box sx={{ display: 'flex', flexWrap: 'nowrap', alignItems: 'center', gap: 0.5, whiteSpace: 'nowrap' }}>
+              <Box sx={{ display: 'flex', flexWrap: 'nowrap', alignItems: 'center', gap: 0.5, whiteSpace: 'nowrap', minWidth: 0, width: '100%', overflow: 'hidden' }}>
                 {assignees.slice(0, 2).map((a: any) => (
                   <Chip
                     key={a.id || a.fullName}
@@ -97,10 +104,19 @@ export const TaskDetailReport: React.FC<TaskDetailReportProps> = memo(
                     }
                     label={a.fullName}
                     size="small"
+                    title={a.fullName}
                     sx={{
                       height: 24,
                       fontSize: '0.72rem',
                       whiteSpace: 'nowrap',
+                      minWidth: 0,
+                      maxWidth: maxChipWidth,
+                      '& .MuiChip-label': {
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                        px: 0.75,
+                      },
                       bgcolor: (theme) => theme.palette.mode === 'dark' ? '#141414' : '#f8fafc',
                       border: '1px solid',
                       borderColor: 'divider',
@@ -112,7 +128,14 @@ export const TaskDetailReport: React.FC<TaskDetailReportProps> = memo(
                     <Chip
                       label={`+${assignees.length - 2}`}
                       size="small"
-                      sx={{ height: 24, fontSize: '0.72rem', bgcolor: 'action.hover' }}
+                      sx={{
+                        height: 24,
+                        fontSize: '0.72rem',
+                        bgcolor: 'action.hover',
+                        flexShrink: 0,
+                        minWidth: 'fit-content',
+                        '& .MuiChip-label': { px: 0.75 },
+                      }}
                     />
                   </Tooltip>
                 )}
