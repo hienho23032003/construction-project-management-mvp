@@ -9,4 +9,5 @@ public interface IPresenceService
     Task ClearEditingTaskAsync(Guid userId);
     ProjectPresenceDto GetProjectPresence(Guid projectId);
     List<UserPresenceDto> GetAllOnlineUsers();
+    bool IsUserOnline(Guid userId);
 }

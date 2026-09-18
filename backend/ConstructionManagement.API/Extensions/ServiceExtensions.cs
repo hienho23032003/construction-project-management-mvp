@@ -55,13 +55,25 @@ public static class ServiceExtensions
         services.AddScoped<IRoleService, RoleService>();
         services.AddScoped<IUserSessionService, UserSessionService>();
         services.AddScoped<IFileStorageService, FileStorageService>();
+        services.AddScoped<IChatService, ChatService>();
         services.AddSingleton<IPresenceService, PresenceService>();
         services.AddHostedService<ConstructionManagement.API.BackgroundServices.SessionExpirationWorker>();
 
-        // 3. Validators
+        // 3. SignalR
+        services.AddSignalR(hubOptions =>
+        {
+            hubOptions.EnableDetailedErrors = true;
+            hubOptions.MaximumReceiveMessageSize = 10 * 1024 * 1024; // 10MB
+        })
+        .AddJsonProtocol(options =>
+        {
+            options.PayloadSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+        });
+
+        // 4. Validators
         services.AddValidatorsFromAssemblyContaining<AuthService>();
 
-        // 4. JWT Authentication
+        // 5. JWT Authentication
         var secret = configuration["Jwt:Secret"] ?? "SuperSecretConstructionManagementSystemKey2026!@#$%^&*";
         var key = Encoding.UTF8.GetBytes(secret);
 
@@ -82,9 +94,22 @@ public static class ServiceExtensions
                 ValidateAudience = false,
                 ClockSkew = TimeSpan.Zero
             };
+            options.Events = new JwtBearerEvents
+            {
+                OnMessageReceived = context =>
+                {
+                    var accessToken = context.Request.Query["access_token"];
+                    var path = context.HttpContext.Request.Path;
+                    if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs"))
+                    {
+                        context.Token = accessToken;
+                    }
+                    return Task.CompletedTask;
+                }
+            };
         });
 
-        // 5. Authorization Policies
+        // 6. Authorization Policies
         services.AddAuthorization(options =>
         {
             options.AddPolicy("RequireAdmin", policy => policy.RequireRole("SuperAdmin"));
@@ -92,15 +117,16 @@ public static class ServiceExtensions
             options.AddPolicy("RequireSupervisorOrAbove", policy => policy.RequireRole("SuperAdmin", "ProjectManager", "Supervisor"));
         });
 
-        // 6. CORS
+        // 7. CORS
         services.AddCors(options =>
         {
             options.AddPolicy("AllowAll", builder =>
             {
                 builder
-                    .AllowAnyOrigin()
+                    .SetIsOriginAllowed(_ => true)
                     .AllowAnyMethod()
-                    .AllowAnyHeader();
+                    .AllowAnyHeader()
+                    .AllowCredentials();
             });
         });
 

@@ -104,6 +104,12 @@ public class PresenceService : IPresenceService
             .ToList();
     }
 
+    public bool IsUserOnline(Guid userId)
+    {
+        CleanupExpired();
+        return _presences.TryGetValue(userId, out var p) && p.LastHeartbeat >= DateTime.UtcNow - HeartbeatTtl;
+    }
+
     private void CleanupExpired()
     {
         var threshold = DateTime.UtcNow - HeartbeatTtl;

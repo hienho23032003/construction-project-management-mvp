@@ -23,6 +23,7 @@ const pageLoaders = {
   ReportsPage: () => import('../pages/ReportsPage'),
   RolesPage: () => import('../pages/RolesPage'),
   LoginHistoryPage: () => import('../pages/LoginHistoryPage'),
+  ChatPage: () => import('../pages/ChatPage'),
   ForbiddenPage: () => import('../pages/ForbiddenPage'),
 };
 
@@ -38,6 +39,7 @@ export const EmployeeDetailPage = lazy(() => pageLoaders.EmployeeDetailPage().th
 export const ReportsPage = lazy(() => pageLoaders.ReportsPage().then((m) => ({ default: m.ReportsPage })));
 export const RolesPage = lazy(() => pageLoaders.RolesPage().then((m) => ({ default: m.RolesPage })));
 export const LoginHistoryPage = lazy(() => pageLoaders.LoginHistoryPage().then((m) => ({ default: m.LoginHistoryPage })));
+export const ChatPage = lazy(() => pageLoaders.ChatPage().then((m) => ({ default: m.ChatPage })));
 export const ForbiddenPage = lazy(() => pageLoaders.ForbiddenPage().then((m) => ({ default: m.ForbiddenPage })));
 
 /**
@@ -121,6 +123,11 @@ export const protectedChildRoutes: RouteConfig[] = [
     component: LoginHistoryPage,
     permission: PERMISSIONS.AUDIT_VIEW_SESSIONS,
     title: 'Lịch Sử Đăng Nhập',
+  },
+  {
+    path: 'chat',
+    component: ChatPage,
+    title: 'Trò Chuyện & Thảo Luận',
   },
   {
     path: 'forbidden',

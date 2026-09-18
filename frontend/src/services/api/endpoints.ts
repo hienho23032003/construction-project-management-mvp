@@ -262,3 +262,39 @@ export const presenceApi = {
     apiClient.get<ApiResponse<UserPresence[]>>('/presence/online'),
 };
 
+export const chatApi = {
+  getConversations: () =>
+    apiClient.get<ApiResponse<import('../../types').Conversation[]>>('/chat/conversations'),
+  getConversationById: (id: string) =>
+    apiClient.get<ApiResponse<import('../../types').Conversation>>(`/chat/conversations/${id}`),
+  getOrCreateDirectChat: (targetUserId: string) =>
+    apiClient.post<ApiResponse<import('../../types').Conversation>>('/chat/conversations/direct', { targetUserId }),
+  createGroupChat: (data: import('../../types').CreateGroupChatPayload) =>
+    apiClient.post<ApiResponse<import('../../types').Conversation>>('/chat/conversations/group', data),
+  createProjectChat: (projectId: string) =>
+    apiClient.post<ApiResponse<import('../../types').Conversation>>(`/chat/conversations/project/${projectId}`),
+  getMessages: (conversationId: string, beforeId?: string, limit = 30) =>
+    apiClient.get<ApiResponse<import('../../types').CursorPagedMessages>>(`/chat/conversations/${conversationId}/messages`, {
+      params: { beforeId, limit },
+    }),
+  sendMessage: (conversationId: string, data: import('../../types').SendMessagePayload) =>
+    apiClient.post<ApiResponse<import('../../types').ChatMessage>>(`/chat/conversations/${conversationId}/messages`, data),
+  markAsRead: (conversationId: string, lastMessageId: string) =>
+    apiClient.post<ApiResponse<boolean>>(`/chat/conversations/${conversationId}/read`, JSON.stringify(lastMessageId), {
+      headers: { 'Content-Type': 'application/json' },
+    }),
+  getMedia: (conversationId: string, type?: 'image' | 'document') =>
+    apiClient.get<ApiResponse<import('../../types').ChatMediaItem[]>>(`/chat/conversations/${conversationId}/media`, {
+      params: { type },
+    }),
+  uploadAttachments: (conversationId: string, files: File[]) => {
+    const formData = new FormData();
+    files.forEach((f) => formData.append('files', f));
+    return apiClient.post<ApiResponse<import('../../types').SendMessageAttachmentInput[]>>(
+      `/chat/conversations/${conversationId}/attachments`,
+      formData,
+      { headers: { 'Content-Type': 'multipart/form-data' } }
+    );
+  },
+};
+

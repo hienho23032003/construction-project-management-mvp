@@ -10,6 +10,8 @@ import {
   ListItemIcon,
   ListItemText,
   Avatar,
+  Badge,
+  Chip,
   Tooltip,
   useTheme,
 } from '@mui/material';
@@ -22,9 +24,11 @@ import {
   FileText,
   Settings,
   History,
+  MessageSquare,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { usePermission } from '../hooks/usePermission';
+import { useChat } from '../contexts/ChatContext';
 import { useAppTheme } from '../contexts/ThemeContext';
 import { getMediaUrl } from '../utils/fileUtils';
 import { ROUTERS_PATHS } from '../constants/router-paths';
@@ -42,6 +46,7 @@ interface MenuItemDef {
 
 const allMenuItems: MenuItemDef[] = [
   { text: 'Tổng Quan', icon: LayoutDashboard, path: ROUTERS_PATHS.DASHBOARD, permission: PERMISSIONS.DASHBOARD_VIEW },
+  { text: 'Trò Chuyện & Thảo Luận', icon: MessageSquare, path: ROUTERS_PATHS.CHAT },
   { text: 'Công Trình & Dự Án', icon: FolderKanban, path: ROUTERS_PATHS.PROJECTS, permission: PERMISSIONS.PROJECTS_VIEW },
   { text: 'Công Việc', icon: CheckSquare, path: ROUTERS_PATHS.TASKS, permission: PERMISSIONS.TASKS_VIEW },
   { text: 'Tiến Độ Gantt', icon: BarChart3, path: ROUTERS_PATHS.GANTT, permission: PERMISSIONS.GANTT_VIEW },
@@ -68,6 +73,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
 }) => {
   const { user } = useAuth();
   const { can, isSuperAdmin } = usePermission();
+  const { totalUnreadCount } = useChat();
   const { isDark } = useAppTheme();
   const theme = useTheme();
   const navigate = useNavigate();
@@ -157,17 +163,33 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
                   transition: 'color 0.15s ease',
                 }}
               >
-                <Icon size={20} />
+                {item.path === ROUTERS_PATHS.CHAT && totalUnreadCount > 0 ? (
+                  <Badge color="error" badgeContent={totalUnreadCount} max={99}>
+                    <Icon size={20} />
+                  </Badge>
+                ) : (
+                  <Icon size={20} />
+                )}
               </ListItemIcon>
               {(!collapsed || isMobile) && (
-                <ListItemText
-                  primary={item.text}
-                  primaryTypographyProps={{
-                    fontSize: '0.875rem',
-                    fontWeight: isActive ? 700 : 500,
-                    color: isActive ? (isDark ? '#2d88ff' : '#0284c7') : isDark ? '#b0b3b8' : '#334155',
-                  }}
-                />
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                  <ListItemText
+                    primary={item.text}
+                    primaryTypographyProps={{
+                      fontSize: '0.875rem',
+                      fontWeight: isActive ? 700 : 500,
+                      color: isActive ? (isDark ? '#2d88ff' : '#0284c7') : isDark ? '#b0b3b8' : '#334155',
+                    }}
+                  />
+                  {item.path === ROUTERS_PATHS.CHAT && totalUnreadCount > 0 && (
+                    <Chip
+                      label={totalUnreadCount}
+                      size="small"
+                      color="error"
+                      sx={{ height: 18, fontSize: '0.65rem', fontWeight: 700 }}
+                    />
+                  )}
+                </Box>
               )}
             </ListItemButton>
           );

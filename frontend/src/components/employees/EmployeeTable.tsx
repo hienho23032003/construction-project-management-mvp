@@ -8,12 +8,13 @@ import {
   Tooltip,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import { Edit2, Lock, Unlock, Trash2, TrendingUp, KeyRound } from 'lucide-react';
+import { Edit2, Lock, Unlock, Trash2, TrendingUp, KeyRound, MessageSquare } from 'lucide-react';
 import { User } from '../../types';
 import { roleLabels } from '../../pages/EmployeesPage';
 import { getMediaUrl } from '../../utils/fileUtils';
 import { CommonTable, ColumnDef } from '../common/CommonTable';
 import { getRoleChipStyle } from '../../utils/roleColors';
+import { useChat } from '../../contexts/ChatContext';
 
 interface EmployeeTableProps {
   users: User[];
@@ -56,6 +57,7 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = memo(({
   const allowDelete = canDelete || isAdmin;
   const allowReset = canResetPassword || isAdmin;
   const navigate = useNavigate();
+  const { openDirectChatWithUser } = useChat();
 
   const columns: ColumnDef<User>[] = useMemo(
     () => [
@@ -221,11 +223,24 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = memo(({
               }}
               onClick={(e) => e.stopPropagation()}
             >
+              <Tooltip title="Nhắn tin trực tiếp">
+                <IconButton
+                  size="small"
+                  onClick={async () => {
+                    const convId = await openDirectChatWithUser(row.id);
+                    if (convId) navigate('/chat');
+                  }}
+                  sx={{ color: '#0284c7', '&:hover': { bgcolor: '#e0f2fe' } }}
+                >
+                  <MessageSquare size={16} />
+                </IconButton>
+              </Tooltip>
+
               <Tooltip title="Xem tiến độ & dự án">
                 <IconButton
                   size="small"
                   onClick={() => navigate(`/employees/${row.id}`)}
-                  sx={{ color: '#0284c7', '&:hover': { bgcolor: '#e0f2fe' } }}
+                  sx={{ color: '#64748b', '&:hover': { bgcolor: '#f1f5f9' } }}
                 >
                   <TrendingUp size={16} />
                 </IconButton>

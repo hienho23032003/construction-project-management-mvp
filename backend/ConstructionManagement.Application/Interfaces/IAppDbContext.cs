@@ -20,6 +20,11 @@ public interface IAppDbContext
     DbSet<UserRoleMapping> UserRoles { get; }
     DbSet<UserLoginSession> UserLoginSessions { get; }
     DbSet<TaskChecklistItem> TaskChecklistItems { get; }
+    DbSet<Conversation> Conversations { get; }
+    DbSet<ConversationMember> ConversationMembers { get; }
+    DbSet<ChatMessage> ChatMessages { get; }
+    DbSet<ChatMessageAttachment> ChatMessageAttachments { get; }
+    DbSet<ChatMessageMention> ChatMessageMentions { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

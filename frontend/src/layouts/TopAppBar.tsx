@@ -19,6 +19,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Bell,
+  MessageSquare,
   User as UserIcon,
   LogOut,
   Sun,
@@ -26,12 +27,15 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotifications } from '../contexts/NotificationContext';
+import { useChat } from '../contexts/ChatContext';
 import { useAppTheme } from '../contexts/ThemeContext';
 import { getMediaUrl } from '../utils/fileUtils';
 import { ROUTERS_PATHS } from '../constants/router-paths';
+import { useNavigate } from 'react-router-dom';
 
 const titleMap: Record<string, string> = {
   [ROUTERS_PATHS.DASHBOARD]: 'Tổng Quan',
+  [ROUTERS_PATHS.CHAT]: 'Trò Chuyện & Thảo Luận',
   [ROUTERS_PATHS.PROJECTS]: 'Công Trình & Dự Án',
   [ROUTERS_PATHS.TASKS]: 'Công Việc',
   [ROUTERS_PATHS.GANTT]: 'Tiến Độ Gantt',
@@ -58,9 +62,11 @@ export const TopAppBar: React.FC<TopAppBarProps> = ({
 }) => {
   const { user, logout } = useAuth();
   const { unreadCount } = useNotifications();
+  const { totalUnreadCount } = useChat();
   const { isDark, toggleTheme } = useAppTheme();
   const theme = useTheme();
   const location = useLocation();
+  const navigate = useNavigate();
 
   const [userMenuAnchor, setUserMenuAnchor] = useState<null | HTMLElement>(null);
 
@@ -149,6 +155,25 @@ export const TopAppBar: React.FC<TopAppBarProps> = ({
               }}
             >
               {isDark ? <Sun size={20} /> : <Moon size={20} />}
+            </IconButton>
+          </Tooltip>
+
+          {/* Chat Button */}
+          <Tooltip title="Trò chuyện">
+            <IconButton
+              onClick={() => navigate(ROUTERS_PATHS.CHAT)}
+              sx={{
+                bgcolor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#f1f5f9',
+                color: isDark ? '#f1f5f9' : '#334155',
+                transition: 'all 0.2s ease',
+                '&:hover': {
+                  bgcolor: isDark ? 'rgba(255, 255, 255, 0.14)' : '#e2e8f0',
+                },
+              }}
+            >
+              <Badge badgeContent={totalUnreadCount} color="error" max={99}>
+                <MessageSquare size={20} color={isDark ? '#e2e8f0' : '#334155'} />
+              </Badge>
             </IconButton>
           </Tooltip>
 

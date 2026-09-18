@@ -7,6 +7,7 @@ import { vi } from 'date-fns/locale/vi';
 import { ThemeContextProvider } from './contexts/ThemeContext';
 import { AuthProvider } from './contexts/AuthContext';
 import { NotificationProvider } from './contexts/NotificationContext';
+import { ChatProvider } from './contexts/ChatContext';
 import { ToastProvider } from './contexts/ToastContext';
 import { AppRoutes } from './routes/AppRoutes';
 
@@ -30,9 +31,11 @@ export const App: React.FC = () => {
           <ToastProvider>
             <AuthProvider>
               <NotificationProvider>
-                <BrowserRouter>
-                  <AppRoutes />
-                </BrowserRouter>
+                <ChatProvider>
+                  <BrowserRouter>
+                    <AppRoutes />
+                  </BrowserRouter>
+                </ChatProvider>
               </NotificationProvider>
             </AuthProvider>
           </ToastProvider>

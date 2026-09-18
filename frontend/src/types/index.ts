@@ -476,4 +476,147 @@ export interface PresenceHeartbeatRequest {
   avatarUrl?: string;
 }
 
+// ==================== CHAT & REALTIME TYPES ====================
+export type ConversationType = 'Direct' | 'Group' | 'ProjectBound' | 0 | 1 | 2;
+export type ChatMessageType = 'Text' | 'Image' | 'File' | 'TaskCard' | 'ProjectCard' | 'System' | 0 | 1 | 2 | 3 | 4 | 5;
+export type ChatMentionType = 'User' | 'Task' | 'Project' | 0 | 1 | 2;
+export type MemberRole = 'Member' | 'Admin' | 0 | 1;
+
+export interface ConversationMember {
+  userId: string;
+  fullName: string;
+  email: string;
+  avatarUrl?: string;
+  roleName?: string;
+  role: MemberRole;
+  isOnline: boolean;
+  lastReadAt?: string;
+  lastReadMessageId?: string;
+  joinedAt: string;
+}
+
+export interface ChatMessageAttachment {
+  id: string;
+  messageId: string;
+  fileName: string;
+  filePath: string;
+  fileType?: string;
+  fileSize: number;
+  thumbnailUrl?: string;
+  createdAt: string;
+}
+
+export interface ChatMessageMention {
+  id: string;
+  mentionType: ChatMentionType;
+  targetId: string;
+  displayName: string;
+  targetCode?: string;
+  targetStatus?: string;
+  targetPriority?: string;
+}
+
+export interface ChatMessage {
+  id: string;
+  conversationId: string;
+  senderId: string;
+  senderName: string;
+  senderAvatarUrl?: string;
+  senderEmail?: string;
+  content: string;
+  type: ChatMessageType;
+  replyToMessageId?: string;
+  replyToMessage?: ChatMessage;
+  isEdited: boolean;
+  isDeleted: boolean;
+  createdAt: string;
+  attachments: ChatMessageAttachment[];
+  mentions: ChatMessageMention[];
+}
+
+export interface Conversation {
+  id: string;
+  title?: string;
+  type: ConversationType;
+  avatarUrl?: string;
+  projectId?: string;
+  projectName?: string;
+  projectCode?: string;
+  createdById: string;
+  createdAt: string;
+  lastMessageAt?: string;
+  lastMessage?: ChatMessage;
+  unreadCount: number;
+  isMuted: boolean;
+  members: ConversationMember[];
+}
+
+export interface CursorPagedMessages {
+  items: ChatMessage[];
+  hasMore: boolean;
+  nextCursorId?: string;
+  totalCount: number;
+}
+
+export interface ChatMediaItem {
+  id: string;
+  messageId: string;
+  fileName: string;
+  filePath: string;
+  fileType?: string;
+  fileSize: number;
+  thumbnailUrl?: string;
+  createdAt: string;
+  senderId: string;
+  senderName: string;
+}
+
+export interface SendMessageAttachmentInput {
+  fileName: string;
+  filePath: string;
+  fileType?: string;
+  fileSize: number;
+  thumbnailUrl?: string;
+}
+
+export interface SendMessageMentionInput {
+  mentionType: ChatMentionType;
+  targetId: string;
+  displayName: string;
+}
+
+export interface SendMessagePayload {
+  conversationId: string;
+  content?: string;
+  type?: ChatMessageType;
+  replyToMessageId?: string;
+  attachments?: SendMessageAttachmentInput[];
+  mentions?: SendMessageMentionInput[];
+}
+
+export interface CreateDirectChatPayload {
+  targetUserId: string;
+}
+
+export interface CreateGroupChatPayload {
+  title: string;
+  avatarUrl?: string;
+  projectId?: string;
+  memberIds: string[];
+}
+
+export interface TypingNotification {
+  conversationId: string;
+  userId: string;
+  fullName: string;
+  isTyping: boolean;
+}
+
+export interface ReadReceipt {
+  conversationId: string;
+  userId: string;
+  lastReadMessageId: string;
+  lastReadAt: string;
+}
+
 

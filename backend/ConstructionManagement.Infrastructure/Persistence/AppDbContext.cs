@@ -25,10 +25,109 @@ public class AppDbContext : DbContext, IAppDbContext
     public DbSet<UserRoleMapping> UserRoles => Set<UserRoleMapping>();
     public DbSet<UserLoginSession> UserLoginSessions => Set<UserLoginSession>();
     public DbSet<TaskChecklistItem> TaskChecklistItems => Set<TaskChecklistItem>();
+    public DbSet<Conversation> Conversations => Set<Conversation>();
+    public DbSet<ConversationMember> ConversationMembers => Set<ConversationMember>();
+    public DbSet<ChatMessage> ChatMessages => Set<ChatMessage>();
+    public DbSet<ChatMessageAttachment> ChatMessageAttachments => Set<ChatMessageAttachment>();
+    public DbSet<ChatMessageMention> ChatMessageMentions => Set<ChatMessageMention>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
+        // Conversation
+        modelBuilder.Entity<Conversation>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.ProjectId);
+            entity.HasIndex(e => e.LastMessageAt);
+            entity.Property(e => e.Title).HasMaxLength(250);
+
+            entity.HasOne(e => e.Project)
+                .WithMany()
+                .HasForeignKey(e => e.ProjectId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasOne(e => e.CreatedBy)
+                .WithMany()
+                .HasForeignKey(e => e.CreatedById)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.LastMessage)
+                .WithMany()
+                .HasForeignKey(e => e.LastMessageId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // ConversationMember
+        modelBuilder.Entity<ConversationMember>(entity =>
+        {
+            entity.HasKey(e => new { e.ConversationId, e.UserId });
+            entity.HasIndex(e => e.UserId);
+
+            entity.HasOne(e => e.Conversation)
+                .WithMany(c => c.Members)
+                .HasForeignKey(e => e.ConversationId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.User)
+                .WithMany()
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // ChatMessage
+        modelBuilder.Entity<ChatMessage>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.ConversationId);
+            entity.HasIndex(e => e.SenderId);
+            entity.HasIndex(e => new { e.ConversationId, e.CreatedAt });
+            entity.Property(e => e.Content).IsRequired(false).HasMaxLength(4000);
+
+            entity.HasOne(e => e.Conversation)
+                .WithMany(c => c.Messages)
+                .HasForeignKey(e => e.ConversationId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.Sender)
+                .WithMany()
+                .HasForeignKey(e => e.SenderId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.ReplyToMessage)
+                .WithMany()
+                .HasForeignKey(e => e.ReplyToMessageId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // ChatMessageAttachment
+        modelBuilder.Entity<ChatMessageAttachment>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.MessageId);
+            entity.Property(e => e.FileName).IsRequired().HasMaxLength(255);
+            entity.Property(e => e.FilePath).IsRequired().HasMaxLength(500);
+
+            entity.HasOne(e => e.Message)
+                .WithMany(m => m.Attachments)
+                .HasForeignKey(e => e.MessageId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // ChatMessageMention
+        modelBuilder.Entity<ChatMessageMention>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.MessageId);
+            entity.HasIndex(e => new { e.MentionType, e.TargetId });
+            entity.Property(e => e.DisplayName).IsRequired().HasMaxLength(150);
+
+            entity.HasOne(e => e.Message)
+                .WithMany(m => m.Mentions)
+                .HasForeignKey(e => e.MessageId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
 
         // User
         modelBuilder.Entity<User>(entity =>

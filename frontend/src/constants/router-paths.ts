@@ -12,6 +12,7 @@ export const ROUTERS_PATHS = {
   REPORTS: '/reports',
   ROLES: '/roles',
   LOGIN_HISTORY: '/login-history',
+  CHAT: '/chat',
   FORBIDDEN: '/forbidden',
 } as const;
 

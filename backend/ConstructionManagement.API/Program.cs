@@ -153,11 +153,12 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapHub<ConstructionManagement.API.Hubs.ChatHub>("/hubs/chat");
 
 // SPA Fallback: Any non-API / non-Upload route returns index.html for React Router
 app.MapFallback(async context =>
 {
-    if (context.Request.Path.StartsWithSegments("/api") || context.Request.Path.StartsWithSegments("/uploads"))
+    if (context.Request.Path.StartsWithSegments("/api") || context.Request.Path.StartsWithSegments("/uploads") || context.Request.Path.StartsWithSegments("/hubs"))
     {
         context.Response.StatusCode = StatusCodes.Status404NotFound;
         await context.Response.WriteAsJsonAsync(new { success = false, message = "Resource not found." });

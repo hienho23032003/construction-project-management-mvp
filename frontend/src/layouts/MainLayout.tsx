@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import { Box, useMediaQuery, useTheme } from '@mui/material';
 import { UserProfileModal } from '../components/common/UserProfileModal';
 import { SidebarNav, EXPANDED_DRAWER_WIDTH, COLLAPSED_DRAWER_WIDTH } from './SidebarNav';
@@ -9,7 +9,9 @@ import { MobileBottomNav } from './MobileBottomNav';
 
 export const MainLayout: React.FC = () => {
   const theme = useTheme();
+  const location = useLocation();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const isChatPage = location.pathname.startsWith('/chat');
 
   const [mobileOpen, setMobileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
@@ -74,14 +76,17 @@ export const MainLayout: React.FC = () => {
           sx={{
             flexGrow: 1,
             height: 'calc(100vh - 64px)',
-            overflowY: 'auto',
+            maxHeight: 'calc(100vh - 64px)',
+            overflowY: isChatPage ? 'hidden' : 'auto',
             overflowX: 'hidden',
-            p: { xs: 1.5, sm: 2.5, md: 3 },
-            pb: { xs: 9, md: 3 },
+            p: isChatPage ? 0 : { xs: 1.5, sm: 2.5, md: 3 },
+            pb: isChatPage ? 0 : { xs: 9, md: 3 },
             minWidth: 0,
             width: '100%',
             maxWidth: '100%',
             boxSizing: 'border-box',
+            display: 'flex',
+            flexDirection: 'column',
           }}
         >
           <React.Suspense fallback={null}>
@@ -89,11 +94,13 @@ export const MainLayout: React.FC = () => {
           </React.Suspense>
         </Box>
 
-        {/* Mobile Bottom Navigation Bar */}
-        <MobileBottomNav
-          mobileOpen={mobileOpen}
-          onDrawerToggle={handleDrawerToggle}
-        />
+        {/* Mobile Bottom Navigation Bar (Hidden on Chat to give full height to chat composer) */}
+        {!isChatPage && (
+          <MobileBottomNav
+            mobileOpen={mobileOpen}
+            onDrawerToggle={handleDrawerToggle}
+          />
+        )}
       </Box>
     </Box>
   );
