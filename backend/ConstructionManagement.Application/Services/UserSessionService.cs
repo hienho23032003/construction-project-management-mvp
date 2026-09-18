@@ -88,51 +88,86 @@ public class UserSessionService : IUserSessionService
             ? await _context.UserLoginSessions.FirstOrDefaultAsync(s => s.Id == sessionId && s.UserId == userId)
             : null;
 
-        var lastActivity = session?.LastActiveTime ?? session?.LoginTime ?? now;
-        var idleGapMinutes = (now - lastActivity).TotalMinutes;
-
-        // If session not found, or not Active, or inactive for > 2 minutes (tab was hidden/inactive):
-        // Finalize old session if needed, then create a new active session for this authenticated user.
-        if (session == null || session.Status != SessionStatus.Active || idleGapMinutes > 2.0)
+        // 1. If the requested session is active and was active within the last 2 minutes, simply update it
+        if (session != null && session.Status == SessionStatus.Active)
         {
-            if (session != null && session.Status == SessionStatus.Active)
+            var lastActivity = session.LastActiveTime ?? session.LoginTime;
+            var idleGapMinutes = (now - lastActivity).TotalMinutes;
+
+            if (idleGapMinutes <= 2.0)
             {
-                session.LogoutTime = lastActivity;
-                session.Status = idleGapMinutes >= 30.0 ? SessionStatus.Expired : SessionStatus.LoggedOut;
-                session.DurationMinutes = Math.Max(0.1, Math.Round((lastActivity - session.LoginTime).TotalMinutes, 1));
+                session.LastActiveTime = now;
+                session.DurationMinutes = Math.Max(0.1, Math.Round((now - session.LoginTime).TotalMinutes, 1));
+                await _context.SaveChangesAsync();
+
+                return ApiResponse<PingSessionResultDto>.Ok(new PingSessionResultDto
+                {
+                    SessionId = session.Id,
+                    IsNewSession = false
+                });
             }
-
-            var newSession = new UserLoginSession
-            {
-                Id = Guid.NewGuid(),
-                UserId = userId,
-                LoginTime = now,
-                LastActiveTime = now,
-                IpAddress = ipAddress ?? session?.IpAddress,
-                UserAgent = userAgent ?? session?.UserAgent,
-                Status = SessionStatus.Active,
-                CreatedAt = now
-            };
-
-            _context.UserLoginSessions.Add(newSession);
-            await _context.SaveChangesAsync();
-
-            return ApiResponse<PingSessionResultDto>.Ok(new PingSessionResultDto
-            {
-                SessionId = newSession.Id,
-                IsNewSession = true
-            });
         }
 
-        // Active session within 2 minutes -> simply update LastActiveTime and Duration
-        session.LastActiveTime = now;
-        session.DurationMinutes = Math.Max(0.1, Math.Round((now - session.LoginTime).TotalMinutes, 1));
+        // 2. If session wasn't matched or is idle, check if this user ALREADY has any active session created recently (< 2 mins)
+        var recentActiveSession = await _context.UserLoginSessions
+            .Where(s => s.UserId == userId && s.Status == SessionStatus.Active)
+            .OrderByDescending(s => s.LastActiveTime ?? s.LoginTime)
+            .FirstOrDefaultAsync();
+
+        if (recentActiveSession != null)
+        {
+            var recentLastAct = recentActiveSession.LastActiveTime ?? recentActiveSession.LoginTime;
+            var recentIdleGap = (now - recentLastAct).TotalMinutes;
+
+            if (recentIdleGap <= 2.0)
+            {
+                recentActiveSession.LastActiveTime = now;
+                recentActiveSession.DurationMinutes = Math.Max(0.1, Math.Round((now - recentActiveSession.LoginTime).TotalMinutes, 1));
+                await _context.SaveChangesAsync();
+
+                return ApiResponse<PingSessionResultDto>.Ok(new PingSessionResultDto
+                {
+                    SessionId = recentActiveSession.Id,
+                    IsNewSession = false
+                });
+            }
+        }
+
+        // 3. If we reach here, any prior active session has been idle for > 2 minutes.
+        // Finalize all existing active sessions for this user cleanly.
+        var priorActiveSessions = await _context.UserLoginSessions
+            .Where(s => s.UserId == userId && s.Status == SessionStatus.Active)
+            .ToListAsync();
+
+        foreach (var prev in priorActiveSessions)
+        {
+            var prevLastAct = prev.LastActiveTime ?? prev.LoginTime;
+            var prevIdle = (now - prevLastAct).TotalMinutes;
+            prev.LogoutTime = prevLastAct;
+            prev.Status = prevIdle >= 30.0 ? SessionStatus.Expired : SessionStatus.LoggedOut;
+            prev.DurationMinutes = Math.Max(0.1, Math.Round((prevLastAct - prev.LoginTime).TotalMinutes, 1));
+        }
+
+        // 4. Create ONE single fresh active session for the resuming user
+        var newSession = new UserLoginSession
+        {
+            Id = Guid.NewGuid(),
+            UserId = userId,
+            LoginTime = now,
+            LastActiveTime = now,
+            IpAddress = ipAddress ?? session?.IpAddress,
+            UserAgent = userAgent ?? session?.UserAgent,
+            Status = SessionStatus.Active,
+            CreatedAt = now
+        };
+
+        _context.UserLoginSessions.Add(newSession);
         await _context.SaveChangesAsync();
 
         return ApiResponse<PingSessionResultDto>.Ok(new PingSessionResultDto
         {
-            SessionId = session.Id,
-            IsNewSession = false
+            SessionId = newSession.Id,
+            IsNewSession = true
         });
     }
 
