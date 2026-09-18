@@ -114,7 +114,7 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
       onClose={onClose}
       PaperProps={{
         sx: {
-          width: { xs: '100%', sm: 600, md: 720 },
+          width: { xs: '100%', sm: 720, md: 880, lg: 960 },
           display: 'flex',
           flexDirection: 'column',
           boxShadow: '-4px 0 24px rgba(0, 0, 0, 0.12)',

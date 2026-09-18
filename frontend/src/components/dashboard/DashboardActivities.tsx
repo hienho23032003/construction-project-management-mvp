@@ -36,7 +36,7 @@ export const DashboardActivities: React.FC<DashboardActivitiesProps> = memo(({ d
       {
         id: 'createdAt',
         header: 'Thời Gian',
-        minWidth: 150,
+        minWidth: 100,
         cell: ({ row }) => {
           const formattedTime = formatDateTime(row.createdAt);
           return (
@@ -50,7 +50,7 @@ export const DashboardActivities: React.FC<DashboardActivitiesProps> = memo(({ d
       {
         id: 'userName',
         header: 'Người Thực Hiện',
-        minWidth: 160,
+        minWidth: 150,
         cell: ({ row }) => (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, whiteSpace: 'nowrap' }}>
             <Avatar
@@ -77,7 +77,7 @@ export const DashboardActivities: React.FC<DashboardActivitiesProps> = memo(({ d
       {
         id: 'project',
         header: 'Dự Án / Công Trình',
-        minWidth: 180,
+        minWidth: 230,
         cell: ({ row }) =>
           row.projectCode ? (
             <Box sx={{ display: 'flex', flexDirection: 'column', whiteSpace: 'nowrap' }}>
@@ -102,7 +102,7 @@ export const DashboardActivities: React.FC<DashboardActivitiesProps> = memo(({ d
                     color: 'text.secondary',
                     fontSize: '0.75rem',
                     whiteSpace: 'nowrap',
-                    maxWidth: 180,
+                    maxWidth: 300,
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
                   }}
@@ -121,7 +121,7 @@ export const DashboardActivities: React.FC<DashboardActivitiesProps> = memo(({ d
       {
         id: 'taskName',
         header: 'Hạng Mục / Công Việc',
-        minWidth: 200,
+        minWidth: 300,
         cell: ({ row }) =>
           row.taskName ? (
             <Typography
@@ -131,7 +131,7 @@ export const DashboardActivities: React.FC<DashboardActivitiesProps> = memo(({ d
                 fontSize: '0.8125rem',
                 color: row.taskId && onSelectTask ? (isDark ? '#38bdf8' : '#0284c7') : 'text.primary',
                 whiteSpace: 'nowrap',
-                maxWidth: 220,
+                maxWidth: 400,
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
                 cursor: row.taskId && onSelectTask ? 'pointer' : 'default',

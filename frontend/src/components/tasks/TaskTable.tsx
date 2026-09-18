@@ -183,7 +183,7 @@ export const TaskTable: React.FC<TaskTableProps> = memo(({
                   Mã Dự Án
                 </TableSortLabel>
               </TableCell>
-              <TableCell sx={{ width: { xs: 'auto', md: 320 }, minWidth: 260 }}>
+              <TableCell sx={{ width: { xs: 'auto', md: 380 }, minWidth: 280 }}>
                 <TableSortLabel
                   active={sortBy === 'name'}
                   direction={isDescending ? 'desc' : 'asc'}

@@ -24,6 +24,12 @@ import {
 import { format, isValid, addDays, differenceInDays } from 'date-fns';
 import { formatDate } from '../../utils/dateUtils';
 
+const vietnameseDayOfWeekFormatter = (_day: string, date: Date | null) => {
+  if (!date) return _day;
+  const days = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+  return days[date.getDay()] || _day;
+};
+
 export interface InlineDateEditCellProps {
   mode?: 'range' | 'single';
   startDate?: string | null;
@@ -317,24 +323,44 @@ export const InlineDateEditCell: React.FC<InlineDateEditCellProps> = memo(({
             <DateCalendar
               value={tempSingle}
               onChange={(newVal) => setTempSingle(newVal)}
+              dayOfWeekFormatter={vietnameseDayOfWeekFormatter}
               sx={{
                 width: '100%',
-                maxHeight: 290,
+                height: 'auto',
+                maxHeight: 'none',
                 '& .MuiPickersCalendarHeader-root': {
                   pl: 1.5,
                   pr: 1,
+                  my: 0.5,
+                },
+                '& .MuiDayCalendar-header': {
+                  justifyContent: 'space-around',
+                },
+                '& .MuiDayCalendar-weekContainer': {
+                  justifyContent: 'space-around',
+                  my: 0.25,
                 },
                 '& .MuiDayCalendar-weekDayLabel': {
-                  width: 34,
-                  height: 34,
+                  width: 36,
+                  height: 36,
                   fontSize: '0.75rem',
                   fontWeight: 700,
+                  color: isDark ? '#94a3b8' : '#475569',
                 },
                 '& .MuiPickersDay-root': {
                   width: 34,
                   height: 34,
                   fontSize: '0.8rem',
                   fontWeight: 600,
+                },
+                '& .MuiPickersDay-root.Mui-selected': {
+                  bgcolor: '#0284c7 !important',
+                  color: '#ffffff !important',
+                  fontWeight: 700,
+                },
+                '& .MuiDayCalendar-slideTransition': {
+                  minHeight: 230,
+                  overflowY: 'visible',
                 },
               }}
             />
@@ -534,12 +560,18 @@ export const InlineDateEditCell: React.FC<InlineDateEditCellProps> = memo(({
           <DateCalendar
             value={tempStart}
             onChange={(newVal) => setTempStart(newVal)}
+            dayOfWeekFormatter={vietnameseDayOfWeekFormatter}
             sx={{
               width: '100%',
-              maxHeight: 290,
-              '& .MuiPickersCalendarHeader-root': { pl: 1.5, pr: 1 },
-              '& .MuiDayCalendar-weekDayLabel': { width: 34, height: 34, fontSize: '0.75rem', fontWeight: 700 },
+              height: 'auto',
+              maxHeight: 'none',
+              '& .MuiPickersCalendarHeader-root': { pl: 1.5, pr: 1, my: 0.5 },
+              '& .MuiDayCalendar-header': { justifyContent: 'space-around' },
+              '& .MuiDayCalendar-weekContainer': { justifyContent: 'space-around', my: 0.25 },
+              '& .MuiDayCalendar-weekDayLabel': { width: 36, height: 36, fontSize: '0.75rem', fontWeight: 700, color: isDark ? '#94a3b8' : '#475569' },
               '& .MuiPickersDay-root': { width: 34, height: 34, fontSize: '0.8rem', fontWeight: 600 },
+              '& .MuiPickersDay-root.Mui-selected': { bgcolor: '#0284c7 !important', color: '#ffffff !important', fontWeight: 700 },
+              '& .MuiDayCalendar-slideTransition': { minHeight: 230, overflowY: 'visible' },
             }}
           />
         </Box>
@@ -613,12 +645,18 @@ export const InlineDateEditCell: React.FC<InlineDateEditCellProps> = memo(({
           <DateCalendar
             value={tempEnd}
             onChange={(newVal) => setTempEnd(newVal)}
+            dayOfWeekFormatter={vietnameseDayOfWeekFormatter}
             sx={{
               width: '100%',
-              maxHeight: 290,
-              '& .MuiPickersCalendarHeader-root': { pl: 1.5, pr: 1 },
-              '& .MuiDayCalendar-weekDayLabel': { width: 34, height: 34, fontSize: '0.75rem', fontWeight: 700 },
+              height: 'auto',
+              maxHeight: 'none',
+              '& .MuiPickersCalendarHeader-root': { pl: 1.5, pr: 1, my: 0.5 },
+              '& .MuiDayCalendar-header': { justifyContent: 'space-around' },
+              '& .MuiDayCalendar-weekContainer': { justifyContent: 'space-around', my: 0.25 },
+              '& .MuiDayCalendar-weekDayLabel': { width: 36, height: 36, fontSize: '0.75rem', fontWeight: 700, color: isDark ? '#94a3b8' : '#475569' },
               '& .MuiPickersDay-root': { width: 34, height: 34, fontSize: '0.8rem', fontWeight: 600 },
+              '& .MuiPickersDay-root.Mui-selected': { bgcolor: '#0284c7 !important', color: '#ffffff !important', fontWeight: 700 },
+              '& .MuiDayCalendar-slideTransition': { minHeight: 230, overflowY: 'visible' },
             }}
           />
         </Box>
@@ -752,12 +790,18 @@ export const InlineDateEditCell: React.FC<InlineDateEditCellProps> = memo(({
                 }
               }
             }}
+            dayOfWeekFormatter={vietnameseDayOfWeekFormatter}
             sx={{
               width: '100%',
-              maxHeight: 285,
-              '& .MuiPickersCalendarHeader-root': { pl: 1.5, pr: 1 },
-              '& .MuiDayCalendar-weekDayLabel': { width: 36, height: 36, fontSize: '0.75rem', fontWeight: 700 },
-              '& .MuiPickersDay-root': { width: 36, height: 36, fontSize: '0.8rem', fontWeight: 600 },
+              height: 'auto',
+              maxHeight: 'none',
+              '& .MuiPickersCalendarHeader-root': { pl: 1.5, pr: 1, my: 0.5 },
+              '& .MuiDayCalendar-header': { justifyContent: 'space-around' },
+              '& .MuiDayCalendar-weekContainer': { justifyContent: 'space-around', my: 0.25 },
+              '& .MuiDayCalendar-weekDayLabel': { width: 36, height: 36, fontSize: '0.75rem', fontWeight: 700, color: isDark ? '#94a3b8' : '#475569' },
+              '& .MuiPickersDay-root': { width: 34, height: 34, fontSize: '0.8rem', fontWeight: 600 },
+              '& .MuiPickersDay-root.Mui-selected': { bgcolor: '#0284c7 !important', color: '#ffffff !important', fontWeight: 700 },
+              '& .MuiDayCalendar-slideTransition': { minHeight: 230, overflowY: 'visible' },
             }}
           />
         </Box>

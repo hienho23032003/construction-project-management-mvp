@@ -77,7 +77,7 @@ export const ProjectTable: React.FC<ProjectTableProps> = memo(({
         header: 'Tên Công Trình / Dự Án',
         accessorKey: 'name',
         sortable: true,
-        width: 250,
+        width: 280,
         minWidth: 180,
         maxWidth: 280,
         cell: ({ value, row }) => (
@@ -119,8 +119,8 @@ export const ProjectTable: React.FC<ProjectTableProps> = memo(({
         header: 'Trạng Thái',
         accessorKey: 'status',
         sortable: true,
-        width: 140,
-        minWidth: 130,
+        width: 120,
+        minWidth: 100,
         cell: ({ value, row }) => (
           <StatusChip status={value} isOverdue={row.isOverdue} />
         ),
@@ -130,9 +130,9 @@ export const ProjectTable: React.FC<ProjectTableProps> = memo(({
         header: 'Quản Lý (PM)',
         accessorKey: 'managerName',
         sortable: true,
-        width: 230,
-        minWidth: 180,
-        maxWidth: 260,
+        width: 200,
+        minWidth: 200,
+        maxWidth: 230,
         cell: ({ value, row }) => {
           const managers =
             row.managers && row.managers.length > 0
@@ -153,7 +153,7 @@ export const ProjectTable: React.FC<ProjectTableProps> = memo(({
 
           const isSingle = managers.length === 1;
           const hasMore = managers.length > 2;
-          const maxChipWidth = isSingle ? 175 : (hasMore ? 95 : 110);
+          const maxChipWidth = isSingle ? 175 : (hasMore ? 130 : 140);
 
           return (
             <Box sx={{ display: 'flex', flexWrap: 'nowrap', gap: 0.5, alignItems: 'center', minWidth: 0, width: '100%', overflow: 'hidden' }}>
@@ -222,8 +222,8 @@ export const ProjectTable: React.FC<ProjectTableProps> = memo(({
         header: 'Ngày Bắt Đầu',
         accessorKey: 'startDate',
         sortable: true,
-        width: 120,
-        minWidth: 120,
+        width: 100,
+        minWidth: 100,
         cell: ({ value }) => (
           <Typography variant="body2" sx={{ fontSize: '0.8125rem', color: 'text.secondary' }}>
             {formatDate(value)}
@@ -235,8 +235,8 @@ export const ProjectTable: React.FC<ProjectTableProps> = memo(({
         header: 'Hạn Dự Kiến',
         accessorKey: 'plannedEndDate',
         sortable: true,
-        width: 120,
-        minWidth: 120,
+        width: 100,
+        minWidth: 100,
         cell: ({ value, row }) => (
           <Typography
             variant="body2"

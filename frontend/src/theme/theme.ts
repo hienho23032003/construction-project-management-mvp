@@ -1,4 +1,5 @@
 import { createTheme, ThemeOptions } from '@mui/material/styles';
+import type {} from '@mui/x-date-pickers/themeAugmentation';
 
 export const getStatusColors = (mode: 'light' | 'dark') => {
   const isDark = mode === 'dark';
@@ -647,6 +648,22 @@ export const getAppTheme = (mode: 'light' | 'dark') => {
           },
           arrow: {
             color: isDark ? '#1e293b' : '#0f172a',
+          },
+        },
+      },
+      MuiDateCalendar: {
+        styleOverrides: {
+          root: {
+            height: 'auto',
+            maxHeight: 'none',
+            '& .MuiDayCalendar-slideTransition': {
+              minHeight: '230px',
+              overflowY: 'visible',
+            },
+            '& .MuiDayCalendar-weekDayLabel': {
+              fontWeight: 700,
+              fontSize: '0.75rem',
+            },
           },
         },
       },
