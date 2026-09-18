@@ -67,7 +67,7 @@ export const TopAppBar: React.FC<TopAppBarProps> = ({
   const currentTitle =
     titleMap[location.pathname] ||
     Object.entries(titleMap).find(([path]) => path !== '/' && location.pathname.startsWith(path))?.[1] ||
-    'FCBVN — Quản Lý Thi Công';
+    'Hệ Thống Quản Lý Dự Án';
 
   return (
     <AppBar

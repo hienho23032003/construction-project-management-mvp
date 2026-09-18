@@ -43,7 +43,8 @@ export const OverdueReport: React.FC<OverdueReportProps> = memo(
           id: 'projectCode',
           header: 'Dự Án',
           accessorKey: 'projectCode',
-          minWidth: 100,
+          width: 80,
+          minWidth: 70,
           cell: ({ value }) => (
             <Chip
               label={value}
@@ -56,14 +57,16 @@ export const OverdueReport: React.FC<OverdueReportProps> = memo(
           id: 'taskName',
           header: 'Tên Công Việc',
           accessorKey: 'taskName',
-          minWidth: 200,
+          width: 320,
+          minWidth: 320,
           headerSx: { fontWeight: 700 },
           cellSx: { fontWeight: 700, color: 'text.primary' },
         },
         {
           id: 'assigneeNames',
           header: 'Người Phụ Trách',
-          minWidth: 180,
+          width: 230,
+          minWidth: 230,
           cell: ({ row }) => {
             const assignees =
               row.assignees && row.assignees.length > 0
@@ -81,7 +84,7 @@ export const OverdueReport: React.FC<OverdueReportProps> = memo(
             }
 
             return (
-              <Box sx={{ display: 'flex', flexWrap: 'nowrap', gap: 0.5, alignItems: 'center' }}>
+              <Box sx={{ display: 'flex', flexWrap: 'nowrap', gap: 0.5, alignItems: 'center', whiteSpace: 'nowrap' }}>
                 {assignees.slice(0, 2).map((a: any) => (
                   <Chip
                     key={a.id || a.fullName}
@@ -128,7 +131,8 @@ export const OverdueReport: React.FC<OverdueReportProps> = memo(
           id: 'plannedEndDate',
           header: 'Hạn Ban Đầu',
           accessorKey: 'plannedEndDate',
-          minWidth: 130,
+          width: 120,
+          minWidth: 120,
           cell: ({ value }) => (
             <span style={{ color: '#b91c1c', fontWeight: 600 }}>
               {formatDate(value)}
@@ -139,7 +143,8 @@ export const OverdueReport: React.FC<OverdueReportProps> = memo(
           id: 'overdueDays',
           header: 'Số Ngày Quá Hạn',
           accessorKey: 'overdueDays',
-          minWidth: 140,
+          width: 120,
+          minWidth: 120,
           cell: ({ value }) => (
             <Chip
               label={`Trễ ${value} ngày`}
@@ -152,7 +157,8 @@ export const OverdueReport: React.FC<OverdueReportProps> = memo(
           id: 'progress',
           header: 'Tiến Độ Hiện Tại',
           accessorKey: 'progress',
-          minWidth: 130,
+          width: 160,
+          minWidth: 160,
           cell: ({ value }) => <ProgressBar value={value} height={7} />,
         },
       ],
@@ -170,6 +176,7 @@ export const OverdueReport: React.FC<OverdueReportProps> = memo(
           rowsPerPage,
         }}
         rowKey="taskId"
+        minWidth={1130}
         onRowClick={(row) => onSelectTask?.(row.taskId)}
         rowSx={() => ({
           bgcolor: isDark ? 'inherit' : '#fff5f5',

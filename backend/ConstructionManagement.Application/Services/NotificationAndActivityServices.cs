@@ -115,6 +115,119 @@ public class ActivityLogService : IActivityLogService
         _context = context;
     }
 
+    public async Task<ApiResponse<PagedResult<ActivityLogDto>>> GetActivityLogsPagedAsync(
+        PaginationParams pagination,
+        Guid? projectId = null,
+        Guid? taskId = null,
+        Guid? userId = null,
+        string? action = null)
+    {
+        var query = _context.ActivityLogs
+            .Include(al => al.User)
+            .Include(al => al.Project)
+            .Include(al => al.Task)
+            .AsNoTracking();
+
+        if (projectId.HasValue)
+        {
+            query = query.Where(al => al.ProjectId == projectId.Value);
+        }
+
+        if (taskId.HasValue)
+        {
+            query = query.Where(al => al.TaskId == taskId.Value);
+        }
+
+        if (userId.HasValue)
+        {
+            query = query.Where(al => al.UserId == userId.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(action) && action != "ALL")
+        {
+            var actionLower = action.Trim().ToLower();
+            if (actionLower == "status")
+            {
+                query = query.Where(al => al.Action == ActivityAction.StatusChanged);
+            }
+            else if (actionLower == "progress")
+            {
+                query = query.Where(al => al.Action == ActivityAction.ProgressChanged);
+            }
+            else if (actionLower == "assign")
+            {
+                query = query.Where(al => al.Action == ActivityAction.TaskAssigned);
+            }
+            else if (actionLower == "date")
+            {
+                query = query.Where(al => al.Action == ActivityAction.DeadlineChanged);
+            }
+            else if (actionLower == "create")
+            {
+                query = query.Where(al => al.Action == ActivityAction.TaskCreated || al.Action == ActivityAction.ProjectCreated);
+            }
+            else if (actionLower == "delete")
+            {
+                query = query.Where(al => al.Action == ActivityAction.TaskDeleted || al.Action == ActivityAction.ProjectDeleted);
+            }
+            else if (Enum.TryParse<ActivityAction>(action, true, out var parsedAction))
+            {
+                query = query.Where(al => al.Action == parsedAction);
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(pagination.Search))
+        {
+            var search = pagination.Search.Trim().ToLower();
+            query = query.Where(al =>
+                (al.User != null && al.User.FullName.ToLower().Contains(search)) ||
+                (al.Task != null && al.Task.Name.ToLower().Contains(search)) ||
+                (al.Details != null && al.Details.ToLower().Contains(search)) ||
+                (al.OldValue != null && al.OldValue.ToLower().Contains(search)) ||
+                (al.NewValue != null && al.NewValue.ToLower().Contains(search)) ||
+                (al.Project != null && (al.Project.Name.ToLower().Contains(search) || al.Project.Code.ToLower().Contains(search)))
+            );
+        }
+
+        var totalCount = await query.CountAsync();
+
+        var pageIndex = pagination.PageIndex > 0 ? pagination.PageIndex : 1;
+        var pageSize = pagination.PageSize > 0 ? pagination.PageSize : 10;
+
+        var items = await query
+            .OrderByDescending(al => al.CreatedAt)
+            .Skip((pageIndex - 1) * pageSize)
+            .Take(pageSize)
+            .Select(al => new ActivityLogDto
+            {
+                Id = al.Id,
+                UserId = al.UserId,
+                UserName = al.User.FullName,
+                UserAvatarUrl = al.User.AvatarUrl,
+                ProjectId = al.ProjectId,
+                ProjectCode = al.Project != null ? al.Project.Code : null,
+                ProjectName = al.Project != null ? al.Project.Name : null,
+                TaskId = al.TaskId,
+                TaskName = al.Task != null ? al.Task.Name : null,
+                Action = al.Action,
+                Details = al.Details,
+                OldValue = al.OldValue,
+                NewValue = al.NewValue,
+                CreatedAt = al.CreatedAt
+            })
+            .ToListAsync();
+
+        var result = new PagedResult<ActivityLogDto>
+        {
+            Items = items,
+            TotalCount = totalCount,
+            PageIndex = pageIndex,
+            PageSize = pageSize
+        };
+
+        return ApiResponse<PagedResult<ActivityLogDto>>.Ok(result);
+    }
+
     public async Task<ApiResponse<List<ActivityLogDto>>> GetRecentLogsAsync(Guid? projectId = null, Guid? taskId = null, int limit = 50)
     {
         var query = _context.ActivityLogs

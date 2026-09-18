@@ -9,6 +9,7 @@ public class EmployeeProgressDetailDto
     public List<EmployeeProjectParticipationDto> Projects { get; set; } = new();
     public List<EmployeeTaskItemDto> Tasks { get; set; } = new();
     public List<EmployeeActivityLogDto> RecentActivities { get; set; } = new();
+    public int TotalActivities { get; set; }
 }
 
 public class EmployeeKpiStatsDto

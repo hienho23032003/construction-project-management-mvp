@@ -36,7 +36,7 @@ public interface IUserSessionService
 {
     Task<Guid> CreateSessionAsync(Guid userId, string? ipAddress, string? userAgent);
     Task<bool> CloseSessionAsync(Guid sessionId);
-    Task<ApiResponse<PingSessionResultDto>> PingSessionAsync(Guid sessionId, Guid userId);
+    Task<ApiResponse<PingSessionResultDto>> PingSessionAsync(Guid sessionId, Guid userId, string? ipAddress = null, string? userAgent = null);
     Task<bool> LeaveSessionAsync(Guid sessionId);
     Task<ApiResponse<PagedResult<UserLoginSessionDto>>> GetLoginHistoryAsync(
         DateTime? fromDate,
@@ -141,6 +141,12 @@ public interface INotificationService
 
 public interface IActivityLogService
 {
+    Task<ApiResponse<PagedResult<ActivityLogDto>>> GetActivityLogsPagedAsync(
+        PaginationParams pagination,
+        Guid? projectId = null,
+        Guid? taskId = null,
+        Guid? userId = null,
+        string? action = null);
     Task<ApiResponse<List<ActivityLogDto>>> GetRecentLogsAsync(Guid? projectId = null, Guid? taskId = null, int limit = 50);
     Task LogAsync(Guid userId, ActivityAction action, string details, Guid? projectId = null, Guid? taskId = null, string? oldValue = null, string? newValue = null);
 }

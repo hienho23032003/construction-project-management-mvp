@@ -209,6 +209,7 @@ export const ProjectTaskTreeTab: React.FC<ProjectTaskTreeTabProps> = memo(({
                           placeholder="Nhập tên hạng mục..."
                           fontWeight={level === 0 ? 700 : 600}
                           typographyVariant={level === 0 ? 'subtitle2' : 'body2'}
+                          modalTitle={level === 0 ? 'Chỉnh sửa tên hạng mục' : 'Chỉnh sửa tên công việc'}
                         />
                       </Box>
                     </TableCell>

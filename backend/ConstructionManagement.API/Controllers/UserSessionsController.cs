@@ -45,14 +45,13 @@ public class UserSessionsController : BaseApiController
     }
 
     [HttpPost("ping")]
-    public async Task<IActionResult> Ping([FromBody] PingSessionRequest request)
+    public async Task<IActionResult> Ping([FromBody] PingSessionRequest? request)
     {
-        if (!request.SessionId.HasValue || request.SessionId.Value == Guid.Empty)
-        {
-            return BadRequest(ApiResponse<PingSessionResultDto>.Fail("SessionId is required."));
-        }
+        var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+        var userAgent = HttpContext.Request.Headers["User-Agent"].ToString();
+        var sessionId = request?.SessionId ?? Guid.Empty;
 
-        var result = await _sessionService.PingSessionAsync(request.SessionId.Value, CurrentUserId);
+        var result = await _sessionService.PingSessionAsync(sessionId, CurrentUserId, ipAddress, userAgent);
         return Ok(result);
     }
 

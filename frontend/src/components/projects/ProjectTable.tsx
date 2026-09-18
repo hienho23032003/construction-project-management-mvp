@@ -77,14 +77,15 @@ export const ProjectTable: React.FC<ProjectTableProps> = memo(({
         header: 'Tên Công Trình / Dự Án',
         accessorKey: 'name',
         sortable: true,
-        minWidth: 220,
+        width: 260,
+        minWidth: 200,
         cell: ({ value, row }) => (
-          <div>
-            <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.primary' }}>
+          <div style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.primary', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={value}>
               {value}
             </Typography>
             {row.location && (
-              <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+              <Typography variant="caption" sx={{ color: 'text.secondary', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }} title={row.location}>
                 {row.location}
               </Typography>
             )}
@@ -96,7 +97,7 @@ export const ProjectTable: React.FC<ProjectTableProps> = memo(({
         header: 'Trạng Thái',
         accessorKey: 'status',
         sortable: true,
-        width: 130,
+        width: 140,
         minWidth: 130,
         cell: ({ value, row }) => (
           <StatusChip status={value} isOverdue={row.isOverdue} />
@@ -107,7 +108,8 @@ export const ProjectTable: React.FC<ProjectTableProps> = memo(({
         header: 'Quản Lý (PM)',
         accessorKey: 'managerName',
         sortable: true,
-        minWidth: 180,
+        width: 200,
+        minWidth: 170,
         cell: ({ value, row }) => {
           const managers =
             row.managers && row.managers.length > 0

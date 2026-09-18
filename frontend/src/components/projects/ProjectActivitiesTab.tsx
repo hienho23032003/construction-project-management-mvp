@@ -1,126 +1,601 @@
-import React, { memo } from 'react';
-import { Box, Typography, Paper, Chip, Avatar } from '@mui/material';
-import { ChevronRight, CheckSquare } from 'lucide-react';
-import { ActivityLog } from '../../types';
-import { getVietnameseStatus } from '../common/StatusChip';
+import React, { memo, useState, useMemo } from 'react';
+import {
+  Box,
+  Typography,
+  Paper,
+  Chip,
+  Avatar,
+  TextField,
+  InputAdornment,
+  MenuItem,
+  Select,
+  FormControl,
+  IconButton,
+  Tooltip,
+  useTheme,
+  CircularProgress,
+  Button,
+} from '@mui/material';
+import {
+  Search,
+  Clock,
+  CheckSquare,
+  ArrowRight,
+  RefreshCw,
+  TrendingUp,
+  UserCheck,
+  Calendar,
+  FileEdit,
+  PlusCircle,
+  Trash2,
+  Activity,
+  ArrowRightLeft,
+  Filter,
+  CheckCircle2,
+  FolderTree,
+} from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { ActivityLog, PagedResult } from '../../types';
+import { activityLogApi } from '../../services/api/endpoints';
+import { useDebounce } from '../../hooks/useDebounce';
+import { CommonTable, ColumnDef } from '../common/CommonTable';
+import { getVietnameseStatus, getStatusConfig } from '../common/StatusChip';
 import { formatDateTime } from '../../utils/dateUtils';
 import { getMediaUrl } from '../../utils/fileUtils';
 
-interface ProjectActivitiesTabProps {
-  activities: ActivityLog[];
+export interface ProjectActivitiesTabProps {
+  activities?: ActivityLog[];
+  projectId?: string;
   onSelectTask?: (taskId: string) => void;
 }
 
-const formatLogDetails = (details?: string) => {
+const getActionBadge = (action: string, isDark: boolean) => {
+  const norm = (action || '').toLowerCase();
+
+  if (norm.includes('status') || norm.includes('trạng thái')) {
+    return {
+      label: 'Đổi trạng thái',
+      color: isDark ? '#c084fc' : '#7c3aed',
+      bg: isDark ? 'rgba(168, 85, 247, 0.16)' : '#f3e8ff',
+      border: isDark ? 'rgba(168, 85, 247, 0.35)' : '#ddd6fe',
+      icon: <ArrowRightLeft size={13} />,
+    };
+  }
+  if (norm.includes('progress') || norm.includes('tiến độ')) {
+    return {
+      label: 'Tiến độ',
+      color: isDark ? '#fbbf24' : '#b45309',
+      bg: isDark ? 'rgba(245, 158, 11, 0.16)' : '#fef3c7',
+      border: isDark ? 'rgba(245, 158, 11, 0.35)' : '#fde68a',
+      icon: <TrendingUp size={13} />,
+    };
+  }
+  if (norm.includes('assign') || norm.includes('phân công') || norm.includes('nhân sự')) {
+    return {
+      label: 'Phân công',
+      color: isDark ? '#22d3ee' : '#0e7490',
+      bg: isDark ? 'rgba(6, 182, 212, 0.16)' : '#cffafe',
+      border: isDark ? 'rgba(6, 182, 212, 0.35)' : '#a5f3fc',
+      icon: <UserCheck size={13} />,
+    };
+  }
+  if (norm.includes('deadline') || norm.includes('date') || norm.includes('thời gian') || norm.includes('hạn')) {
+    return {
+      label: 'Thời gian / Hạn chót',
+      color: isDark ? '#fb923c' : '#c2410c',
+      bg: isDark ? 'rgba(249, 115, 22, 0.16)' : '#ffedd5',
+      border: isDark ? 'rgba(249, 115, 22, 0.35)' : '#fed7aa',
+      icon: <Calendar size={13} />,
+    };
+  }
+  if (norm.includes('created') || norm.includes('tạo')) {
+    return {
+      label: 'Tạo mới',
+      color: isDark ? '#34d399' : '#047857',
+      bg: isDark ? 'rgba(168, 185, 129, 0.16)' : '#d1fae5',
+      border: isDark ? 'rgba(16, 185, 129, 0.35)' : '#a7f3d0',
+      icon: <PlusCircle size={13} />,
+    };
+  }
+  if (norm.includes('deleted') || norm.includes('xóa')) {
+    return {
+      label: 'Xóa',
+      color: isDark ? '#f87171' : '#b91c1c',
+      bg: isDark ? 'rgba(239, 68, 68, 0.16)' : '#fee2e2',
+      border: isDark ? 'rgba(239, 68, 68, 0.35)' : '#fca5a5',
+      icon: <Trash2 size={13} />,
+    };
+  }
+  return {
+    label: 'Cập nhật',
+    color: isDark ? '#38bdf8' : '#0284c7',
+    bg: isDark ? 'rgba(2, 132, 199, 0.16)' : '#e0f2fe',
+    border: isDark ? 'rgba(56, 189, 248, 0.35)' : '#bae6fd',
+    icon: <FileEdit size={13} />,
+  };
+};
+
+const cleanLogDescription = (details?: string) => {
   if (!details) return '';
-  // Remove redundant trailing ': StatusA -> StatusB' or ': StatusA → StatusB'
   return details
     .replace(/:\s*['"]?[\w\d_-]+['"]?\s*(->|→|➔|-->)\s*['"]?[\w\d_-]+['"]?/gi, '')
     .trim();
 };
 
-export const ProjectActivitiesTab: React.FC<ProjectActivitiesTabProps> = memo(({ activities, onSelectTask }) => {
-  return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h4" sx={{ fontWeight: 700, fontSize: '1rem', mb: 2 }}>
-        Lịch Sử Biến Động Công Trình
-      </Typography>
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-        {activities.length === 0 ? (
-          <Typography variant="body2" sx={{ color: '#94a3b8' }}>
-            Chưa có nhật ký hoạt động nào.
-          </Typography>
-        ) : (
-          activities.map((act) => {
-            const hasTask = Boolean(act.taskId && onSelectTask);
+export const ProjectActivitiesTab: React.FC<ProjectActivitiesTabProps> = memo(({
+  activities: initialActivities = [],
+  projectId,
+  onSelectTask,
+}) => {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
 
-            return (
-              <Paper
-                key={act.id}
-                onClick={() => {
-                  if (hasTask && act.taskId && onSelectTask) {
-                    onSelectTask(act.taskId);
-                  }
-                }}
+  const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 300);
+  const [actionFilter, setActionFilter] = useState('ALL');
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(20);
+
+  // Server-side paginated query
+  const {
+    data: pagedData,
+    isLoading,
+    isFetching,
+    refetch,
+  } = useQuery({
+    queryKey: ['project-activity-logs', projectId, page, rowsPerPage, debouncedSearch, actionFilter],
+    queryFn: async () => {
+      if (!projectId) return null;
+      const res = await activityLogApi.getLogs({
+        projectId,
+        pageIndex: page + 1,
+        pageSize: rowsPerPage,
+        search: debouncedSearch.trim() || undefined,
+        action: actionFilter !== 'ALL' ? actionFilter : undefined,
+      });
+      const data: any = res.data?.data;
+      if (data && typeof data === 'object' && Array.isArray(data.items)) {
+        return data as PagedResult<ActivityLog>;
+      }
+      if (Array.isArray(data)) {
+        const total = data.length;
+        const sliced = data.slice(page * rowsPerPage, (page + 1) * rowsPerPage);
+        return {
+          items: sliced,
+          totalCount: total,
+          pageIndex: page + 1,
+          pageSize: rowsPerPage,
+          totalPages: Math.ceil(total / rowsPerPage),
+          hasPreviousPage: page > 0,
+          hasNextPage: (page + 1) * rowsPerPage < total,
+        } as PagedResult<ActivityLog>;
+      }
+      return null;
+    },
+    enabled: Boolean(projectId),
+    staleTime: 15_000,
+  });
+
+  const totalCount = pagedData?.totalCount ?? initialActivities.length;
+  const tableData = pagedData?.items ?? (initialActivities.length > 0 ? initialActivities.slice(page * rowsPerPage, (page + 1) * rowsPerPage) : []);
+
+  // Columns definition for CommonTable
+  const columns: ColumnDef<ActivityLog>[] = useMemo(
+    () => [
+      {
+        id: 'createdAt',
+        header: 'Thời Gian',
+        width: 115,
+        minWidth: 105,
+        cell: ({ row }) => (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, color: 'text.primary', fontWeight: 600, fontSize: '0.8125rem', whiteSpace: 'nowrap' }}>
+            <Clock size={14} color="#64748b" style={{ flexShrink: 0 }} />
+            <span>{formatDateTime(row.createdAt)}</span>
+          </Box>
+        ),
+      },
+      {
+        id: 'userName',
+        header: 'Người Thực Hiện',
+        width: 120,
+        minWidth: 120,
+        cell: ({ row }) => (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Avatar
+              src={getMediaUrl(row.userAvatarUrl) || undefined}
+              sx={{
+                width: 26,
+                height: 26,
+                fontSize: '0.75rem',
+                fontWeight: 700,
+                bgcolor: '#0284c7',
+                color: '#ffffff',
+                flexShrink: 0,
+              }}
+            >
+              {row.userName ? row.userName.charAt(0).toUpperCase() : 'U'}
+            </Avatar>
+            <Typography
+              variant="body2"
+              sx={{
+                fontWeight: 600,
+                fontSize: '0.8125rem',
+                color: 'text.primary',
+                wordBreak: 'break-word',
+                lineHeight: 1.3,
+              }}
+              title={row.userName}
+            >
+              {row.userName || 'Hệ thống'}
+            </Typography>
+          </Box>
+        ),
+      },
+      {
+        id: 'taskName',
+        header: 'Hạng Mục / Công Việc',
+        width: '26%',
+        minWidth: 170,
+        cellSx: { whiteSpace: 'normal', wordBreak: 'break-word' },
+        cell: ({ row }) => {
+          const hasTask = Boolean(row.taskId && onSelectTask);
+          return row.taskName ? (
+            <Box
+              onClick={() => {
+                if (hasTask && row.taskId && onSelectTask) {
+                  onSelectTask(row.taskId);
+                }
+              }}
+              sx={{
+                display: 'inline-flex',
+                alignItems: 'flex-start',
+                gap: 0.75,
+                maxWidth: '100%',
+                cursor: hasTask ? 'pointer' : 'default',
+                borderRadius: '6px',
+                p: '2px 4px',
+                ml: '-4px',
+                transition: 'all 0.15s ease',
+                '&:hover': hasTask
+                  ? {
+                      bgcolor: isDark ? 'rgba(56, 189, 248, 0.12)' : '#e0f2fe',
+                    }
+                  : {},
+              }}
+              title={hasTask ? `Xem chi tiết: ${row.taskName}` : row.taskName}
+            >
+              <CheckSquare
+                size={14}
+                color={hasTask ? '#0284c7' : '#64748b'}
+                style={{ flexShrink: 0, marginTop: 2 }}
+              />
+              <Typography
+                variant="body2"
                 sx={{
-                  p: 2,
-                  borderRadius: '8px',
-                  bgcolor: (theme) => theme.palette.mode === 'dark' ? '#141414' : '#f8fafc',
-                  border: '1px solid',
-                  borderColor: 'divider',
-                  cursor: hasTask ? 'pointer' : 'default',
-                  transition: 'all 0.2s ease',
-                  '&:hover': hasTask
-                    ? {
-                        bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(56, 189, 248, 0.08)' : '#f0f9ff',
-                        borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(56, 189, 248, 0.4)' : '#bae6fd',
-                        transform: 'translateY(-1px)',
-                        boxShadow: '0 2px 6px rgba(2, 132, 199, 0.08)',
-                      }
-                    : {},
+                  fontWeight: 600,
+                  fontSize: '0.8125rem',
+                  color: hasTask ? (isDark ? '#38bdf8' : '#0284c7') : 'text.primary',
+                  wordBreak: 'break-word',
+                  lineHeight: 1.4,
                 }}
               >
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 1 }}>
-                  <Box sx={{ flexGrow: 1 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', mb: 0.5 }}>
-                      <Avatar
-                        src={getMediaUrl(act.userAvatarUrl) || undefined}
+                {row.taskName}
+              </Typography>
+            </Box>
+          ) : (
+            <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}>
+              <FolderTree size={14} color="#64748b" />
+              <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 500 }}>
+                Cấp công trình
+              </Typography>
+            </Box>
+          );
+        },
+      },
+      {
+        id: 'action',
+        header: 'Loại Biến Động',
+        width: 145,
+        minWidth: 135,
+        cell: ({ row }) => {
+          const badge = getActionBadge(row.action, isDark);
+          return (
+            <Chip
+              icon={badge.icon}
+              label={badge.label}
+              size="small"
+              sx={{
+                height: 24,
+                fontSize: '0.75rem',
+                fontWeight: 600,
+                bgcolor: badge.bg,
+                color: badge.color,
+                border: `1px solid ${badge.border}`,
+                '& .MuiChip-icon': {
+                  color: 'inherit',
+                  ml: 0.75,
+                },
+              }}
+            />
+          );
+        },
+      },
+      {
+        id: 'details',
+        header: 'Chi Tiết Thay Đổi & Giá Trị Cũ ➔ Mới',
+        minWidth: 280,
+        cellSx: { whiteSpace: 'normal', wordBreak: 'break-word' },
+        cell: ({ row }) => {
+          const isStatusAction = row.action?.toLowerCase().includes('status');
+          const isProgressAction = row.action?.toLowerCase().includes('progress');
+          const hasOldNew = Boolean(row.oldValue && row.newValue && row.oldValue !== row.newValue);
+
+          const desc = cleanLogDescription(row.details);
+
+          return (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, py: 0.25, width: '100%' }}>
+              {/* If old and new values exist, show rich visual diff */}
+              {hasOldNew ? (
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, flexWrap: 'wrap' }}>
+                  {isStatusAction ? (
+                    <>
+                      <Chip
+                        label={getVietnameseStatus(row.oldValue)}
+                        size="small"
                         sx={{
-                          width: 22,
                           height: 22,
-                          fontSize: '0.65rem',
-                          bgcolor: '#0284c7',
-                          color: '#ffffff',
-                          fontWeight: 700,
+                          fontSize: '0.72rem',
+                          textDecoration: 'line-through',
+                          opacity: 0.75,
+                          bgcolor: isDark ? 'rgba(255,255,255,0.06)' : '#f1f5f9',
+                          color: 'text.secondary',
+                        }}
+                      />
+                      <ArrowRight size={13} color={isDark ? '#94a3b8' : '#64748b'} style={{ flexShrink: 0 }} />
+                      {(() => {
+                        const cfg = getStatusConfig(row.newValue || '', isDark);
+                        return (
+                          <Chip
+                            label={getVietnameseStatus(row.newValue)}
+                            size="small"
+                            sx={{
+                              height: 22,
+                              fontSize: '0.72rem',
+                              fontWeight: 700,
+                              bgcolor: cfg.bg,
+                              color: cfg.color,
+                              border: `1px solid ${cfg.border}`,
+                            }}
+                          />
+                        );
+                      })()}
+                    </>
+                  ) : isProgressAction ? (
+                    <>
+                      <Typography
+                        component="span"
+                        variant="caption"
+                        sx={{
+                          textDecoration: 'line-through',
+                          color: 'text.secondary',
+                          fontWeight: 500,
+                          fontSize: '0.75rem',
                         }}
                       >
-                        {act.userName ? act.userName.charAt(0) : 'U'}
-                      </Avatar>
-                      <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'text.primary' }}>
-                        {act.userName}
+                        {row.oldValue}
                       </Typography>
-                      <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                        {formatLogDetails(act.details)}
+                      <ArrowRight size={13} color="#f59e0b" style={{ flexShrink: 0 }} />
+                      <Chip
+                        label={row.newValue}
+                        size="small"
+                        sx={{
+                          height: 20,
+                          fontSize: '0.72rem',
+                          fontWeight: 700,
+                          bgcolor: isDark ? 'rgba(245, 158, 11, 0.2)' : '#fef3c7',
+                          color: isDark ? '#fbbf24' : '#b45309',
+                        }}
+                      />
+                    </>
+                  ) : (
+                    <>
+                      <Typography
+                        component="span"
+                        variant="caption"
+                        sx={{
+                          textDecoration: 'line-through',
+                          color: 'text.secondary',
+                          fontSize: '0.75rem',
+                          wordBreak: 'break-word',
+                        }}
+                        title={row.oldValue}
+                      >
+                        {row.oldValue}
                       </Typography>
-                      {act.taskName && (
-                        <Chip
-                          icon={<CheckSquare size={13} style={{ marginLeft: 4 }} />}
-                          label={act.taskName}
-                          size="small"
-                          sx={{
-                            height: 22,
-                            fontSize: '0.75rem',
-                            fontWeight: 600,
-                            bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(56, 189, 248, 0.16)' : '#e0f2fe',
-                            color: (theme) => theme.palette.mode === 'dark' ? '#38bdf8' : '#0369a1',
-                            border: (theme) => theme.palette.mode === 'dark' ? '1px solid rgba(56, 189, 248, 0.35)' : '1px solid #bae6fd',
-                          }}
-                        />
-                      )}
-                    </Box>
-
-                    {act.oldValue && act.newValue && (
-                      <Typography variant="caption" sx={{ color: '#0284c7', display: 'block', fontWeight: 600, mt: 0.5 }}>
-                        Thay đổi: {getVietnameseStatus(act.oldValue)} ➔ {getVietnameseStatus(act.newValue)}
+                      <ArrowRight size={13} color="#0284c7" style={{ flexShrink: 0 }} />
+                      <Typography
+                        component="span"
+                        variant="caption"
+                        sx={{
+                          fontWeight: 700,
+                          color: 'text.primary',
+                          fontSize: '0.75rem',
+                          wordBreak: 'break-word',
+                        }}
+                        title={row.newValue}
+                      >
+                        {row.newValue}
                       </Typography>
-                    )}
-                  </Box>
-
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0 }}>
-                    <Typography variant="caption" sx={{ color: 'text.disabled' }}>
-                      {formatDateTime(act.createdAt)}
-                    </Typography>
-                    {hasTask && (
-                      <ChevronRight size={16} color="#0284c7" />
-                    )}
-                  </Box>
+                    </>
+                  )}
                 </Box>
-              </Paper>
-            );
-          })
-        )}
-      </Box>
+              ) : null}
+
+              {/* Description text */}
+              {desc && (
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: hasOldNew ? 'text.secondary' : 'text.primary',
+                    fontSize: hasOldNew ? '0.75rem' : '0.8125rem',
+                    lineHeight: 1.45,
+                    wordBreak: 'break-word',
+                    whiteSpace: 'normal',
+                  }}
+                >
+                  {desc}
+                </Typography>
+              )}
+            </Box>
+          );
+        },
+      },
+    ],
+    [isDark, onSelectTask]
+  );
+
+  return (
+    <Box sx={{ p: { xs: 1.5, sm: 2.5 }, display: 'flex', flexDirection: 'column', gap: 2 }}>
+      {/* Header & Filter Toolbar */}
+      <Paper
+        elevation={0}
+        sx={{
+          p: 2,
+          borderRadius: 2,
+          border: '1px solid',
+          borderColor: 'divider',
+          bgcolor: (theme) => (theme.palette.mode === 'dark' ? '#18191a' : '#ffffff'),
+          display: 'flex',
+          flexDirection: { xs: 'column', md: 'row' },
+          alignItems: { xs: 'stretch', md: 'center' },
+          justifyContent: 'space-between',
+          gap: 1.5,
+        }}
+      >
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Activity size={20} color="#0284c7" />
+            <Typography variant="h6" sx={{ fontWeight: 700, fontSize: '0.975rem' }}>
+              Lịch Sử Biến Động & Nhật Ký Hoạt Động
+            </Typography>
+          </Box>
+          <Chip
+            label={`${totalCount} bản ghi`}
+            size="small"
+            sx={{
+              fontWeight: 700,
+              fontSize: '0.75rem',
+              bgcolor: isDark ? 'rgba(56, 189, 248, 0.15)' : '#e0f2fe',
+              color: isDark ? '#38bdf8' : '#0369a1',
+            }}
+          />
+        </Box>
+
+        {/* Filter inputs */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25, flexWrap: 'wrap' }}>
+          <TextField
+            size="small"
+            placeholder="Tìm theo tên việc, người làm..."
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(0);
+            }}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Search size={16} color="#94a3b8" />
+                </InputAdornment>
+              ),
+            }}
+            sx={{
+              width: { xs: '100%', sm: 340 },
+              '& .MuiOutlinedInput-root': {
+                borderRadius: '8px',
+                fontSize: '0.8125rem',
+              },
+            }}
+          />
+
+          <FormControl size="small" sx={{ minWidth: 230 }}>
+            <Select
+              value={actionFilter}
+              onChange={(e) => {
+                setActionFilter(e.target.value);
+                setPage(0);
+              }}
+              displayEmpty
+              sx={{
+                borderRadius: '8px',
+                fontSize: '0.8125rem',
+              }}
+            >
+              <MenuItem value="ALL">Tất cả loại biến động</MenuItem>
+              <MenuItem value="STATUS">Đổi trạng thái</MenuItem>
+              <MenuItem value="PROGRESS">Cập nhật tiến độ</MenuItem>
+              <MenuItem value="ASSIGN">Phân công nhân sự</MenuItem>
+              <MenuItem value="DATE">Thời gian / Hạn chót</MenuItem>
+              <MenuItem value="CREATE">Tạo mới công việc</MenuItem>
+              <MenuItem value="DELETE">Xóa công việc</MenuItem>
+            </Select>
+          </FormControl>
+
+          <Tooltip title="Làm mới dữ liệu">
+            <span>
+              <IconButton
+                size="small"
+                onClick={() => refetch()}
+                disabled={isFetching}
+                sx={{
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  borderRadius: '8px',
+                  p: 0.8,
+                }}
+              >
+                <RefreshCw size={16} className={isFetching ? 'animate-spin' : ''} />
+              </IconButton>
+            </span>
+          </Tooltip>
+        </Box>
+      </Paper>
+
+      {/* Paginated Data Table */}
+      <CommonTable
+        columns={columns}
+        data={tableData}
+        loading={isLoading}
+        showSTT={true}
+        sttConfig={{
+          title: 'STT',
+          page,
+          rowsPerPage,
+          align: 'center',
+          width: 56,
+        }}
+        bordered={true}
+        density="standard"
+        tableLayout="fixed"
+        tableSx={{ width: '100%' }}
+        minWidth={{ xs: 720, md: '100%' }}
+        pagination={{
+          page,
+          rowsPerPage,
+          totalCount,
+          onPageChange: (newPage) => setPage(newPage),
+          onRowsPerPageChange: (newRows) => {
+            setRowsPerPage(newRows);
+            setPage(0);
+          },
+          rowsPerPageOptions: [10, 20, 50, 100],
+          isZeroIndexed: true,
+        }}
+        emptyMessage="Chưa có dữ liệu biến động nào phù hợp với bộ lọc."
+      />
     </Box>
   );
 });
+
+ProjectActivitiesTab.displayName = 'ProjectActivitiesTab';
+
 

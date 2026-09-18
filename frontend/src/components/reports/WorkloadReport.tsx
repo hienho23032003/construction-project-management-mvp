@@ -37,7 +37,8 @@ export const WorkloadReport: React.FC<WorkloadReportProps> = memo(
           id: 'fullName',
           header: 'Họ Và Tên',
           accessorKey: 'fullName',
-          minWidth: 190,
+          minWidth: 140,
+          cellSx: { fontWeight: 700 },
           cell: ({ row }) => (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <Avatar

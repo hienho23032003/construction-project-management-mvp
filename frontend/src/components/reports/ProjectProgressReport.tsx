@@ -47,8 +47,8 @@ export const ProjectProgressReport: React.FC<ProjectProgressReportProps> = memo(
           id: 'code',
           header: 'Mã Dự Án',
           accessorKey: 'code',
-          width: '10%',
-          minWidth: 100,
+          width: 90,
+          minWidth: 80,
           sortable: true,
           cell: ({ value }) => (
             <Chip
@@ -62,7 +62,8 @@ export const ProjectProgressReport: React.FC<ProjectProgressReportProps> = memo(
           id: 'name',
           header: 'Tên Công Trình',
           accessorKey: 'name',
-          minWidth: 200,
+          width: 280,
+          minWidth: 220,
           sortable: true,
           cellSx: { fontWeight: 700, color: 'text.primary' },
         },
@@ -70,7 +71,8 @@ export const ProjectProgressReport: React.FC<ProjectProgressReportProps> = memo(
           id: 'managerName',
           header: 'Quản Lý (PM)',
           accessorKey: 'managerName',
-          minWidth: 180,
+          width: 250,
+          minWidth: 220,
           cell: ({ value, row }) => {
             const managers =
               row.managers && row.managers.length > 0
@@ -131,34 +133,40 @@ export const ProjectProgressReport: React.FC<ProjectProgressReportProps> = memo(
           id: 'startDate',
           header: 'Ngày Khởi Công',
           accessorKey: 'startDate',
-          minWidth: 120,
+          width: 120,
+          minWidth: 110,
           cell: ({ value }) => formatDate(value),
         },
         {
           id: 'plannedEndDate',
           header: 'Hạn Dự Kiến',
           accessorKey: 'plannedEndDate',
-          minWidth: 120,
+          width: 120,
+          minWidth: 110,
           cell: ({ value }) => formatDate(value),
         },
         {
           id: 'progress',
           header: 'Tiến Độ',
           accessorKey: 'progress',
-          minWidth: 120,
+          width: 130,
+          minWidth: 110,
           cell: ({ value }) => <ProgressBar value={value} height={7} />,
         },
         {
           id: 'status',
           header: 'Trạng Thái',
-          minWidth: 120,
+          accessorKey: 'status',
+          width: 140,
+          minWidth: 130,
           cell: ({ row }) => <StatusChip status={row.status} isOverdue={row.isOverdue} />,
         },
         {
           id: 'taskStats',
           header: 'Tổng Task / Xong / Trễ',
           align: 'right',
-          minWidth: 210,
+          width: 250,
+          minWidth: 230,
           cell: ({ row }) => (
             <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.75, justifyContent: 'flex-end', width: '100%' }}>
               <Tooltip title={row.totalTasks > 0 ? `Bấm để xem tất cả (${row.totalTasks}) công việc của dự án này` : 'Không có công việc'} arrow>
@@ -246,6 +254,7 @@ export const ProjectProgressReport: React.FC<ProjectProgressReportProps> = memo(
           rowsPerPage,
         }}
         rowKey="projectId"
+        minWidth={1350}
         emptyMessage="Không có dữ liệu dự án phù hợp"
       />
     );

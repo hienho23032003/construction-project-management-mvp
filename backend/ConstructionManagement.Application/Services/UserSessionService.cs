@@ -19,6 +19,20 @@ public class UserSessionService : IUserSessionService
     public async Task<Guid> CreateSessionAsync(Guid userId, string? ipAddress, string? userAgent)
     {
         var now = DateTime.UtcNow;
+
+        // Auto-close any previous active sessions for this user to avoid stale duplicate "Active" sessions
+        var previousActiveSessions = await _context.UserLoginSessions
+            .Where(s => s.UserId == userId && s.Status == SessionStatus.Active)
+            .ToListAsync();
+
+        foreach (var prev in previousActiveSessions)
+        {
+            var lastAct = prev.LastActiveTime ?? prev.LoginTime;
+            prev.LogoutTime = lastAct;
+            prev.Status = SessionStatus.LoggedOut;
+            prev.DurationMinutes = Math.Max(0.1, Math.Round((lastAct - prev.LoginTime).TotalMinutes, 1));
+        }
+
         var session = new UserLoginSession
         {
             Id = Guid.NewGuid(),
@@ -45,7 +59,7 @@ public class UserSessionService : IUserSessionService
         var now = DateTime.UtcNow;
         session.LogoutTime = now;
         session.LastActiveTime = now;
-        session.DurationMinutes = Math.Round((now - session.LoginTime).TotalMinutes, 1);
+        session.DurationMinutes = Math.Max(0.1, Math.Round((now - session.LoginTime).TotalMinutes, 1));
         session.Status = SessionStatus.LoggedOut;
 
         await _context.SaveChangesAsync();
@@ -67,41 +81,26 @@ public class UserSessionService : IUserSessionService
         return true;
     }
 
-    public async Task<ApiResponse<PingSessionResultDto>> PingSessionAsync(Guid sessionId, Guid userId)
+    public async Task<ApiResponse<PingSessionResultDto>> PingSessionAsync(Guid sessionId, Guid userId, string? ipAddress = null, string? userAgent = null)
     {
         var now = DateTime.UtcNow;
-        var session = await _context.UserLoginSessions.FirstOrDefaultAsync(s => s.Id == sessionId);
+        var session = sessionId != Guid.Empty
+            ? await _context.UserLoginSessions.FirstOrDefaultAsync(s => s.Id == sessionId && s.UserId == userId)
+            : null;
 
-        if (session == null)
-        {
-            var newId = sessionId != Guid.Empty ? sessionId : Guid.NewGuid();
-            var newSession = new UserLoginSession
-            {
-                Id = newId,
-                UserId = userId,
-                LoginTime = now,
-                LastActiveTime = now,
-                Status = SessionStatus.Active,
-                CreatedAt = now
-            };
-            _context.UserLoginSessions.Add(newSession);
-            await _context.SaveChangesAsync();
-            return ApiResponse<PingSessionResultDto>.Ok(new PingSessionResultDto
-            {
-                SessionId = newSession.Id,
-                IsNewSession = true
-            });
-        }
-
-        var lastActivity = session.LastActiveTime ?? session.LoginTime;
+        var lastActivity = session?.LastActiveTime ?? session?.LoginTime ?? now;
         var idleGapMinutes = (now - lastActivity).TotalMinutes;
 
-        // If inactive for > 30 minutes or already logged out, finalize previous session and start fresh new session
-        if (idleGapMinutes > 30.0 || session.Status != SessionStatus.Active)
+        // If session not found, or not Active, or inactive for > 2 minutes (tab was hidden/inactive):
+        // Finalize old session if needed, then create a new active session for this authenticated user.
+        if (session == null || session.Status != SessionStatus.Active || idleGapMinutes > 2.0)
         {
-            session.LogoutTime = lastActivity;
-            session.Status = SessionStatus.LoggedOut;
-            session.DurationMinutes = Math.Max(0.1, Math.Round((lastActivity - session.LoginTime).TotalMinutes, 1));
+            if (session != null && session.Status == SessionStatus.Active)
+            {
+                session.LogoutTime = lastActivity;
+                session.Status = idleGapMinutes >= 30.0 ? SessionStatus.Expired : SessionStatus.LoggedOut;
+                session.DurationMinutes = Math.Max(0.1, Math.Round((lastActivity - session.LoginTime).TotalMinutes, 1));
+            }
 
             var newSession = new UserLoginSession
             {
@@ -109,11 +108,12 @@ public class UserSessionService : IUserSessionService
                 UserId = userId,
                 LoginTime = now,
                 LastActiveTime = now,
-                IpAddress = session.IpAddress,
-                UserAgent = session.UserAgent,
+                IpAddress = ipAddress ?? session?.IpAddress,
+                UserAgent = userAgent ?? session?.UserAgent,
                 Status = SessionStatus.Active,
                 CreatedAt = now
             };
+
             _context.UserLoginSessions.Add(newSession);
             await _context.SaveChangesAsync();
 
@@ -124,8 +124,9 @@ public class UserSessionService : IUserSessionService
             });
         }
 
+        // Active session within 2 minutes -> simply update LastActiveTime and Duration
         session.LastActiveTime = now;
-        session.DurationMinutes = Math.Round((now - session.LoginTime).TotalMinutes, 1);
+        session.DurationMinutes = Math.Max(0.1, Math.Round((now - session.LoginTime).TotalMinutes, 1));
         await _context.SaveChangesAsync();
 
         return ApiResponse<PingSessionResultDto>.Ok(new PingSessionResultDto
@@ -172,6 +173,8 @@ public class UserSessionService : IUserSessionService
         if (!string.IsNullOrWhiteSpace(status))
         {
             var st = status.Trim();
+            var expiredCutoff = now.AddMinutes(-30);
+
             if (st.Equals("Active", StringComparison.OrdinalIgnoreCase))
             {
                 query = query.Where(s => s.Status == SessionStatus.Active &&
@@ -182,12 +185,15 @@ public class UserSessionService : IUserSessionService
             {
                 query = query.Where(s => s.Status == SessionStatus.LoggedOut ||
                     (s.Status == SessionStatus.Active &&
-                     ((s.LastActiveTime.HasValue && s.LastActiveTime.Value < onlineThreshold) ||
-                      (!s.LastActiveTime.HasValue && s.LoginTime < onlineThreshold))));
+                     ((s.LastActiveTime.HasValue && s.LastActiveTime.Value < onlineThreshold && s.LastActiveTime.Value > expiredCutoff) ||
+                      (!s.LastActiveTime.HasValue && s.LoginTime < onlineThreshold && s.LoginTime > expiredCutoff))));
             }
             else if (st.Equals("Expired", StringComparison.OrdinalIgnoreCase))
             {
-                query = query.Where(s => s.Status == SessionStatus.Expired);
+                query = query.Where(s => s.Status == SessionStatus.Expired ||
+                    (s.Status == SessionStatus.Active &&
+                     ((s.LastActiveTime.HasValue && s.LastActiveTime.Value <= expiredCutoff) ||
+                      (!s.LastActiveTime.HasValue && s.LoginTime <= expiredCutoff))));
             }
         }
 
@@ -214,6 +220,7 @@ public class UserSessionService : IUserSessionService
         {
             var lastActivity = s.LastActiveTime ?? s.LoginTime;
             var isActuallyOnline = s.Status == SessionStatus.Active && lastActivity >= onlineThreshold;
+            var idleMinutes = (now - lastActivity).TotalMinutes;
 
             SessionStatus resolvedStatus;
             DateTime? resolvedLogoutTime;
@@ -225,9 +232,15 @@ public class UserSessionService : IUserSessionService
                 resolvedLogoutTime = null;
                 resolvedDuration = Math.Round((now - s.LoginTime).TotalMinutes, 1);
             }
+            else if (s.Status == SessionStatus.Expired || (s.Status == SessionStatus.Active && idleMinutes >= 30.0))
+            {
+                resolvedStatus = SessionStatus.Expired;
+                resolvedLogoutTime = s.LogoutTime ?? lastActivity;
+                resolvedDuration = s.DurationMinutes ?? Math.Round(((s.LogoutTime ?? lastActivity) - s.LoginTime).TotalMinutes, 1);
+            }
             else
             {
-                resolvedStatus = s.Status == SessionStatus.Expired ? SessionStatus.Expired : SessionStatus.LoggedOut;
+                resolvedStatus = SessionStatus.LoggedOut;
                 resolvedLogoutTime = s.LogoutTime ?? lastActivity;
                 resolvedDuration = s.DurationMinutes ?? Math.Round(((s.LogoutTime ?? lastActivity) - s.LoginTime).TotalMinutes, 1);
             }
@@ -295,16 +308,31 @@ public class UserSessionService : IUserSessionService
             .CountAsync();
 
         var loggedOutToday = await _context.UserLoginSessions
-            .Where(s => (s.Status == SessionStatus.LoggedOut && s.LogoutTime >= today && s.LogoutTime < tomorrow) ||
+            .Where(s => (s.Status == SessionStatus.LoggedOut && ((s.LogoutTime ?? s.LastActiveTime ?? s.LoginTime) >= today && (s.LogoutTime ?? s.LastActiveTime ?? s.LoginTime) < tomorrow)) ||
                         (s.Status == SessionStatus.Active && (s.LastActiveTime ?? s.LoginTime) < onlineThreshold && (s.LastActiveTime ?? s.LoginTime) >= today))
             .CountAsync();
 
-        var closedSessions = await query
-            .Where(s => s.DurationMinutes.HasValue && s.DurationMinutes > 0)
-            .Select(s => s.DurationMinutes!.Value)
+        var rawSessions = await query
+            .Select(s => new
+            {
+                s.DurationMinutes,
+                s.LoginTime,
+                s.LogoutTime,
+                s.LastActiveTime
+            })
             .ToListAsync();
 
-        var avgDuration = closedSessions.DefaultIfEmpty(0).Average();
+        var durations = rawSessions.Select(s =>
+        {
+            if (s.DurationMinutes.HasValue && s.DurationMinutes.Value > 0)
+            {
+                return s.DurationMinutes.Value;
+            }
+            var lastAct = s.LogoutTime ?? s.LastActiveTime ?? s.LoginTime;
+            return Math.Max(0.1, Math.Round((lastAct - s.LoginTime).TotalMinutes, 1));
+        }).ToList();
+
+        var avgDuration = durations.DefaultIfEmpty(0).Average();
 
         return ApiResponse<LoginSessionStatsDto>.Ok(new LoginSessionStatsDto
         {

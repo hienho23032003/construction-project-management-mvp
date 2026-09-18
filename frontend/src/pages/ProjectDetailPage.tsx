@@ -443,6 +443,7 @@ export const ProjectDetailPage: React.FC = () => {
         )}
         {activeTab === 4 && (
           <ProjectActivitiesTab
+            projectId={project.id}
             activities={project.recentActivities}
             onSelectTask={(taskId) => handleSelectTask(taskId)}
           />

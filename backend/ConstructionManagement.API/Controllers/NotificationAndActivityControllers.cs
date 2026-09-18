@@ -50,9 +50,14 @@ public class ActivityLogsController : BaseApiController
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetLogs([FromQuery] Guid? projectId, [FromQuery] Guid? taskId, [FromQuery] int limit = 50)
+    public async Task<IActionResult> GetLogs(
+        [FromQuery] PaginationParams pagination,
+        [FromQuery] Guid? projectId,
+        [FromQuery] Guid? taskId,
+        [FromQuery] Guid? userId,
+        [FromQuery] string? action = null)
     {
-        var result = await _activityLogService.GetRecentLogsAsync(projectId, taskId, limit);
+        var result = await _activityLogService.GetActivityLogsPagedAsync(pagination, projectId, taskId, userId, action);
         return Ok(result);
     }
 }

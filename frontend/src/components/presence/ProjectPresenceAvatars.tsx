@@ -8,7 +8,7 @@ import {
   Chip,
   Badge,
 } from '@mui/material';
-import { Users, Edit3 } from 'lucide-react';
+import { Users, Edit3, Eye } from 'lucide-react';
 import { useProjectPresenceQuery } from '../../hooks/usePresence';
 import { useAuth } from '../../contexts/AuthContext';
 import { getMediaUrl } from '../../utils/fileUtils';
@@ -78,32 +78,100 @@ export const ProjectPresenceAvatars: React.FC<ProjectPresenceAvatarsProps> = ({
           const isEditing = u.isEditing && u.editingTaskId;
 
           const tooltipTitle = (
-            <Box sx={{ p: 0.5 }}>
-              <Typography variant="caption" sx={{ fontWeight: 700, display: 'block' }}>
-                {u.userName} {isMe && '(Bạn)'}
-              </Typography>
-              {u.userDepartment && (
-                <Typography variant="caption" sx={{ display: 'block', color: 'text.disabled' }}>
-                  {u.userDepartment} {u.userRole && `• ${u.userRole}`}
+            <Box sx={{ p: 0.5, minWidth: 180 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1, mb: 0.5 }}>
+                <Typography sx={{ fontWeight: 700, fontSize: '0.8125rem', color: '#ffffff', lineHeight: 1.3 }}>
+                  {u.userName}
+                </Typography>
+                {isMe && (
+                  <Chip
+                    label="Bạn"
+                    size="small"
+                    sx={{
+                      height: 18,
+                      fontSize: '0.65rem',
+                      fontWeight: 700,
+                      bgcolor: '#0284c7',
+                      color: '#ffffff',
+                      px: 0.25,
+                    }}
+                  />
+                )}
+              </Box>
+
+              {(u.userDepartment || u.userRole) && (
+                <Typography sx={{ display: 'block', color: '#cbd5e1', fontSize: '0.72rem', lineHeight: 1.3, mb: 0.75 }}>
+                  {u.userDepartment} {u.userRole && u.userDepartment ? `• ${u.userRole}` : (u.userRole || '')}
                 </Typography>
               )}
+
               {isEditing ? (
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5, color: '#fbbf24' }}>
-                  <Edit3 size={12} />
-                  <Typography variant="caption" sx={{ fontWeight: 600 }}>
-                    Đang sửa: {u.editingTaskName || 'công việc'}
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 0.75,
+                    px: 1,
+                    py: 0.5,
+                    borderRadius: 1,
+                    bgcolor: 'rgba(245, 158, 11, 0.18)',
+                    border: '1px solid rgba(245, 158, 11, 0.35)',
+                    color: '#fbbf24',
+                  }}
+                >
+                  <Edit3 size={13} style={{ flexShrink: 0 }} />
+                  <Typography sx={{ fontWeight: 600, fontSize: '0.72rem', color: '#fbbf24' }}>
+                    Đang sửa: <strong>{u.editingTaskName || 'công việc'}</strong>
                   </Typography>
                 </Box>
               ) : (
-                <Typography variant="caption" sx={{ color: 'text.disabled', fontStyle: 'italic', display: 'block', mt: 0.25 }}>
-                  Đang xem dự án
-                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, mt: 0.25 }}>
+                  <Box
+                    sx={{
+                      width: 7,
+                      height: 7,
+                      borderRadius: '50%',
+                      bgcolor: '#10b981',
+                      boxShadow: '0 0 6px #10b981',
+                      flexShrink: 0,
+                    }}
+                  />
+                  <Typography sx={{ color: '#94a3b8', fontStyle: 'italic', fontSize: '0.72rem' }}>
+                    Đang xem dự án
+                  </Typography>
+                </Box>
               )}
             </Box>
           );
 
           return (
-            <Tooltip key={u.userId} title={tooltipTitle} arrow placement="top">
+            <Tooltip
+              key={u.userId}
+              title={tooltipTitle}
+              arrow
+              placement="top"
+              slotProps={{
+                tooltip: {
+                  sx: {
+                    bgcolor: '#0f172a',
+                    color: '#f8fafc',
+                    boxShadow: '0 8px 24px rgba(0, 0, 0, 0.4)',
+                    border: '1px solid rgba(255, 255, 255, 0.15)',
+                    p: 1.25,
+                    borderRadius: 2,
+                    maxWidth: 280,
+                  },
+                },
+                arrow: {
+                  sx: {
+                    color: '#0f172a',
+                    '&::before': {
+                      border: '1px solid rgba(255, 255, 255, 0.15)',
+                    },
+                  },
+                },
+              }}
+            >
               <Badge
                 overlap="circular"
                 anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}

@@ -498,6 +498,7 @@ public class UserService : IUserService
         }
 
         // Recent Activities by user
+        var totalActivities = await _context.ActivityLogs.CountAsync(a => a.UserId == userId);
         var activities = await _context.ActivityLogs
             .Where(a => a.UserId == userId)
             .OrderByDescending(a => a.CreatedAt)
@@ -531,7 +532,8 @@ public class UserService : IUserService
             },
             Projects = projects,
             Tasks = taskItems,
-            RecentActivities = activities
+            RecentActivities = activities,
+            TotalActivities = totalActivities
         };
 
         return ApiResponse<EmployeeProgressDetailDto>.Ok(result);

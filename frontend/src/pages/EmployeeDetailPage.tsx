@@ -16,6 +16,7 @@ import {
   Activity,
   ChevronRight,
 } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 import { usePermission } from '../hooks/usePermission';
 import { PERMISSIONS } from '../constants/permissions';
 import { useUserProgressQuery, useResetUserPasswordMutation } from '../hooks/useEmployees';
@@ -25,6 +26,7 @@ import {
   useTaskDependenciesQuery,
   useAddCommentMutation,
 } from '../hooks/useTasks';
+import { activityLogApi } from '../services/api/endpoints';
 import { TaskDetailDrawer } from '../components/tasks/TaskDetailDrawer';
 import { ResetPasswordModal } from '../components/employees/ResetPasswordModal';
 import { EmployeeHeader } from '../components/employees/detail/EmployeeHeader';
@@ -43,6 +45,7 @@ export const EmployeeDetailPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState(0);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [openResetPassword, setOpenResetPassword] = useState(false);
+  const [tabActivityCount, setTabActivityCount] = useState<number | null>(null);
 
   // Queries & Mutations
   const { data: progressData, isLoading, error } = useUserProgressQuery(id);
@@ -52,11 +55,31 @@ export const EmployeeDetailPage: React.FC = () => {
   const addCommentMutation = useAddCommentMutation(selectedTaskId || undefined);
   const resetPasswordMutation = useResetUserPasswordMutation();
 
+  const { data: activityCountData } = useQuery({
+    queryKey: ['employee-activity-logs-count', id],
+    queryFn: async () => {
+      if (!id) return 0;
+      const res = await activityLogApi.getLogs({ userId: id, pageSize: 1, pageIndex: 1 });
+      const data: any = res.data?.data;
+      if (data && typeof data === 'object' && typeof data.totalCount === 'number') {
+        return data.totalCount;
+      }
+      return 0;
+    },
+    enabled: Boolean(id),
+    staleTime: 15_000,
+  });
+
   const user = progressData?.user;
   const stats = progressData?.stats;
   const projects: EmployeeProjectParticipation[] = progressData?.projects || [];
   const tasks: EmployeeTaskItem[] = progressData?.tasks || [];
   const activities: EmployeeActivityLog[] = progressData?.recentActivities || [];
+  const totalActivities =
+    tabActivityCount ??
+    (typeof activityCountData === 'number'
+      ? activityCountData
+      : (progressData?.totalActivities ?? activities.length));
 
   const handleResetPassword = async (userId: string, newPassword: string) => {
     await resetPasswordMutation.mutateAsync({ id: userId, newPassword });
@@ -161,7 +184,7 @@ export const EmployeeDetailPage: React.FC = () => {
               iconPosition="start"
             />
             <Tab
-              label={`Lịch Sử Hoạt Động (${activities.length})`}
+              label={`Lịch Sử Hoạt Động (${totalActivities})`}
               icon={<Activity size={17} />}
               iconPosition="start"
             />
@@ -179,7 +202,14 @@ export const EmployeeDetailPage: React.FC = () => {
 
           {activeTab === 1 && <EmployeeProjectsTab projects={projects} />}
 
-          {activeTab === 2 && <EmployeeActivitiesTab activities={activities} />}
+          {activeTab === 2 && (
+            <EmployeeActivitiesTab
+              activities={activities}
+              userId={id}
+              onSelectTask={(taskId) => setSelectedTaskId(taskId)}
+              onTotalCountChange={setTabActivityCount}
+            />
+          )}
         </Box>
       </Paper>
 

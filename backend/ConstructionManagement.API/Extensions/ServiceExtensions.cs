@@ -56,6 +56,7 @@ public static class ServiceExtensions
         services.AddScoped<IUserSessionService, UserSessionService>();
         services.AddScoped<IFileStorageService, FileStorageService>();
         services.AddSingleton<IPresenceService, PresenceService>();
+        services.AddHostedService<ConstructionManagement.API.BackgroundServices.SessionExpirationWorker>();
 
         // 3. Validators
         services.AddValidatorsFromAssemblyContaining<AuthService>();

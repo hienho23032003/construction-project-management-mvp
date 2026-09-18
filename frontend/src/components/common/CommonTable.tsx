@@ -231,21 +231,12 @@ function CommonTableInner<T = any>({
   // Cell padding based on density
   const cellPadding = densityPaddingMap[density];
 
-  // Responsive minWidth ensuring full-content horizontal scrolling on mobile and 100% stretch on desktop
+  // Responsive minWidth ensuring 100% stretch or custom minWidth
   const computedMinWidth = useMemo(() => {
     if (typeof minWidth === 'object' && minWidth !== null) {
-      return {
-        ...minWidth,
-        xs: 'max-content',
-        sm: 'max-content',
-        md: (minWidth as any).md || '100%',
-      };
+      return minWidth;
     }
-    return {
-      xs: 'max-content',
-      sm: 'max-content',
-      md: minWidth || '100%',
-    };
+    return minWidth || '100%';
   }, [minWidth]);
 
   return (
@@ -279,7 +270,7 @@ function CommonTableInner<T = any>({
           sx={{
             width: '100%',
             minWidth: computedMinWidth as any,
-            tableLayout: tableLayout || 'fixed',
+            tableLayout: { xs: 'auto', md: tableLayout || 'fixed' },
             borderCollapse: 'separate',
             ...tableSx,
           }}
@@ -348,16 +339,20 @@ function CommonTableInner<T = any>({
                 const colKey = col.id || (col.accessorKey as string) || `col-${colIdx}`;
                 const sortKey = col.sortField || (col.accessorKey as string) || col.id;
                 const isSortActive = Boolean(sortBy && sortKey && sortBy === sortKey);
+                const headerTitle = typeof col.header === 'string' ? col.header : undefined;
 
                 return (
                     <TableCell
                       key={colKey}
                       align={col.align || 'left'}
+                      title={headerTitle}
                       sx={{
-                        width: col.width as any,
-                        minWidth: (col.minWidth as any) || (typeof col.width === 'number' ? col.width : undefined),
-                        maxWidth: col.maxWidth as any,
+                        width: { xs: 'auto', md: (col.width || col.minWidth) as any },
+                        minWidth: (col.minWidth || col.width) as any,
+                        maxWidth: { xs: 'none', md: col.maxWidth as any },
                         whiteSpace: 'nowrap',
+                        overflow: col.ellipsis ? 'hidden' : 'visible',
+                        textOverflow: col.ellipsis ? 'ellipsis' : 'clip',
                         ...col.headerSx,
                       }}
                     >
@@ -616,24 +611,25 @@ function CommonTableInner<T = any>({
                         }
 
                         // Text auto truncation & tooltip title
+                        const stringValue =
+                          typeof cellValue === 'string' || typeof cellValue === 'number'
+                            ? String(cellValue)
+                            : typeof content === 'string' || typeof content === 'number'
+                            ? String(content)
+                            : undefined;
+
                         let finalCellContent: React.ReactNode = content;
                         if (col.ellipsis) {
-                          const titleVal =
-                            typeof cellValue === 'string' || typeof cellValue === 'number'
-                              ? String(cellValue)
-                              : typeof content === 'string'
-                              ? content
-                              : undefined;
                           finalCellContent = (
                             <Box
                               component="div"
-                              title={titleVal}
+                              title={stringValue}
                               sx={{
                                 display: 'block',
                                 overflow: 'hidden',
                                 textOverflow: 'ellipsis',
                                 whiteSpace: 'nowrap',
-                                maxWidth: col.maxWidth || 280,
+                                maxWidth: col.maxWidth,
                               }}
                             >
                               {content}
@@ -644,11 +640,14 @@ function CommonTableInner<T = any>({
                             <Typography
                               component="span"
                               variant="body2"
+                              title={stringValue}
                               sx={{
                                 fontSize: 'inherit',
                                 fontWeight: 'inherit',
                                 color: 'inherit',
-                                whiteSpace: 'nowrap',
+                                whiteSpace: 'inherit',
+                                wordBreak: 'inherit',
+                                display: 'inline',
                               }}
                             >
                               {content}
@@ -660,18 +659,21 @@ function CommonTableInner<T = any>({
                           <TableCell
                             key={cellKey}
                             align={col.align || 'left'}
+                            title={stringValue}
                             sx={{
                               py: cellPadding.py,
                               px: cellPadding.px,
                               fontSize: '0.8125rem',
                               color: 'text.primary',
                               whiteSpace: 'nowrap',
-                              width: col.width as any,
-                              minWidth: (col.minWidth as any) || (typeof col.width === 'number' ? col.width : undefined),
-                              maxWidth: col.maxWidth as any,
+                              width: { xs: 'auto', md: (col.width || col.minWidth) as any },
+                              minWidth: (col.minWidth || col.width) as any,
+                              maxWidth: { xs: 'none', md: col.maxWidth as any },
                               borderBottom: '1px solid',
                               borderColor: 'divider',
-                              ...customCellSx,
+                              overflow: col.ellipsis ? 'hidden' : 'visible',
+                              textOverflow: col.ellipsis ? 'ellipsis' : 'clip',
+                              ...(typeof customCellSx === 'object' ? customCellSx : {}),
                             }}
                           >
                             {finalCellContent}

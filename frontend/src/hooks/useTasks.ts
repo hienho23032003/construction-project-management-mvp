@@ -108,11 +108,12 @@ export const useTaskActivitiesQuery = (taskId?: string) => {
     queryKey: ['task-activities', taskId],
     queryFn: async () => {
       if (!taskId) return [];
-      const res = await activityLogApi.getLogs(undefined, taskId, 100);
+      const res = await activityLogApi.getLogs({ taskId, pageSize: 100 });
       if (!res.data.success || !res.data.data) {
         throw new Error(res.data.message || 'Không thể tải lịch sử biến động');
       }
-      return res.data.data;
+      const data: any = res.data.data;
+      return Array.isArray(data) ? data : data.items || [];
     },
     enabled: Boolean(taskId),
   });

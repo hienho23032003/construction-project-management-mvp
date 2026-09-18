@@ -84,21 +84,25 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     initAuth();
   }, [logout]);
 
-  // Setup periodic Heartbeat (every 30 seconds), tab focus/visibility refresh, and pagehide beacon when user is active
+  // Setup periodic Heartbeat (every 30 seconds), tab focus/visibility refresh when user is active
   useEffect(() => {
-    const currentSessionId = sessionId || localStorage.getItem('sessionId');
-    if (!token || !user || !currentSessionId) return;
+    if (!token || !user) return;
 
-    // 1. Initial and recurring Heartbeat ping & visibility resume
-    const sendPing = () => {
-      const sId = sessionId || localStorage.getItem('sessionId');
-      if (sId && localStorage.getItem('token')) {
+    // 1. Heartbeat ping: only active when the tab is visible to the user
+    const sendPing = (force: boolean = false) => {
+      // Pause pinging if tab is hidden (e.g. switched to another tab/minimized)
+      if (!force && (document.hidden || document.visibilityState !== 'visible')) {
+        return;
+      }
+
+      const sId = sessionId || localStorage.getItem('sessionId') || '00000000-0000-0000-0000-000000000000';
+      if (localStorage.getItem('token')) {
         sessionApi
           .ping(sId)
           .then((pingRes) => {
             if (pingRes.data.success && pingRes.data.data?.sessionId) {
               const returnedId = pingRes.data.data.sessionId;
-              if (returnedId !== sId) {
+              if (returnedId && returnedId !== localStorage.getItem('sessionId')) {
                 setSessionId(returnedId);
                 localStorage.setItem('sessionId', returnedId);
               }
@@ -108,17 +112,23 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
     };
 
-    sendPing();
-    const interval = setInterval(sendPing, 30000);
+    // Initial ping if tab is visible
+    if (!document.hidden && document.visibilityState === 'visible') {
+      sendPing(true);
+    }
+
+    const interval = setInterval(() => sendPing(false), 30000);
 
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
-        sendPing();
+        sendPing(true);
       }
     };
 
     const handleFocus = () => {
-      sendPing();
+      if (document.visibilityState === 'visible') {
+        sendPing(true);
+      }
     };
 
     window.addEventListener('visibilitychange', handleVisibilityChange);

@@ -43,7 +43,8 @@ export const TaskDetailReport: React.FC<TaskDetailReportProps> = memo(
           id: 'projectCode',
           header: 'Dự Án',
           accessorKey: 'projectCode',
-          minWidth: 100,
+          width: 80,
+          minWidth: 70,
           cell: ({ value }) => (
             <Chip
               label={value}
@@ -56,13 +57,15 @@ export const TaskDetailReport: React.FC<TaskDetailReportProps> = memo(
           id: 'taskName',
           header: 'Tên Công Việc',
           accessorKey: 'taskName',
-          minWidth: 200,
+          width: 280,
+          minWidth: 220,
           cellSx: { fontWeight: 700, color: 'text.primary' },
         },
         {
           id: 'assigneeNames',
           header: 'Người Phụ Trách',
-          minWidth: 180,
+          width: 230,
+          minWidth: 230,
           cell: ({ row }) => {
             const assignees =
               row.assignees && row.assignees.length > 0
@@ -80,7 +83,7 @@ export const TaskDetailReport: React.FC<TaskDetailReportProps> = memo(
             }
 
             return (
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+              <Box sx={{ display: 'flex', flexWrap: 'nowrap', alignItems: 'center', gap: 0.5, whiteSpace: 'nowrap' }}>
                 {assignees.slice(0, 2).map((a: any) => (
                   <Chip
                     key={a.id || a.fullName}
@@ -120,6 +123,7 @@ export const TaskDetailReport: React.FC<TaskDetailReportProps> = memo(
         {
           id: 'dateRange',
           header: 'Thời Gian',
+          width: 160,
           minWidth: 150,
           cell: ({ row }) => {
             return `${formatDate(row.startDate, 'dd/MM')} - ${formatDate(
@@ -132,12 +136,15 @@ export const TaskDetailReport: React.FC<TaskDetailReportProps> = memo(
           id: 'progress',
           header: 'Tiến Độ',
           accessorKey: 'progress',
-          minWidth: 120,
+          width: 130,
+          minWidth: 110,
           cell: ({ value }) => <ProgressBar value={value} height={7} />,
         },
         {
           id: 'status',
           header: 'Trạng Thái',
+          accessorKey: 'status',
+          width: 130,
           minWidth: 120,
           cell: ({ row }) => <StatusChip status={row.status} isOverdue={row.isOverdue} />,
         },
@@ -156,6 +163,7 @@ export const TaskDetailReport: React.FC<TaskDetailReportProps> = memo(
           rowsPerPage,
         }}
         rowKey="taskId"
+        minWidth={1070}
         onRowClick={(row) => onSelectTask?.(row.taskId)}
         rowSx={() => ({
           cursor: onSelectTask ? 'pointer' : 'default',

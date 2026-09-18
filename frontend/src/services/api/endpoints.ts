@@ -232,8 +232,21 @@ export const notificationApi = {
 };
 
 export const activityLogApi = {
-  getLogs: (projectId?: string, taskId?: string, limit = 50) =>
-    apiClient.get<ApiResponse<ActivityLog[]>>('/activity-logs', { params: { projectId, taskId, limit } }),
+  getLogs: (
+    paramsOrProjectId?: string | (PaginationParams & { projectId?: string; taskId?: string; userId?: string; action?: string; limit?: number }),
+    taskId?: string,
+    limit?: number
+  ) => {
+    let params: any = {};
+    if (typeof paramsOrProjectId === 'object' && paramsOrProjectId !== null) {
+      params = { ...paramsOrProjectId };
+    } else {
+      if (paramsOrProjectId) params.projectId = paramsOrProjectId;
+      if (taskId) params.taskId = taskId;
+      if (limit) params.pageSize = limit;
+    }
+    return apiClient.get<ApiResponse<PagedResult<ActivityLog>>>('/activity-logs', { params });
+  },
 };
 
 export const presenceApi = {

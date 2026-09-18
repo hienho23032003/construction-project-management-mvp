@@ -33,6 +33,7 @@ export const RoleTable: React.FC<RoleTableProps> = memo(({
       {
         id: 'name',
         header: 'Tên & Chip Vai Trò',
+        width: 220,
         minWidth: 200,
         cell: ({ row }) => (
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, whiteSpace: 'nowrap' }}>
@@ -67,7 +68,9 @@ export const RoleTable: React.FC<RoleTableProps> = memo(({
       {
         id: 'description',
         header: 'Mô Tả Nhiệm Vụ',
-        minWidth: 220,
+        width: 320,
+        minWidth: 270,
+        ellipsis: true,
         accessorKey: 'description',
         cell: ({ value }) => (
           <Typography
@@ -75,9 +78,12 @@ export const RoleTable: React.FC<RoleTableProps> = memo(({
             sx={{
               color: 'text.secondary',
               fontSize: '0.8rem',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
               whiteSpace: 'nowrap',
+              display: 'block',
             }}
-            title={value || ''}
+            title={value || 'Chưa có mô tả chi tiết'}
           >
             {value || 'Chưa có mô tả chi tiết'}
           </Typography>
@@ -86,6 +92,7 @@ export const RoleTable: React.FC<RoleTableProps> = memo(({
       {
         id: 'classification',
         header: 'Phân Loại',
+        width: 120,
         minWidth: 110,
         cell: ({ row }) =>
           row.isSystem ? (
@@ -121,6 +128,7 @@ export const RoleTable: React.FC<RoleTableProps> = memo(({
         id: 'userCount',
         header: 'Nhân Sự',
         align: 'center',
+        width: 90,
         minWidth: 90,
         accessorKey: 'userCount',
         cell: ({ value }) => (
@@ -135,7 +143,8 @@ export const RoleTable: React.FC<RoleTableProps> = memo(({
       {
         id: 'permissionsCount',
         header: 'Phạm Vi Quyền Hạn',
-        minWidth: 240,
+        width: 250,
+        minWidth: 230,
         cell: ({ row }) => {
           const moduleTags = getRoleModuleTags(row.permissions);
           const isSuperAdminRole = row.code === 'SuperAdmin';
@@ -209,6 +218,7 @@ export const RoleTable: React.FC<RoleTableProps> = memo(({
         id: 'actions',
         header: 'Thao Tác',
         align: 'right',
+        width: 90,
         minWidth: 90,
         cell: ({ row }) => (
           <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 0.5 }}>

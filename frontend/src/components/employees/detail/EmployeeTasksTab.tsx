@@ -72,7 +72,8 @@ export const EmployeeTasksTab: React.FC<EmployeeTasksTabProps> = ({
         id: 'name',
         header: 'Hạng Mục / Công Việc',
         accessorKey: 'name',
-        minWidth: 260,
+        width: 380,
+        minWidth: 320,
         cell: ({ row }) => (
           <Box
             onClick={() => onSelectTask(row.taskId)}
@@ -80,14 +81,41 @@ export const EmployeeTasksTab: React.FC<EmployeeTasksTabProps> = ({
               cursor: 'pointer',
               '&:hover': { color: '#0284c7' },
               transition: 'color 0.15s ease',
+              width: '100%',
+              minWidth: 0,
             }}
           >
-            <Typography variant="body2" sx={{ fontWeight: 700, color: 'inherit' }}>
+            <Typography
+              variant="body2"
+              sx={{
+                fontWeight: 700,
+                color: 'inherit',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}
+              title={row.name}
+            >
               {row.name}
             </Typography>
-            <Typography variant="caption" sx={{ color: '#64748b', display: 'flex', alignItems: 'center', gap: 0.5 }}>
-              <FolderKanban size={13} color="#0284c7" />
-              [{row.projectCode}] {row.projectName}
+            <Typography
+              variant="caption"
+              sx={{
+                color: '#64748b',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 0.5,
+                mt: 0.25,
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}
+              title={`[${row.projectCode}] ${row.projectName}`}
+            >
+              <FolderKanban size={13} color="#0284c7" style={{ flexShrink: 0 }} />
+              <Box component="span" sx={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                [{row.projectCode}] {row.projectName}
+              </Box>
             </Typography>
           </Box>
         ),
@@ -96,14 +124,17 @@ export const EmployeeTasksTab: React.FC<EmployeeTasksTabProps> = ({
         id: 'priority',
         header: 'Ưu Tiên',
         accessorKey: 'priority',
+        width: 120,
         minWidth: 110,
+        align: 'center',
         cell: ({ value }) => <PriorityBadge priority={value} size="small" />,
       },
       {
         id: 'status',
         header: 'Trạng Thái',
         accessorKey: 'status',
-        minWidth: 150,
+        width: 190,
+        minWidth: 180,
         cell: ({ row }) => {
           const isDone = row.status === 'Completed';
           const isCompletedLate =
@@ -147,7 +178,8 @@ export const EmployeeTasksTab: React.FC<EmployeeTasksTabProps> = ({
         id: 'progress',
         header: 'Tiến Độ',
         accessorKey: 'progress',
-        minWidth: 150,
+        width: 140,
+        minWidth: 120,
         cell: ({ value, row }) => (
           <Box sx={{ width: '100%' }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
@@ -180,7 +212,8 @@ export const EmployeeTasksTab: React.FC<EmployeeTasksTabProps> = ({
         id: 'plannedEndDate',
         header: 'Hạn Chót',
         accessorKey: 'plannedEndDate',
-        minWidth: 150,
+        width: 170,
+        minWidth: 160,
         cell: ({ row }) => {
           const isDone = row.status === 'Completed';
           const isCompletedLate =
@@ -222,7 +255,9 @@ export const EmployeeTasksTab: React.FC<EmployeeTasksTabProps> = ({
       {
         id: 'actions',
         header: 'Thao Tác',
-        minWidth: 90,
+        width: 80,
+        minWidth: 80,
+        align: 'center',
         cell: ({ row }) => (
           <Tooltip title="Xem chi tiết công việc">
             <IconButton
@@ -290,6 +325,7 @@ export const EmployeeTasksTab: React.FC<EmployeeTasksTabProps> = ({
       <CommonTable<EmployeeTaskItem>
         data={filteredTasks}
         columns={taskColumns}
+        minWidth={1050}
         emptyMessage={
           tasks.length === 0
             ? 'Nhân viên này chưa được phân công công việc nào.'

@@ -631,6 +631,25 @@ export const getAppTheme = (mode: 'light' | 'dark') => {
           },
         },
       },
+      MuiTooltip: {
+        styleOverrides: {
+          tooltip: {
+            backgroundColor: isDark ? '#1e293b' : '#0f172a',
+            color: '#f8fafc',
+            fontSize: '0.75rem',
+            fontWeight: 500,
+            borderRadius: '8px',
+            padding: '8px 12px',
+            boxShadow: isDark
+              ? '0 10px 25px -5px rgba(0, 0, 0, 0.6), 0 8px 10px -6px rgba(0, 0, 0, 0.6)'
+              : '0 10px 25px -5px rgba(15, 23, 42, 0.3), 0 8px 10px -6px rgba(15, 23, 42, 0.2)',
+            border: isDark ? '1px solid rgba(255, 255, 255, 0.12)' : '1px solid rgba(255, 255, 255, 0.15)',
+          },
+          arrow: {
+            color: isDark ? '#1e293b' : '#0f172a',
+          },
+        },
+      },
     },
   };
 

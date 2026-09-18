@@ -437,6 +437,7 @@ export interface EmployeeProgressDetail {
   projects: EmployeeProjectParticipation[];
   tasks: EmployeeTaskItem[];
   recentActivities: EmployeeActivityLog[];
+  totalActivities?: number;
 }
 
 export interface UserPresence {

@@ -96,64 +96,6 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
         borderRadius: 0,
       }}
     >
-      {/* Brand Header */}
-      <Box
-        sx={{
-          px: collapsed && !isMobile ? 1.5 : 2,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: collapsed && !isMobile ? 'center' : 'space-between',
-          borderBottom: `1px solid ${theme.palette.divider}`,
-          height: 64,
-          minHeight: 64,
-          maxHeight: 64,
-          boxSizing: 'border-box',
-        }}
-      >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, overflow: 'hidden', width: '100%', justifyContent: collapsed && !isMobile ? 'center' : 'flex-start' }}>
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              p: 0.5,
-              borderRadius: '8px',
-              bgcolor: isDark ? 'rgba(56, 189, 248, 0.1)' : '#f0f9ff',
-              border: isDark ? '1px solid rgba(56, 189, 248, 0.2)' : '1px solid #e0f2fe',
-            }}
-          >
-            <Box
-              component="img"
-              src="https://www.fcbvn.vn/landing/logo.svg"
-              alt="FCBVN Logo"
-              sx={{
-                height: 32,
-                maxWidth: collapsed && !isMobile ? 32 : 120,
-                objectFit: 'contain',
-              }}
-            />
-          </Box>
-          {(!collapsed || isMobile) && (
-            <Box sx={{ overflow: 'hidden' }}>
-              <Typography
-                variant="h6"
-                sx={{
-                  fontWeight: 800,
-                  fontSize: '0.95rem',
-                  color: 'text.primary',
-                  lineHeight: 1.2,
-                  letterSpacing: '0.02em',
-                }}
-              >
-                FCB<span style={{ color: isDark ? '#38bdf8' : '#0284c7' }}>VN</span>
-              </Typography>
-              <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.68rem', fontWeight: 500 }} noWrap>
-                Quản Lý Công Trình
-              </Typography>
-            </Box>
-          )}
-        </Box>
-      </Box>
 
       {/* Navigation Links */}
       <List sx={{ px: collapsed && !isMobile ? 1 : 1.5, py: 2, flexGrow: 1 }}>

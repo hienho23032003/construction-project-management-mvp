@@ -151,8 +151,8 @@ export const TaskTable: React.FC<TaskTableProps> = memo(({
           stickyHeader
           sx={{
             width: '100%',
-            minWidth: 1220,
-            tableLayout: 'fixed',
+            minWidth: { xs: 'max-content', md: 1220 },
+            tableLayout: { xs: 'auto', md: 'fixed' },
             borderCollapse: 'separate',
           }}
         >
@@ -173,8 +173,8 @@ export const TaskTable: React.FC<TaskTableProps> = memo(({
                 },
               }}
             >
-              <TableCell sx={{ width: 50, textAlign: 'center' }}>STT</TableCell>
-              <TableCell sx={{ width: 105 }}>
+              <TableCell sx={{ width: { xs: 'auto', md: 50 }, minWidth: 50, textAlign: 'center' }}>STT</TableCell>
+              <TableCell sx={{ width: { xs: 'auto', md: 105 }, minWidth: 100 }}>
                 <TableSortLabel
                   active={sortBy === 'projectCode' || sortBy === 'projectCreatedAt'}
                   direction={isDescending ? 'desc' : 'asc'}
@@ -183,7 +183,7 @@ export const TaskTable: React.FC<TaskTableProps> = memo(({
                   Mã Dự Án
                 </TableSortLabel>
               </TableCell>
-              <TableCell sx={{ width: 320 }}>
+              <TableCell sx={{ width: { xs: 'auto', md: 320 }, minWidth: 260 }}>
                 <TableSortLabel
                   active={sortBy === 'name'}
                   direction={isDescending ? 'desc' : 'asc'}
@@ -192,8 +192,8 @@ export const TaskTable: React.FC<TaskTableProps> = memo(({
                   Tên Công Việc
                 </TableSortLabel>
               </TableCell>
-              <TableCell sx={{ width: 170 }}>Người Thực Hiện</TableCell>
-              <TableCell sx={{ width: 120 }}>
+              <TableCell sx={{ width: { xs: 'auto', md: 170 }, minWidth: 150 }}>Người Thực Hiện</TableCell>
+              <TableCell sx={{ width: { xs: 'auto', md: 120 }, minWidth: 110 }}>
                 <TableSortLabel
                   active={sortBy === 'priority'}
                   direction={isDescending ? 'desc' : 'asc'}
@@ -202,7 +202,7 @@ export const TaskTable: React.FC<TaskTableProps> = memo(({
                   Ưu Tiên
                 </TableSortLabel>
               </TableCell>
-              <TableCell sx={{ width: 165 }}>
+              <TableCell sx={{ width: { xs: 'auto', md: 165 }, minWidth: 150 }}>
                 <TableSortLabel
                   active={sortBy === 'plannedEndDate'}
                   direction={isDescending ? 'desc' : 'asc'}
@@ -211,7 +211,7 @@ export const TaskTable: React.FC<TaskTableProps> = memo(({
                   Hạn Dự Kiến
                 </TableSortLabel>
               </TableCell>
-              <TableCell sx={{ width: 145 }}>
+              <TableCell sx={{ width: { xs: 'auto', md: 145 }, minWidth: 135 }}>
                 <TableSortLabel
                   active={sortBy === 'status'}
                   direction={isDescending ? 'desc' : 'asc'}
@@ -220,7 +220,7 @@ export const TaskTable: React.FC<TaskTableProps> = memo(({
                   Trạng Thái
                 </TableSortLabel>
               </TableCell>
-              <TableCell sx={{ width: 145 }}>
+              <TableCell sx={{ width: { xs: 'auto', md: 145 }, minWidth: 135 }}>
                 <TableSortLabel
                   active={sortBy === 'progress'}
                   direction={isDescending ? 'desc' : 'asc'}
@@ -375,12 +375,12 @@ export const TaskTable: React.FC<TaskTableProps> = memo(({
                             }}
                           >
                             {/* STT */}
-                            <TableCell sx={{ textAlign: 'center', width: 50, py: 1, px: 2, fontWeight: 600, color: 'text.secondary', borderBottom: '1px solid', borderColor: 'divider', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                            <TableCell sx={{ textAlign: 'center', width: { xs: 'auto', md: 50 }, minWidth: 50, py: 1, px: 2, fontWeight: 600, color: 'text.secondary', borderBottom: '1px solid', borderColor: 'divider', overflow: { xs: 'visible', md: 'hidden' }, whiteSpace: 'nowrap' }}>
                               {originalIndex + 1}
                             </TableCell>
 
                             {/* Project Code */}
-                            <TableCell sx={{ width: 105, py: 1, px: 2, borderBottom: '1px solid', borderColor: 'divider', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                            <TableCell sx={{ width: { xs: 'auto', md: 105 }, minWidth: 100, py: 1, px: 2, borderBottom: '1px solid', borderColor: 'divider', overflow: { xs: 'visible', md: 'hidden' }, whiteSpace: 'nowrap' }}>
                               <Chip
                                 label={task.projectCode || 'N/A'}
                                 size="small"
@@ -395,18 +395,19 @@ export const TaskTable: React.FC<TaskTableProps> = memo(({
                             </TableCell>
 
                             {/* Task Name */}
-                            <TableCell sx={{ width: 320, py: 1, px: 2, borderBottom: '1px solid', borderColor: 'divider', overflow: 'hidden', whiteSpace: 'nowrap' }} onClick={(e) => e.stopPropagation()}>
+                            <TableCell sx={{ width: { xs: 'auto', md: 320 }, minWidth: 260, py: 1, px: 2, borderBottom: '1px solid', borderColor: 'divider', overflow: { xs: 'visible', md: 'hidden' }, whiteSpace: 'nowrap' }} onClick={(e) => e.stopPropagation()}>
                               <InlineEditCell
                                 value={task.name}
                                 subtitle={task.parentName ? `Thuộc hạng mục: ${task.parentName}` : undefined}
                                 disabled={!allowEditName}
                                 onSave={(newName) => onTaskNameChange?.(task.id, newName)}
                                 placeholder="Nhập tên công việc..."
+                                modalTitle="Chỉnh sửa tên công việc"
                               />
                             </TableCell>
 
                             {/* Assignees */}
-                            <TableCell sx={{ width: 170, py: 1, px: 2, borderBottom: '1px solid', borderColor: 'divider', overflow: 'hidden', whiteSpace: 'nowrap' }} onClick={(e) => e.stopPropagation()}>
+                            <TableCell sx={{ width: { xs: 'auto', md: 170 }, minWidth: 150, py: 1, px: 2, borderBottom: '1px solid', borderColor: 'divider', overflow: { xs: 'visible', md: 'hidden' }, whiteSpace: 'nowrap' }} onClick={(e) => e.stopPropagation()}>
                               <AssigneeSelectPopover
                                 assignees={task.assignees}
                                 taskId={task.id}
@@ -417,7 +418,7 @@ export const TaskTable: React.FC<TaskTableProps> = memo(({
                             </TableCell>
 
                             {/* Priority */}
-                            <TableCell sx={{ width: 120, py: 1, px: 2, borderBottom: '1px solid', borderColor: 'divider', overflow: 'hidden', whiteSpace: 'nowrap' }} onClick={(e) => e.stopPropagation()}>
+                            <TableCell sx={{ width: { xs: 'auto', md: 120 }, minWidth: 110, py: 1, px: 2, borderBottom: '1px solid', borderColor: 'divider', overflow: { xs: 'visible', md: 'hidden' }, whiteSpace: 'nowrap' }} onClick={(e) => e.stopPropagation()}>
                               <PrioritySelect
                                 value={task.priority}
                                 onChange={(priority) => onPriorityChange?.(task.id, priority)}
@@ -426,7 +427,7 @@ export const TaskTable: React.FC<TaskTableProps> = memo(({
                             </TableCell>
 
                             {/* Timeline */}
-                            <TableCell sx={{ width: 165, py: 1, px: 2, borderBottom: '1px solid', borderColor: 'divider', overflow: 'hidden', whiteSpace: 'nowrap' }} onClick={(e) => e.stopPropagation()}>
+                            <TableCell sx={{ width: { xs: 'auto', md: 165 }, minWidth: 150, py: 1, px: 2, borderBottom: '1px solid', borderColor: 'divider', overflow: { xs: 'visible', md: 'hidden' }, whiteSpace: 'nowrap' }} onClick={(e) => e.stopPropagation()}>
                               <InlineDateEditCell
                                 mode="range"
                                 startDate={task.startDate}
@@ -441,7 +442,7 @@ export const TaskTable: React.FC<TaskTableProps> = memo(({
                             </TableCell>
 
                             {/* Status */}
-                            <TableCell sx={{ width: 145, py: 1, px: 2, borderBottom: '1px solid', borderColor: 'divider', overflow: 'hidden', whiteSpace: 'nowrap' }} onClick={(e) => e.stopPropagation()}>
+                            <TableCell sx={{ width: { xs: 'auto', md: 145 }, minWidth: 135, py: 1, px: 2, borderBottom: '1px solid', borderColor: 'divider', overflow: { xs: 'visible', md: 'hidden' }, whiteSpace: 'nowrap' }} onClick={(e) => e.stopPropagation()}>
                               <StatusSelect
                                 value={task.status}
                                 onChange={(status) => onStatusChange(task.id, status)}
@@ -450,7 +451,7 @@ export const TaskTable: React.FC<TaskTableProps> = memo(({
                             </TableCell>
 
                             {/* Progress */}
-                            <TableCell sx={{ width: 145, py: 1, px: 2, borderBottom: '1px solid', borderColor: 'divider', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                            <TableCell sx={{ width: { xs: 'auto', md: 145 }, minWidth: 135, py: 1, px: 2, borderBottom: '1px solid', borderColor: 'divider', overflow: { xs: 'visible', md: 'hidden' }, whiteSpace: 'nowrap' }}>
                               <TaskProgressSlider
                                 value={task.progress}
                                 disabled={!allowProgress}

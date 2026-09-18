@@ -67,7 +67,9 @@ public enum ActivityAction
     DeadlineChanged = 7,
     CommentAdded = 8,
     MemberAdded = 9,
-    MemberRemoved = 10
+    MemberRemoved = 10,
+    TaskDeleted = 11,
+    ProjectDeleted = 12
 }
 
 public enum SessionStatus

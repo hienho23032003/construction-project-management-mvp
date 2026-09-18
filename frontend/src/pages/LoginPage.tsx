@@ -184,36 +184,6 @@ export const LoginPage: React.FC = () => {
 
         {/* Main Content Area */}
         <Box sx={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', gap: 2.5, my: 'auto' }}>
-          {/* Top Branding */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-            <Box
-              sx={{
-                p: 0.8,
-                bgcolor: '#ffffff',
-                borderRadius: '10px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: '0 4px 14px rgba(0,0,0,0.15)',
-              }}
-            >
-              <Box
-                component="img"
-                src="https://www.fcbvn.vn/landing/logo.svg"
-                alt="FCBVN Logo"
-                sx={{ height: 32, objectFit: 'contain' }}
-              />
-            </Box>
-            <Box>
-              <Typography variant="h6" sx={{ fontWeight: 800, color: '#ffffff', letterSpacing: '0.04em', lineHeight: 1.1 }}>
-                FCB<span style={{ color: '#7dd3fc' }}>VN</span>
-              </Typography>
-              <Typography variant="caption" sx={{ color: '#bae6fd', fontWeight: 500, fontSize: '0.72rem' }}>
-                Hệ Thống Quản Lý Thi Công & Dự Án
-              </Typography>
-            </Box>
-          </Box>
-
           {/* Headline & Description */}
           <Box>
             <Typography
@@ -486,7 +456,7 @@ export const LoginPage: React.FC = () => {
         {/* Bottom copyright in Left Panel */}
         <Box sx={{ position: 'relative', zIndex: 1, pt: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
           <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.75rem' }}>
-            © 2026 FCBVN Construction Management System. Phiên bản Doanh Nghiệp 2.0
+            © 2026 Construction Management System. Phiên bản Doanh Nghiệp 2.0
           </Typography>
           <Typography variant="caption" sx={{ color: '#7dd3fc', fontWeight: 600, fontSize: '0.75rem' }}>
             Design by Phạm Thế Hiển
@@ -521,24 +491,6 @@ export const LoginPage: React.FC = () => {
             flexDirection: 'column',
           }}
         >
-          {/* Mobile Brand Header */}
-          <Box sx={{ display: { xs: 'flex', md: 'none' }, alignItems: 'center', gap: 1.5, mb: 3 }}>
-            <Box
-              component="img"
-              src="https://www.fcbvn.vn/landing/logo.svg"
-              alt="FCBVN Logo"
-              sx={{ height: 38, objectFit: 'contain' }}
-            />
-            <Box>
-              <Typography variant="h6" sx={{ fontWeight: 800, color: 'text.primary', lineHeight: 1.1 }}>
-                FCB<span style={{ color: '#0284c7' }}>VN</span>
-              </Typography>
-              <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.75rem' }}>
-                Quản Lý Thi Công & Dự Án
-              </Typography>
-            </Box>
-          </Box>
-
           {/* Form Header */}
           <Box sx={{ mb: 3 }}>
             <Typography variant="h4" sx={{ fontWeight: 800, fontSize: { xs: '1.4rem', sm: '1.6rem' }, color: 'text.primary' }}>
@@ -738,7 +690,7 @@ export const LoginPage: React.FC = () => {
 
           <Box sx={{ mt: 3, textAlign: 'center' }}>
             <Typography variant="caption" sx={{ color: '#94a3b8', display: 'block', fontSize: '0.72rem' }}>
-              © 2026 FCBVN Management System
+              © 2026 Management System
             </Typography>
             <Typography variant="caption" sx={{ color: '#0284c7', fontWeight: 600, display: 'block', mt: 0.3, fontSize: '0.72rem' }}>
               Design by Phạm Thế Hiển
